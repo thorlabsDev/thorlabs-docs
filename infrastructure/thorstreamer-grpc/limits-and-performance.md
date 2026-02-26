@@ -1,0 +1,153 @@
+# Limits and Performance
+
+## Subscription Limits
+
+Each authentication token (client) is limited to:
+
+| Limit                              | Value  |
+| ---------------------------------- | ------ |
+| **Total concurrent subscriptions** | 6      |
+| Transaction streams                | 2 max  |
+| Account update streams             | 5 max  |
+| Slot status streams                | 2 max  |
+| Wallet transaction streams         | 10 max |
+
+### Per-Subscription Limits
+
+| Subscription Type             | Limit |
+| ----------------------------- | ----- |
+| Wallet addresses per request  | 10    |
+| Account addresses per request | 100   |
+
+***
+
+## Performance Requirements
+
+### EventPublisher Service (Individual Streams)
+
+Recommended for most use cases.
+
+| Resource | Requirement        |
+| -------- | ------------------ |
+| CPU      | 2-4 cores          |
+| RAM      | 2-4 GB             |
+| Network  | Standard broadband |
+
+### ThorStreamer Service (Unified Stream)
+
+High-throughput stream combining all events. **Requires robust infrastructure.**
+
+| Resource | Requirement                 |
+| -------- | --------------------------- |
+| CPU      | 8+ cores                    |
+| RAM      | 16+ GB                      |
+| Network  | Low-latency, high-bandwidth |
+
+{% hint style="info" %}
+Mandatory architecture:
+
+* Worker pools for parallel message processing
+* Asynchronous event handling
+* Message queuing for backpressure management
+{% endhint %}
+
+***
+
+## Disconnection Policy
+
+Clients are automatically disconnected when they cannot keep up with the stream:
+
+* **High message drop rate** — >50% messages dropped consistently
+* **Processing latency** — Sustained delays in message handling
+* **Buffer overflow** — Client or server-side buffer saturation
+
+### Warning Signs
+
+Before disconnection, you may observe:
+
+* Increasing latency in message delivery
+* Gaps in slot numbers or transaction indices
+* Server-side warning messages
+
+### Mitigation
+
+{% stepper %}
+{% step %}
+**Upgrade infrastructure**
+
+Add more CPU, RAM, and improve network capacity to handle higher throughput and reduce latency.
+{% endstep %}
+
+{% step %}
+**Optimize code**
+
+Implement async processing and reduce per-message latency (for example: use goroutines, async tasks, or batching).
+{% endstep %}
+
+{% step %}
+**Use individual streams**
+
+Switch to EventPublisher streams which have lower throughput requirements if ThorStreamer is too demanding.
+{% endstep %}
+
+{% step %}
+**Monitor resources**
+
+Continuously track CPU, memory, and network utilization to detect and react to capacity issues early.
+{% endstep %}
+{% endstepper %}
+
+***
+
+## Choosing the Right Service
+
+| Use Case                         | Recommended Service                             |
+| -------------------------------- | ----------------------------------------------- |
+| Monitor specific programs        | EventPublisher: `SubscribeToTransactions`       |
+| Track wallet activity            | EventPublisher: `SubscribeToWalletTransactions` |
+| Monitor account states           | EventPublisher: `SubscribeToAccountUpdates`     |
+| Block confirmations              | EventPublisher: `SubscribeToSlotStatus`         |
+| All data, high-performance infra | ThorStreamer: `StreamUpdates`                   |
+
+***
+
+## Optimization Tips
+
+### Message Processing
+
+{% code title="Go (example)" %}
+```go
+// Use goroutines for parallel processing (Go)
+for {
+    msg, err := stream.Recv()
+    if err != nil {
+        break
+    }
+    go processMessage(msg)  // Process concurrently
+}
+```
+{% endcode %}
+
+{% code title="Rust (example)" %}
+```rust
+// Use tokio::spawn for async processing (Rust)
+while let Some(response) = stream.message().await? {
+    let data = response.data.clone();
+    tokio::spawn(async move {
+        process_message(data).await;
+    });
+}
+```
+{% endcode %}
+
+### Buffer Management
+
+* Use bounded channels/queues to prevent memory exhaustion
+* Implement circuit breakers for downstream systems
+* Monitor queue depths as a health indicator
+
+### Network
+
+* Deploy clients in same region as ThorStreamer server
+* Use persistent connections (gRPC handles this automatically)
+* Avoid proxy layers that add latency
