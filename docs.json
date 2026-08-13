@@ -8,10 +8,10 @@
     "light": "#FBB03B",
     "dark": "#D97706"
   },
-  "favicon": "/logo/thornode.svg",
+  "favicon": "/logo/thornode-blue-icon.svg",
   "logo": {
-    "light": "/logo/thornode.svg",
-    "dark": "/logo/thornode.svg"
+    "light": "/logo/thornode-blue-light.svg",
+    "dark": "/logo/thornode-blue-dark.svg"
   },
   "navigation": {
     "groups": [
