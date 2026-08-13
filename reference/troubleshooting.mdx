@@ -1,0 +1,132 @@
+---
+title: "Troubleshooting"
+description: "Diagnose ThorNode authentication, limits, connectivity, streaming, UDP, and payment issues."
+---
+
+Start with **Node Status** when that view is available in the ThorNode dashboard, then confirm that the selected pass or rental is active. Refresh the product view and copy its current target and credential before debugging an old configuration.
+
+## Quick triage
+
+<Steps>
+  <Step title="Confirm scope">
+    Record the product, network, location, and access identifier. Do not record
+    the secret.
+  </Step>
+  <Step title="Check current access">
+    Confirm the product and location are still enabled and review **Usage** and
+    **Limits**.
+  </Step>
+  <Step title="Test one operation">
+    Reduce the client to one low-impact request, connection, or subscription
+    with bounded retries.
+  </Step>
+  <Step title="Compare timestamps">
+    Correlate the failure time with application logs and the status page. Redact
+    complete URLs and credentials before sharing evidence.
+  </Step>
+</Steps>
+
+## HTTP and RPC responses
+
+| Symptom                       | Likely causes                                                                                            | Actions                                                                                                           |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `401` or `403`                | Revoked or stale token, wrong location, inactive access, unavailable product, or IP restriction mismatch | Copy the values for the same access and location; confirm the real public egress IP; regenerate only if necessary |
+| `429`                         | A live throughput, concurrency, subscription, or filter limit was reached                                | Inspect **Usage** and **Limits**, reduce load, reuse connections, and retry with exponential backoff and jitter   |
+| `5xx`                         | Temporary service or upstream failure                                                                    | Check status, retry a small number of times with backoff, and preserve a redacted request identifier if returned  |
+| Method or route not found     | Wrong product URL, stale Bifrost route catalog, or unsupported RPC method                                | Refresh the dashboard and use the complete target or route currently displayed                                    |
+| RPC works but WebSocket fails | Wrong scheme or URL, proxy restrictions, or outbound WebSocket blocking                                  | Copy the `wss://` URL, check proxy policy, and test from the same runtime network                                 |
+
+<Note>
+  ThorEdge does not impose a monthly request cap. A `429` indicates a live rate,
+  concurrency, subscription, or filter constraint—not exhaustion of a monthly
+  request allowance.
+</Note>
+
+Do not retry authorization errors in a tight loop. They normally require a configuration or access change rather than more requests.
+
+## DNS, TLS, and connection failures
+
+- Use the public hostname and target exactly as shown in the dashboard; do not substitute a resolved IP.
+- Confirm the host clock is correct and the operating system trusts current certificate authorities.
+- Check outbound firewall, VPN, DNS, proxy, and service-mesh policies from the actual runtime environment.
+- Ensure an intercepting proxy supports WebSockets or HTTP/2 when the client needs them.
+- Verify that the target and token came from the same access and location.
+
+You can test name resolution without exposing a credential:
+
+```bash
+dig +short <public-hostname-copied-from-dashboard>
+```
+
+When testing a socket or TLS connection, use the host and port displayed by the dashboard. Do not paste a tokenized URL into shared terminal output.
+
+## IP restriction rejects a valid token
+
+The restriction checks the public egress address seen after NAT, a cloud gateway, VPN, or proxy. It is not necessarily the address assigned to the application host.
+
+1. Determine the runtime's public egress address through your approved network tooling.
+2. Check whether traffic can leave through more than one gateway.
+3. Update the restriction to the stable intended address.
+4. Retest from the same runtime, not from a developer laptop on another network.
+
+If egress changes dynamically, route traffic through a stable gateway before relying on an IP restriction.
+
+## Yellowstone streaming
+
+- Send the location token as metadata with the exact key `x-token`; do not append it to the target URL.
+- Confirm the client and protobuf definitions are compatible with the standard Yellowstone interface.
+- Reduce account and other filters if a subscription is rejected.
+- Reuse streams and check the live concurrent-stream and account/filter entitlements.
+- Add bounded queues, reconnect with backoff and jitter, and detect gaps after reconnecting.
+- Confirm proxies and firewalls support the target's TLS and HTTP/2 requirements.
+
+## Pulse streaming
+
+- Use the currently supported ThorNode client and control-message contract; old ThorPulse NATS examples are not wire-compatible.
+- Confirm the target and token belong to the same location and access.
+- Check outbound UDP/QUIC rules, VPN policy, and middleboxes that can block the handshake.
+- Move expensive work out of the receive path and monitor consumer lag.
+- Back off reconnect attempts instead of opening parallel sessions.
+
+See [Legacy services](/reference/legacy-services) before adapting an older ThorStreamer or ThorPulse client.
+
+## ShredStream or ShredReplay sends no UDP data
+
+1. Confirm the dashboard contains the intended public receiver and UDP port. ShredStream requires a public IPv4 address; ShredReplay accepts the target format shown in its form.
+2. Verify the process is listening on that exact port.
+3. Check cloud security groups, host firewalls, router forwarding, and network ACLs.
+4. Confirm the host is not behind carrier-grade NAT without explicit forwarding.
+5. Capture briefly on the receiver to distinguish a network problem from an application problem:
+
+```bash
+export UDP_PORT='<registered-port>'
+sudo tcpdump -ni any "udp port ${UDP_PORT}"
+```
+
+For ShredReplay, also confirm that the slot range remains inside the rolling availability window and that another job is not queued or running.
+
+## Payment is signed but access is not updated
+
+<Warning>
+  Do not pay a second time while a signed payment is pending or unresolved.
+</Warning>
+
+- Keep the transaction signature and, if displayed, the dashboard support or recovery reference.
+- Check whether the wallet shows the transaction as submitted and whether it reached the intended network.
+- Leave the dashboard flow open when possible. If the current flow offers a recovery, verification, or signature-retry action, use it instead of starting another payment.
+- Confirm the connected wallet is the registered wallet used for the operation.
+- If the state does not resolve, contact support with the transaction signature and approximate time. Never share a seed phrase, private key, token, or full credential-bearing URL.
+
+## Contact support safely
+
+Use [email](mailto:support@thornode.io) or the official [Thor Labs Discord](https://discord.gg/thorlabs). Include:
+
+- Product, network, and location
+- Access identifier and tier, without wallet private material
+- Approximate timestamp and timezone
+- HTTP or gRPC status and a redacted error message
+- Client name and version
+- A short description of what changed before the failure
+- A transaction signature for payment recovery, when relevant
+
+Never include endpoint tokens, Bifrost keys, replay keys, complete private route URLs, wallet private keys, or seed phrases.

@@ -1,0 +1,71 @@
+---
+title: "ThorEdge RPC"
+description: "Connect to ThorNode's Solana JSON-RPC and WebSocket endpoints."
+---
+
+ThorEdge provides Solana JSON-RPC over HTTP and subscriptions over WebSocket. The dashboard creates the complete URLs for each access, network, and location.
+
+## Before you connect
+
+You need an active pass or rental with access to the location you want to use. You also need a token for that location.
+
+<Note>
+  Tokens are location-bound. A token created for one location cannot
+  authenticate a URL in another location.
+</Note>
+
+## Get your endpoints
+
+<Steps>
+  <Step title="Select your access">
+    Open **Endpoints → Endpoints**, then select the pass or rental you want to
+    use.
+  </Step>
+  <Step title="Choose a network and location">
+    Select the network and an enabled location. Availability is determined by
+    your access.
+  </Step>
+  <Step title="Create or select a token">
+    Create a token for the location if one does not exist. Apply an IP
+    restriction when your client has a stable public egress IP.
+  </Step>
+  <Step title="Copy both URLs">
+    Copy the complete HTTP RPC URL and WebSocket URL from the dashboard. Do not
+    assemble either URL manually.
+  </Step>
+</Steps>
+
+Use the secure `https://` and `wss://` URLs unless you have a specific, controlled reason to use a non-TLS endpoint shown by the dashboard.
+
+## Send an RPC request
+
+Store the copied URL in your secret manager or runtime environment:
+
+```bash
+export THOR_RPC_URL='<copied-https-url>'
+
+curl --fail-with-body "$THOR_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{"jsonrpc":"2.0","id":1,"method":"getLatestBlockhash"}'
+```
+
+For subscriptions, configure your Solana WebSocket client with the complete `wss://` URL copied from the same location panel.
+
+## Operate safely
+
+- Treat the full endpoint URL as a secret because it contains or resolves to your credential.
+- Keep tokens in server-side configuration. Do not ship them in browser bundles, mobile apps, screenshots, or logs.
+- Restrict a token to a public egress IP when possible.
+- Regenerating or revoking a token invalidates the old token for that location. Other location tokens are unaffected.
+- Use narrow retry backoff for transient failures and avoid retry loops that amplify load.
+
+See [Security](/reference/security) for credential handling guidance.
+
+## Troubleshooting
+
+- **Unauthorized or forbidden:** confirm the token, selected access, network, location, and optional IP restriction.
+- **Rate limited:** compare current traffic with the live values shown under **Usage** and **Limits** in the dashboard.
+- **RPC works but WebSocket fails:** verify that you copied the WebSocket URL and that your network permits outbound WebSocket traffic.
+- **A previously working token stopped:** check whether it was regenerated, revoked, or its access expired.
+
+Limits and availability can change by plan and access. Use the [plans and limits reference](/reference/plans-and-limits) and the live dashboard together.

@@ -1,0 +1,67 @@
+---
+title: "ShredStream"
+description: "Receive live raw Solana shreds from ThorNode at your own UDP target."
+---
+
+ShredStream forwards live raw Solana shreds from a selected ThorNode location to a UDP receiver that you operate.
+
+## Receiver requirements
+
+Before registering a target, prepare:
+
+- A publicly routable IPv4 address
+- An inbound UDP port from `1024` through `65535`
+- A process listening on that exact port
+- Firewall, security-group, and NAT rules that forward the traffic to the receiver
+
+<Warning>
+  A host behind carrier-grade NAT (CGNAT) does not have a directly reachable
+  public IPv4 address. Use a server with a public address or arrange explicit
+  UDP forwarding before registering it.
+</Warning>
+
+## Register a receiver
+
+<Steps>
+  <Step title="Open ShredStream">
+    Go to **Endpoints → ShredStream** and select an active access that the
+    dashboard marks as eligible.
+  </Step>
+  <Step title="Choose a location">
+    Select a location enabled for the access. Each registration receives data
+    from its selected location.
+  </Step>
+  <Step title="Enter the public target">
+    Enter the receiver's public IPv4 address and UDP port. The port must be in
+    the supported range.
+  </Step>
+  <Step title="Save and verify">
+    Save the registration, start the receiver, and verify packets arrive. Remove
+    stale registrations when they are no longer needed.
+  </Step>
+</Steps>
+
+To confirm that packets reach a Linux host before debugging your application:
+
+```bash
+export SHREDSTREAM_PORT='<registered-port>'
+sudo tcpdump -ni any "udp port ${SHREDSTREAM_PORT}"
+```
+
+Stop the capture after you have enough evidence; raw shred traffic can produce substantial output.
+
+## Design for UDP delivery
+
+UDP is connectionless. Your receiver must tolerate packet loss, duplication, and reordering. Keep the receive path small, use bounded queues, and monitor drops at both the operating-system and application layers.
+
+The number of active registrations depends on the access tier and current backend policy. The dashboard is authoritative for the limit and shows whether ShredStream is enabled for an access.
+
+## Troubleshooting
+
+- Confirm the registered address is the host's public IPv4 address, not a private interface address.
+- Confirm the listening process and registration use the same UDP port.
+- Check cloud security groups, host firewalls, router forwarding, and CGNAT.
+- Check whether the access is active, the location is enabled, and the registration limit has been reached.
+- If you restrict traffic by source, obtain the current source ranges from ThorNode support instead of relying on an old allowlist.
+
+For broader connection checks, see [Troubleshooting](/reference/troubleshooting).

@@ -1,0 +1,106 @@
+---
+title: "Endpoints"
+description: "Create location-scoped ThorNode credentials, copy RPC and WebSocket URLs, restrict access by IPv4, and rotate secrets safely."
+---
+
+Use **Endpoints** to turn an owned pass or active rental into application credentials. Product tabs can remain visible for an ineligible access. Treat enabled controls, offered locations, and the current backend response—not tab visibility—as the availability signal.
+
+## Get an RPC or WebSocket endpoint
+
+<Steps>
+  <Step title="Select the access source">
+    Open **Endpoints** and choose the owned pass or rental your application should use.
+  </Step>
+
+<Step title="Select a network and location">
+  Choose from the live options shown by the dashboard. Availability can differ
+  between access sources.
+</Step>
+
+  <Step title="Create or copy the location token">
+    Generate the token if the location does not have one, then copy the full RPC or WebSocket URL provided by the dashboard.
+
+    Use the copied URL as-is. It already contains the connection details required for that location.
+
+  </Step>
+
+  <Step title="Configure the application">
+    Store the full URL or token in a server-side secret manager. Use the SSL RPC URL for HTTPS clients and the SSL WebSocket URL for secure WebSocket clients.
+  </Step>
+</Steps>
+
+<Warning>
+  The token embedded in or associated with an endpoint URL is a secret. Do not
+  commit the URL to a repository, expose it in frontend code, or include it in
+  logs.
+</Warning>
+
+## Location isolation
+
+Each location has an independent token. That isolation has two important effects:
+
+- Regenerating or revoking one location's token does not change another location's token.
+- A failure in one location does not mean the credential for a different location is invalid.
+
+Use separate environment variables for each deployment instead of copying one region's token across locations.
+
+## Restrict a token by IP
+
+An IP restriction applies to both RPC and WebSocket traffic authenticated by that location token.
+
+<Steps>
+  <Step title="Find the deployment's egress address">
+    Identify the single public IPv4 address from which your server reaches ThorNode. A private address such as `10.x.x.x` or `192.168.x.x` is not valid.
+  </Step>
+
+<Step title="Save the restriction">
+  Enter exactly one public IPv4 address in the token's restriction field and
+  save it.
+</Step>
+
+  <Step title="Verify both protocols">
+    Test RPC and WebSocket connections from the allowed server. Requests from any other public IP should no longer authenticate with that token.
+  </Step>
+</Steps>
+
+Do not enter a hostname, URL, port, CIDR range, IPv6 address, or comma-separated list. To clear the restriction, leave the field blank and save.
+
+<Note>
+  Dynamic residential, mobile, serverless, and some cloud egress addresses can
+  change. Leave the restriction blank until you have a stable public IPv4
+  address, then enable it.
+</Note>
+
+## Regenerate or revoke a token
+
+**Regenerate** when an application still needs the location but the current secret may be exposed. The old token stops working for that location, so update every dependent service immediately.
+
+**Revoke** when the location credential is no longer required. Revoking it does not delete the underlying pass or rental and does not revoke tokens for other locations.
+
+<Steps>
+  <Step title="Identify dependants">
+    Find every service, job, and secret store that uses the location token.
+  </Step>
+
+<Step title="Regenerate or revoke">
+  Confirm the action for the intended access, network, and location.
+</Step>
+
+  <Step title="Update and test">
+    Replace the secret where required, restart or reload clients, and send a health request.
+  </Step>
+</Steps>
+
+## Test an RPC URL
+
+Copy the full SSL RPC URL before running this request:
+
+```bash
+export THORNODE_RPC_URL='<full SSL RPC URL copied from the dashboard>'
+
+curl --request POST "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{"jsonrpc":"2.0","id":1,"method":"getLatestBlockhash"}'
+```
+
+If authentication fails, check that you copied the URL for the intended location, that the access source is active, and that the request originates from the allowed IPv4 address. See [Usage and limits](/dashboard/usage-and-limits) for throttling and capacity checks.

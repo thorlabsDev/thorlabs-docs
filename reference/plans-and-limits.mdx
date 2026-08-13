@@ -1,0 +1,76 @@
+---
+title: "Plans and limits"
+description: "Understand ThorNode access tiers, live entitlements, and how service limits are applied."
+---
+
+The current standard tiers are **Flash**, **Classic**, **Elite**, and **Prime**. Special pass types can exist outside that standard tier list. Every pass or rental grants the specific products, locations, and limits shown for its active term.
+
+<Warning>
+  The dashboard and backend are the source of truth for pricing, limits, and
+  product availability. This page intentionally does not publish a static
+  numeric tier table, because entitlements can change and may differ by access.
+</Warning>
+
+## No monthly request cap
+
+ThorEdge RPC access does **not** have a monthly request quota. Your requests do not stop because you reach a monthly request count.
+
+Live throughput and concurrency limits still apply. Depending on the product, these can include RPC requests per second, transaction submissions per second, WebSocket subscriptions, Yellowstone streams and account filters, ShredStream registrations, or accessible locations.
+
+## Check an access before you integrate
+
+<Steps>
+  <Step title="Select the pass or rental">
+    Open the dashboard and select the exact access your application will use. Do
+    not assume that two accesses with the same tier name have identical active
+    configuration.
+  </Step>
+  <Step title="Review products and locations">
+    Open the endpoint views and confirm which products and locations are enabled
+    for the selected access.
+  </Step>
+  <Step title="Review live limits">
+    Open **Usage** and **Limits** for current RPC, transaction, WebSocket, and
+    streaming entitlements.
+  </Step>
+  <Step title="Copy current connection details">
+    Copy targets and credentials from the dashboard only after selecting the
+    intended access, network, and location.
+  </Step>
+</Steps>
+
+## Limit types
+
+| Limit                | What it controls                                | What to monitor                                               |
+| -------------------- | ----------------------------------------------- | ------------------------------------------------------------- |
+| RPC RPS              | JSON-RPC request throughput                     | Request rate, `429` responses, and retry volume               |
+| Transaction TPS      | Transaction-submission throughput               | Submission rate and application retries                       |
+| WebSocket capacity   | Active subscriptions and related connection use | Open subscriptions, reconnects, and consumer lag              |
+| Yellowstone capacity | Concurrent streams and account/filter usage     | Active streams, requested filters, and rejected subscriptions |
+| ShredStream capacity | Active UDP receiver registrations               | Registrations for the selected access and location            |
+| Location access      | Locations that can be used by an access         | The live location selector for each product                   |
+
+Limits are safeguards for shared infrastructure. Creating extra clients, tokens, or reconnect loops does not increase the entitlement attached to an access.
+
+## Product availability
+
+Product availability is access-specific. For example, seeing ThorEdge RPC for an access does not imply that the same access includes ShredStream, Yellowstone, Pulse, ShredReplay, or private transaction routes.
+
+Product tabs can remain visible when the selected access is not eligible. Verify availability from enabled controls, offered locations, and current backend responses. Do not build a target from an older document or another access.
+
+## Pricing and terms
+
+The amount, currency, duration, and other transaction details shown in the current payment flow are authoritative for that transaction. Review them before signing a wallet request. Documentation, screenshots, and previously quoted prices can become stale.
+
+If a signed payment remains unresolved, do not send a second payment. Preserve the transaction signature and follow the recovery guidance in [Troubleshooting](/reference/troubleshooting#payment-is-signed-but-access-is-not-updated).
+
+## Operate within the live limits
+
+- Keep sustained traffic below the displayed ceiling so bursts and retries have headroom.
+- Use exponential backoff with jitter for transient failures and `429` responses.
+- Reuse connections and subscriptions instead of reconnecting on every operation.
+- Request narrow Yellowstone filters and close streams that are no longer needed.
+- Monitor **Usage** and **Limits** after releases or traffic changes.
+- Contact [ThorNode support](mailto:support@thornode.io) before a planned workload needs more capacity.
+
+For response-specific guidance, see [Troubleshooting](/reference/troubleshooting).

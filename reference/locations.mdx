@@ -1,0 +1,79 @@
+---
+title: "Locations"
+description: "Choose a ThorNode location and use its dashboard-provided public connection details safely."
+---
+
+ThorNode runs services in multiple locations. The available location list is dynamic and depends on the selected pass or rental, network, and product.
+
+<Note>
+  The location selector in the dashboard is the current source of truth. A
+  location named in an old guide, integration, or screenshot may no longer be
+  available to your access.
+</Note>
+
+## Choose a location
+
+Start with the closest available location to your application's infrastructure, then validate it under real traffic. Geographic distance is useful for an initial choice, but your measured latency, stability, and product availability should decide the final placement.
+
+Consider:
+
+- Whether the selected access exposes the required product there
+- Network path and observed tail latency from your application
+- Your application's public egress address when using an IP restriction
+- Regional resilience and a tested failover location
+- Inbound UDP reachability when receiving ShredStream or ShredReplay data
+
+## Copy connection details from the dashboard
+
+<Steps>
+  <Step title="Select the access">
+    Choose the exact pass or rental that your client will use.
+  </Step>
+  <Step title="Select the product and network">
+    Open its endpoint view and choose the intended network when the product
+    offers one.
+  </Step>
+  <Step title="Select a location">
+    Choose from the locations currently enabled for that access and product.
+  </Step>
+  <Step title="Copy the complete public target">
+    Use the hostname, URL, or dial target exactly as displayed. Keep
+    credential-bearing URLs secret.
+  </Step>
+</Steps>
+
+Do not replace a public hostname with a resolved IP address. TLS certificates, routing, and service addresses can change independently of the hostname. Never use an internal URL or raw infrastructure address obtained from logs, source code, or an older deployment.
+
+## Location-bound credentials
+
+ThorEdge and streaming tokens are associated with the location shown alongside them. A token from one location must not be combined with a target from another location.
+
+When moving a client:
+
+1. Select the destination location in the dashboard.
+2. Create or retrieve the credential shown for that location.
+3. Copy the destination target and credential as one configuration change.
+4. Test the new path before removing the old one.
+5. Revoke credentials that are no longer required.
+
+Some products use a different credential scope from RPC. Always follow the credential and location scope stated in that product's current dashboard view.
+
+## IP restrictions and UDP receivers
+
+An RPC IP restriction refers to your client's **public egress IP**, after NAT or a cloud gateway. If your provider uses multiple or changing egress addresses, confirm the real outbound address before enabling the restriction.
+
+ShredStream and ShredReplay work in the opposite direction: ThorNode sends UDP data to a public receiver that you provide. The receiver host and selected port must be reachable through its firewall, security group, and NAT configuration. ShredStream registration specifically requires a public IPv4 address.
+
+## Design regional failover
+
+A resilient client should keep targets and credentials separate per location. Do not create a failover URL by changing only the hostname while reusing a location-bound token.
+
+Before relying on failover:
+
+- Confirm the backup location is enabled for the access and product.
+- Test authentication and a low-impact request or subscription.
+- Use bounded retries so an outage does not create a reconnect storm.
+- Decide how streaming consumers will detect and reconcile gaps.
+- Keep the location catalog configurable rather than compiled into application code.
+
+If a location disappears or a copied target stops working, refresh the dashboard before contacting [ThorNode support](mailto:support@thornode.io).

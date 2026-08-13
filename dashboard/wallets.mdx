@@ -1,0 +1,71 @@
+---
+title: "Wallets"
+description: "Register up to three Solana wallets for pass discovery, rentals, and renewals."
+---
+
+Registering a wallet proves that you control a Solana address and associates it with your Discord-authenticated dashboard account. ThorNode uses registered wallets to find eligible owned passes and authorize supported payments.
+
+<Note>You can register up to three wallets per dashboard account.</Note>
+
+## Register a wallet
+
+<Steps>
+  <Step title="Sign in">
+    Open the dashboard from [thornode.io](https://www.thornode.io) and sign in with Discord.
+  </Step>
+
+<Step title="Connect the intended wallet">
+  Open **Wallets**, start the registration flow, and select the Solana address
+  that owns your pass or will be used for a payment.
+</Step>
+
+<Step title="Review the message">
+  Confirm that the address and dashboard account are correct. Registration uses
+  a signed message to prove control of the address.
+</Step>
+
+  <Step title="Sign and confirm">
+    Approve the message in your wallet. Wait until the address appears in the registered wallet list before continuing.
+  </Step>
+</Steps>
+
+<Warning>
+  ThorNode never needs your seed phrase or private key. A wallet-registration
+  prompt should not ask you to transfer assets. Reject any unexpected request
+  and reopen the flow from the official dashboard.
+</Warning>
+
+## Use a wallet for payment
+
+The wallet connected at payment time must be registered to your dashboard account. Before starting a rental or renewal:
+
+1. Check that the connected address matches the address shown in **Wallets**.
+2. Confirm that the wallet can use the USDC asset and network displayed by the dashboard.
+3. Review the live amount and payment details before signing.
+
+Switching accounts in a wallet extension can silently change the connected address. Recheck it on every payment confirmation.
+
+## Remove a wallet
+
+Open **Wallets**, choose the address, and follow the signed removal flow. Removing a wallet disconnects the address from your dashboard account; it does not move or destroy assets held by that address.
+
+Before removal, make sure you will not lose dashboard access to a pass that is held only by that wallet. You can register the address again later if you still control it and have not reached the wallet limit.
+
+## Troubleshooting
+
+### The pass does not appear
+
+- Confirm that its owner address is registered under the Discord account you are currently using.
+- Confirm that your wallet extension is connected to the expected Solana address.
+- Refresh after registration has completed.
+- Check the dashboard for the pass's current eligibility and state.
+
+### The payment screen rejects the wallet
+
+The connected address may not match a registered address. Return to **Wallets**, compare the full address, then reconnect the correct account before retrying.
+
+### The registration limit is reached
+
+Remove a wallet you no longer use, then register the new address. Do not remove the only wallet associated with an access source you still need.
+
+If a signature completed but the dashboard does not update, do not share the signature message or any secret material publicly. Contact [ThorNode support](mailto:support@thornode.io) with your Discord account and public wallet address.

@@ -1,0 +1,84 @@
+---
+title: "Direct rentals"
+description: "Purchase time-limited ThorNode access when the dashboard direct-rental catalog is enabled, and recover a pending USDC payment safely."
+---
+
+When the direct-rental rollout is enabled for your account and environment, it provides time-limited ThorNode access without requiring you to own a pass NFT. The dashboard catalog determines which tiers, durations, and USDC amounts are currently available.
+
+<Note>
+  Open the dashboard from [thornode.io](https://www.thornode.io). Do not rely on
+  an old price table or bookmarked checkout address. If **Rent** does not show a
+  catalog, direct rental is not currently available to you.
+</Note>
+
+## Before you rent
+
+- Sign in with Discord.
+- Register the Solana wallet that will make the payment.
+- Connect that same registered wallet in the rental flow.
+- Review the live tier, duration, USDC asset, amount, and expiration information.
+
+The connected wallet must match one of the wallet addresses registered to your dashboard account.
+
+## Purchase a rental
+
+<Steps>
+  <Step title="Open Rent">
+    If **Rent** is available, open it and wait for the current catalog to load.
+  </Step>
+
+<Step title="Choose a live offer">
+  Select a tier and duration from the options currently displayed. If an option
+  is absent, it is not available through the direct rental flow at that time.
+</Step>
+
+<Step title="Review the payment">
+  Verify the registered wallet, USDC asset, exact amount, rental duration, and
+  resulting access before signing.
+</Step>
+
+<Step title="Approve once">
+  Approve the payment in your wallet, then keep the dashboard open while it
+  submits and verifies the transaction.
+</Step>
+
+  <Step title="Wait for activation">
+    Continue only after the dashboard marks the rental active. It will then appear as an access source in the dashboard and eligible endpoint product views.
+  </Step>
+</Steps>
+
+<Warning>
+  After you approve or submit a payment, do not pay again because the screen is
+  slow, refreshed, or still verifying. A second payment can create a duplicate
+  charge.
+</Warning>
+
+## Recover a pending payment
+
+The dashboard preserves payment progress so a submitted transaction can be reconciled without paying twice.
+
+<Steps>
+  <Step title="Check the current state">
+    Return to the same rental flow and allow it to resume verification. Do not start a new purchase.
+  </Step>
+
+<Step title="Keep the recovery details">
+  Copy the transaction signature and any recovery or support code shown by the
+  dashboard. These identifiers are not wallet private keys, but you should still
+  share them only with official support.
+</Step>
+
+  <Step title="Escalate without repaying">
+    If the state remains pending, contact [ThorNode support](mailto:support@thornode.io) with the public paying wallet, transaction signature, recovery or support code, and approximate payment time.
+  </Step>
+</Steps>
+
+Support can use those details to find the submitted payment. Never send your seed phrase, private key, or endpoint token.
+
+## After activation
+
+Open **Endpoints**, select the rental, and create credentials for its available products and locations. The dashboard shows the exact expiration time and current entitlement.
+
+Direct rentals do not appear in the owned-pass renewal flow. To continue after expiration, use only the rental options currently offered by the dashboard.
+
+The pass-holder [vendor marketplace](/dashboard/vendor-marketplace) is a separate SOL-priced checkout-link flow. Do not treat a vendor offer as a direct USDC rental.

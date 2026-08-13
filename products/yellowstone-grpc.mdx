@@ -1,0 +1,73 @@
+---
+title: "Yellowstone gRPC"
+description: "Stream Solana data through ThorNode's standard Yellowstone gRPC interface."
+---
+
+ThorNode's Yellowstone service exposes the standard Yellowstone gRPC streaming interface. The dashboard may label this service **Yellowstone DM**.
+
+## Connection details
+
+Your client needs two values from the dashboard:
+
+- The gRPC dial target for the selected location
+- The location-bound token, sent as `x-token` request metadata
+
+```bash
+export THOR_YELLOWSTONE_TARGET='<copied-grpc-target>'
+export THOR_TOKEN='<location-token>'
+```
+
+Configure your Yellowstone-compatible client to dial `THOR_YELLOWSTONE_TARGET` and attach this metadata to authenticated requests:
+
+```text
+x-token: <location-token>
+```
+
+<Warning>
+  Do not append the token to the target URL or send it as a query parameter.
+  Keep it in protected runtime configuration and attach it as gRPC metadata.
+</Warning>
+
+## Connect
+
+<Steps>
+  <Step title="Choose an access and location">
+    In the endpoint view, select an active pass or rental and an enabled
+    location.
+  </Step>
+  <Step title="Copy the target and token">
+    Use the values displayed together for that location. Do not combine a target
+    from one location with a token from another.
+  </Step>
+  <Step title="Configure a compatible client">
+    Use a Yellowstone client and protobuf definitions compatible with the
+    service. Pass the copied target through the client's endpoint setting and
+    the token through `x-token` metadata.
+  </Step>
+  <Step title="Subscribe with narrow filters">
+    Request only the accounts, transactions, slots, or other data your
+    application needs. Narrow filters reduce downstream work and help you remain
+    within live limits.
+  </Step>
+</Steps>
+
+## Reliability
+
+Streaming clients should:
+
+- Apply exponential backoff with jitter after a disconnect.
+- Recreate subscriptions after reconnecting.
+- Process messages with bounded queues so a slow consumer does not exhaust memory.
+- Detect stream gaps and reconcile application state through RPC when correctness requires it.
+- Monitor concurrent stream and account-filter usage in the dashboard.
+
+The dashboard is authoritative for the concurrent stream, account, and availability limits attached to your access. See [plans and limits](/reference/plans-and-limits) for an overview.
+
+## Troubleshooting
+
+- **Unauthenticated:** verify that the metadata key is exactly `x-token` and that the token belongs to the selected location.
+- **Connection failure:** use the target exactly as displayed and confirm that your network allows outbound gRPC traffic.
+- **Subscription rejected:** reduce the requested filters and check current account and stream limits.
+- **Repeated disconnects:** inspect client backpressure, keepalive settings, and retry behavior before opening additional streams.
+
+If you are migrating from a legacy ThorStreamer integration, read [Legacy services](/reference/legacy-services) before changing your client.

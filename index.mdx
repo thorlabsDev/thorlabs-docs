@@ -1,0 +1,83 @@
+---
+title: "ThorNode documentation"
+description: "Build low-latency Solana applications with ThorNode RPC, streaming, shred, replay, and private transaction infrastructure."
+---
+
+ThorNode provides location-aware Solana infrastructure through one dashboard. Create access for RPC and WebSocket traffic, stream data with Yellowstone or Pulse, receive raw shreds, replay historical shreds, and submit private transactions.
+
+<CardGroup cols={3}>
+  <Card title="Connect to RPC" icon="bolt" href="/products/thoredge-rpc">
+    Create a location token and connect your Solana HTTP and WebSocket clients.
+  </Card>
+  <Card
+    title="Stream Solana data"
+    icon="wave-pulse"
+    href="/products/yellowstone-grpc"
+  >
+    Use Yellowstone gRPC or Pulse for persistent, low-latency data delivery.
+  </Card>
+  <Card
+    title="Work with shreds"
+    icon="layer-group"
+    href="/products/shredstream"
+  >
+    Register a live UDP receiver or replay a historical slot range.
+  </Card>
+</CardGroup>
+
+## Start in the dashboard
+
+<Steps>
+  <Step title="Login with Discord">
+    Open the dashboard from [thornode.io](https://www.thornode.io) and
+    authenticate with the Discord account associated with your ThorNode access.
+    If the website's dashboard link is unavailable, contact support instead of
+    guessing a hostname from an old bookmark.
+  </Step>
+  <Step title="Choose an access">
+    Use an active owned pass or rental. Product tabs can remain visible even
+    when an access is not eligible; enabled controls, locations, and current
+    backend responses establish availability.
+  </Step>
+  <Step title="Create credentials">
+    Generate the token or product key you need, then copy its connection details
+    directly from the dashboard.
+  </Step>
+  <Step title="Integrate and monitor">
+    Keep credentials server-side, test the connection, and monitor current usage
+    and limits in the dashboard.
+  </Step>
+</Steps>
+
+<Note>
+  Locations, prices, limits, routes, and product availability can change. The
+  authenticated dashboard and its live backend responses are authoritative.
+</Note>
+
+## Choose a product
+
+| Need                                  | Product                                                | Transport     |
+| ------------------------------------- | ------------------------------------------------------ | ------------- |
+| Solana requests and subscriptions     | [ThorEdge RPC](/products/thoredge-rpc)                 | HTTPS and WSS |
+| Standard Geyser-compatible streams    | [Yellowstone gRPC](/products/yellowstone-grpc)         | gRPC          |
+| Decoded shred firehose                | [Pulse](/products/pulse)                               | QUIC          |
+| Live raw shreds                       | [ShredStream](/products/shredstream)                   | UDP           |
+| Historical shred delivery             | [ShredReplay](/products/shredreplay)                   | UDP           |
+| Provider-aware transaction submission | [Private transactions](/products/private-transactions) | HTTPS         |
+
+<CardGroup cols={2}>
+  <Card
+    title="Five-minute quickstart"
+    icon="play"
+    href="/getting-started/quickstart"
+  >
+    Sign in, select access, create a token, and send your first RPC request.
+  </Card>
+  <Card
+    title="Troubleshooting"
+    icon="life-ring"
+    href="/reference/troubleshooting"
+  >
+    Diagnose authentication, limits, streaming, UDP, and payment issues.
+  </Card>
+</CardGroup>

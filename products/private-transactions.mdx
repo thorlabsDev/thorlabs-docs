@@ -1,0 +1,63 @@
+---
+title: "Private transactions"
+description: "Submit Solana transactions through ThorNode's Bifrost routing catalog."
+---
+
+Private transactions use Bifrost to expose provider submission routes through a dashboard-managed access key. Treat the catalog and connection details shown by the current dashboard as authoritative for your access.
+
+## Copy a route
+
+<Steps>
+  <Step title="Open Private TX">
+    Go to **Endpoints → Private TX** and select an eligible access shown by the
+    dashboard.
+  </Step>
+  <Step title="Choose from the available options">
+    If the dashboard asks for a location or provider, select only an option it
+    currently enables for your access. Do not infer availability from an old
+    integration.
+  </Step>
+  <Step title="Copy the complete URL">
+    Copy the full URL for the route you intend to call. The URL includes the
+    access path required for authentication, so treat it as a secret.
+  </Step>
+  <Step title="Send the provider-compatible body">
+    POST the request body expected by the selected provider and route. Bifrost
+    forwards the body; it does not make different provider contracts
+    interchangeable.
+  </Step>
+</Steps>
+
+```bash
+export BIFROST_ROUTE_URL='<complete-url-copied-from-dashboard>'
+
+curl --fail-with-body --request POST \
+  --url "$BIFROST_ROUTE_URL" \
+  --header 'content-type: application/json' \
+  --data-binary @request.json
+```
+
+<Warning>
+  Do not build Bifrost URLs from old documentation or hard-code a provider list.
+  Always use the current route catalog and exact URL shown by the dashboard.
+</Warning>
+
+## Understand route behavior
+
+Capabilities and delivery semantics belong to the live route entry, not to a provider name you remember from an older integration. Do not infer MEV protection, revert protection, bundle behavior, fallback behavior, or landing guarantees unless the current dashboard catalog states them for the exact route you copied.
+
+An accepted HTTP response means the route accepted the request for processing. It does **not** mean the transaction landed or finalized. When a route returns a transaction signature, track it through Solana status APIs and apply your application's own expiry and confirmation policy.
+
+## Credential handling
+
+The Bifrost key is scoped to the selected access and works across the Bifrost locations enabled for that access. The copied base and route URLs remain location-specific, so do not reuse one location's URL for another location or access source. Because the URL carries the key in its access path, keep the entire URL in a server-side secret store and redact it from logs, traces, analytics, and error reports.
+
+## Troubleshooting
+
+- **Unauthorized or forbidden:** confirm the key is active and the selected option belongs to the current access.
+- **Route not found:** refresh the dashboard catalog and replace stale route URLs.
+- **Provider error:** validate the request body against the contract for the selected provider and route.
+- **Accepted but not landed:** check the transaction signature on-chain; acceptance is not a landing guarantee.
+- **Rate limited or unavailable:** respect retry guidance, use bounded exponential backoff, and recheck the live route status before retrying.
+
+See [Security](/reference/security) for guidance on storing and rotating access credentials.

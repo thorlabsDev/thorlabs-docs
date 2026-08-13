@@ -1,0 +1,70 @@
+---
+title: "Dashboard overview"
+description: "Find passes, rentals, endpoints, usage, live limits, payments, and service status in the ThorNode dashboard."
+---
+
+The dashboard is the control plane for your ThorNode access. Open it from [thornode.io](https://www.thornode.io) and sign in with Discord.
+
+If the website's dashboard link is unavailable, contact [ThorNode support](mailto:support@thornode.io) instead of using an old bookmarked hostname.
+
+<Note>
+  Dashboard values are live. When a value here differs from a saved document,
+  screenshot, or older announcement, use the dashboard value.
+</Note>
+
+## Main areas
+
+| Area              | Use it to                                                                     |
+| ----------------- | ----------------------------------------------------------------------------- |
+| **Dashboard**     | Review owned passes, rentals, status, and expiration information              |
+| **Endpoints**     | Create and manage location or product credentials and copy connection details |
+| **Usage**         | Inspect request activity, methods, recent traffic, and token-level usage      |
+| **Limits**        | See the effective throughput and concurrency limits for your current access   |
+| **Rent**          | Purchase time-limited access when the direct-rental catalog is enabled        |
+| **Renew**         | Extend an eligible owned pass                                                 |
+| **Wallets**       | Register and remove Solana wallets associated with your account               |
+| **Compare Tiers** | Compare plan capabilities when this view is available                         |
+| **Node Status**   | Check service health and active incidents when this view is available         |
+
+## A typical workflow
+
+<Steps>
+  <Step title="Establish identity">
+    Sign in with Discord, then register the Solana wallet that owns your pass or will make a payment.
+  </Step>
+
+<Step title="Confirm access">
+  Select an owned pass or active rental and review its current products,
+  networks, locations, and expiration.
+</Step>
+
+<Step title="Create credentials">
+  Open **Endpoints**, choose a product or location, and create the credential
+  required by your application.
+</Step>
+
+  <Step title="Operate">
+    Monitor **Usage**, compare it with **Limits**, rotate exposed credentials, and check **Node Status** when that view is available and behavior changes unexpectedly.
+  </Step>
+</Steps>
+
+## Source-of-truth rules
+
+Use the dashboard for values that can change without a documentation release, including:
+
+- Product and location availability
+- Direct-rental catalog entries, durations, and USDC amounts, when available
+- Renewal eligibility, options, and deadlines
+- Effective RPC, WebSocket, and streaming limits
+- Credential state and IP restrictions
+- Maintenance notices and service status
+
+Static documentation explains how each workflow behaves. It does not override live entitlement or payment data.
+
+<Warning>
+  Never share endpoint tokens, replay keys, private transaction keys, payment
+  recovery codes, wallet private keys, or seed phrases in a public issue or
+  chat.
+</Warning>
+
+Start with [Wallets](/dashboard/wallets), [Endpoints](/dashboard/endpoints), or [Rentals](/dashboard/rentals).

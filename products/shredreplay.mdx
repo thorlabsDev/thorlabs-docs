@@ -1,0 +1,58 @@
+---
+title: "ShredReplay"
+description: "Replay captured historical shreds to your UDP receiver."
+---
+
+ShredReplay sends captured shreds from ThorNode's rolling availability window to a UDP target that you operate. Use it to reproduce a past slot range without changing your live ShredStream registration.
+
+## Create a replay
+
+<Steps>
+  <Step title="Prepare the receiver">
+    Start a UDP receiver at a public `host:port` and allow the inbound port
+    through your firewall and NAT configuration.
+  </Step>
+  <Step title="Generate a replay key">
+    Open **Endpoints → ShredReplay**, select an eligible pass shown by the
+    dashboard, and generate its dedicated ShredReplay key. This key is separate
+    from the target address.
+  </Step>
+  <Step title="Select a slot range">
+    Choose start and end slots inside the currently available range shown by the
+    dashboard. The window rolls forward, so previously available slots can
+    expire.
+  </Step>
+  <Step title="Choose delivery pacing">
+    Select maximum speed for the fastest available delivery, or original pacing
+    with the multiplier offered by the dashboard.
+  </Step>
+  <Step title="Start and monitor the job">
+    Enter the UDP target, start the replay, and follow its status. Cancel the
+    job if you need to replace it.
+  </Step>
+</Steps>
+
+<Note>
+  Each access can have only one queued or running replay job at a time. Wait for
+  it to finish or cancel it before starting another.
+</Note>
+
+## Choose pacing deliberately
+
+**Maximum speed** can send data faster than the original capture rate and may overwhelm a receiver or its network path. **Original pacing** preserves capture timing, adjusted by the multiplier available in the dashboard. Start conservatively when validating a new receiver.
+
+As with any UDP delivery, your application must tolerate packet loss, duplication, and reordering. A completed dashboard job means the replay sender finished its work; it does not prove that the receiver processed every packet.
+
+## Key security
+
+- Store the per-access replay key as a secret.
+- Do not place it in source control, support screenshots, or logs.
+- Revoke the key when it may have been exposed. Revocation stops future access with that key.
+
+## Troubleshooting
+
+- **Slot range rejected:** refresh the page and choose values inside the live minimum and maximum slots.
+- **Another job is active:** wait for the queued or running job to finish, or cancel it.
+- **No UDP packets:** confirm the public target, listener, firewall, security group, and NAT forwarding.
+- **Receiver drops data:** use a slower pacing option, reduce receive-path work, and inspect system socket-drop metrics.
+- **Unauthorized:** confirm the replay key belongs to the selected active access and has not been revoked.

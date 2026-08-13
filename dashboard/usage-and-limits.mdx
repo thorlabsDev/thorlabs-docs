@@ -1,0 +1,77 @@
+---
+title: "Usage and limits"
+description: "Monitor request activity and read the live throughput, WebSocket, and streaming limits applied to your access."
+---
+
+Use **Usage** to understand traffic and **Limits** to see the capacity currently enforced for an owned pass or rental. These views answer different questions:
+
+- **Usage** shows what your applications have sent.
+- **Limits** shows how much concurrent or per-second capacity the selected access currently has.
+
+<Note>
+  ThorNode endpoint access does not have a monthly request cap. Live throughput
+  and concurrency limits still apply.
+</Note>
+
+## Read the Usage view
+
+Depending on the selected product and time range, the dashboard can show summary activity, request trends, methods, recent requests, and token-level breakdowns.
+
+<Steps>
+  <Step title="Select the access and time range">
+    Make sure the owned pass or rental and the requested time window match the application you are investigating.
+  </Step>
+
+<Step title="Narrow by token or location">
+  Compare the labels shown in the dashboard with the credential used by your
+  deployment. Location tokens are independent, so aggregate traffic can hide a
+  hot region.
+</Step>
+
+  <Step title="Inspect methods and recent activity">
+    Look for unexpected method volume, retry loops, duplicate polling, or traffic from a service that should have been stopped.
+  </Step>
+</Steps>
+
+Usage data can arrive after the request itself. Use application logs and response codes for immediate debugging, then use the dashboard to confirm the broader pattern.
+
+## Read the Limits view
+
+The Limits view is the authoritative place for the selected access's effective capacity. It can include categories such as:
+
+- RPC requests or transactions per second
+- WebSocket connections or subscriptions
+- Yellowstone concurrent streams or subscribed accounts
+- Other product-specific concurrency or registration allowances
+
+Values can vary by access, product, and current entitlement. Read them from the dashboard instead of encoding a plan table into deployment logic.
+
+<Warning>
+  No monthly request cap does not mean unlimited instantaneous traffic. Clients
+  can still be throttled when they exceed an effective per-second, connection,
+  subscription, account, or product-specific limit.
+</Warning>
+
+## Investigate throttling
+
+When a client receives a rate-limit response or cannot create more concurrent work:
+
+1. Confirm the request is using the expected access, network, location, and token.
+2. Compare recent traffic with the corresponding live limit.
+3. Check for aggressive retries, unbounded parallelism, duplicate subscriptions, or leaked connections.
+4. Add bounded concurrency and exponential backoff with jitter.
+5. Check **Node Status**, when available, for an incident before rotating a healthy token.
+
+Rotating a token does not increase capacity. Multiple tokens or locations should not be used to bypass an access source's effective entitlement.
+
+## Capacity planning
+
+Design clients to remain below the displayed limits and to degrade gracefully:
+
+- Reuse WebSocket or streaming connections where the protocol permits.
+- Unsubscribe and close idle streams.
+- Cache responses that do not need slot-by-slot freshness.
+- Apply timeouts and bounded retries.
+- Alert on sustained traffic near a live limit, not only on failures.
+
+For a service-wide issue, open **Node Status** when that view is available in the dashboard. For an account-specific mismatch, contact [ThorNode support](mailto:support@thornode.io) with the access identifier, location, time window, and response code—but never the token itself.

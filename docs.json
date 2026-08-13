@@ -1,0 +1,258 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "ThorNode Documentation",
+  "description": "Build on ThorNode's Solana RPC, streaming, shred, replay, and private transaction infrastructure.",
+  "colors": {
+    "primary": "#92400E",
+    "light": "#FBB03B",
+    "dark": "#D97706"
+  },
+  "favicon": "/favicon.svg",
+  "logo": {
+    "light": "/logo/dark.svg",
+    "dark": "/logo/light.svg"
+  },
+  "navigation": {
+    "groups": [
+      {
+        "group": "Get started",
+        "icon": "rocket",
+        "pages": [
+          "index",
+          "getting-started/quickstart",
+          "getting-started/access-model"
+        ]
+      },
+      {
+        "group": "Dashboard",
+        "icon": "gauge-high",
+        "pages": [
+          "dashboard/overview",
+          "dashboard/wallets",
+          "dashboard/endpoints",
+          "dashboard/usage-and-limits",
+          "dashboard/rentals",
+          "dashboard/vendor-marketplace",
+          "dashboard/renewals"
+        ]
+      },
+      {
+        "group": "Products",
+        "icon": "server",
+        "pages": [
+          "products/thoredge-rpc",
+          "products/yellowstone-grpc",
+          "products/pulse",
+          "products/shredstream",
+          "products/shredreplay",
+          "products/private-transactions"
+        ]
+      },
+      {
+        "group": "Reference",
+        "icon": "book-open",
+        "pages": [
+          "reference/plans-and-limits",
+          "reference/locations",
+          "reference/security",
+          "reference/troubleshooting",
+          "reference/legacy-services"
+        ]
+      },
+      {
+        "group": "Legal",
+        "icon": "scale-balanced",
+        "pages": [
+          "legal/policies",
+          "legal/terms",
+          "legal/privacy",
+          "legal/refunds"
+        ]
+      }
+    ],
+    "global": {
+      "anchors": [
+        {
+          "anchor": "GitHub",
+          "href": "https://github.com/thorlabsDev",
+          "icon": "github"
+        },
+        {
+          "anchor": "Discord",
+          "href": "https://discord.gg/thorlabs",
+          "icon": "discord"
+        }
+      ]
+    }
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "mailto:support@thornode.io"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "ThorNode website",
+      "href": "https://www.thornode.io"
+    }
+  },
+  "contextual": {
+    "options": ["copy", "view", "chatgpt", "claude", "perplexity", "mcp"]
+  },
+  "footer": {
+    "socials": {
+      "x": "https://x.com/thor_labs",
+      "github": "https://github.com/thorlabsDev",
+      "discord": "https://discord.gg/thorlabs"
+    }
+  },
+  "redirects": [
+    {
+      "source": "/introduction/welcome/:slug*",
+      "destination": "/getting-started/quickstart"
+    },
+    {
+      "source": "/introduction/welcome",
+      "destination": "/getting-started/quickstart"
+    },
+    {
+      "source": "/introduction/node-locations-and-access/authentication/:slug*",
+      "destination": "/dashboard/endpoints"
+    },
+    {
+      "source": "/introduction/node-locations-and-access/authentication",
+      "destination": "/dashboard/endpoints"
+    },
+    {
+      "source": "/introduction/node-locations-and-access/rental-system/:slug*",
+      "destination": "/dashboard/vendor-marketplace"
+    },
+    {
+      "source": "/introduction/node-locations-and-access/rental-system",
+      "destination": "/dashboard/vendor-marketplace"
+    },
+    {
+      "source": "/introduction/node-locations-and-access/troubleshooting",
+      "destination": "/reference/troubleshooting"
+    },
+    {
+      "source": "/introduction/node-locations-and-access",
+      "destination": "/dashboard/endpoints"
+    },
+    {
+      "source": "/introduction/renewals-and-subscriptions/refund-policy",
+      "destination": "/legal/refunds"
+    },
+    {
+      "source": "/introduction/renewals-and-subscriptions/:slug*",
+      "destination": "/dashboard/renewals"
+    },
+    {
+      "source": "/introduction/renewals-and-subscriptions",
+      "destination": "/dashboard/renewals"
+    },
+    {
+      "source": "/introduction/thornode-economics",
+      "destination": "/reference/plans-and-limits"
+    },
+    {
+      "source": "/infrastructure/asgard-vision",
+      "destination": "/products/thoredge-rpc"
+    },
+    {
+      "source": "/infrastructure/bifrost-api/:slug*",
+      "destination": "/products/private-transactions"
+    },
+    {
+      "source": "/infrastructure/bifrost-api",
+      "destination": "/products/private-transactions"
+    },
+    {
+      "source": "/infrastructure/fastgate-rpc/:slug*",
+      "destination": "/products/thoredge-rpc"
+    },
+    {
+      "source": "/infrastructure/fastgate-rpc",
+      "destination": "/products/thoredge-rpc"
+    },
+    {
+      "source": "/infrastructure/thor-shredstream/:slug*",
+      "destination": "/products/shredstream"
+    },
+    {
+      "source": "/infrastructure/thor-shredstream",
+      "destination": "/products/shredstream"
+    },
+    {
+      "source": "/infrastructure/thorstreamer-grpc/:slug*",
+      "destination": "/reference/legacy-services"
+    },
+    {
+      "source": "/infrastructure/thorstreamer-grpc",
+      "destination": "/reference/legacy-services"
+    },
+    {
+      "source": "/infrastructure/thorpulse-nats/:slug*",
+      "destination": "/reference/legacy-services"
+    },
+    {
+      "source": "/infrastructure/thorpulse-nats",
+      "destination": "/reference/legacy-services"
+    },
+    {
+      "source": "/infrastructure/tools/helm-ps",
+      "destination": "/reference/legacy-services"
+    },
+    {
+      "source": "/infrastructure/tools/thorstreamer-yellowstone-translator",
+      "destination": "/reference/legacy-services"
+    },
+    {
+      "source": "/infrastructure/tools",
+      "destination": "/reference/legacy-services"
+    },
+    {
+      "source": "/guides/:slug*",
+      "destination": "/getting-started/quickstart"
+    },
+    {
+      "source": "/collaborator-program/:slug*",
+      "destination": "/reference/troubleshooting"
+    },
+    {
+      "source": "/thornode-cloud/terms-of-service",
+      "destination": "/legal/terms"
+    },
+    {
+      "source": "/thornode-cloud/thornode-cloud-privacy-policy",
+      "destination": "/legal/privacy"
+    },
+    {
+      "source": "/thornode-cloud/thornode-cloud-refund-policy",
+      "destination": "/legal/refunds"
+    },
+    {
+      "source": "/thornode-cloud/:slug*",
+      "destination": "/legal/policies"
+    },
+    {
+      "source": "/thornode-cloud",
+      "destination": "/legal/policies"
+    },
+    {
+      "source": "/introduction/thornode-cloud-terms-of-service",
+      "destination": "/legal/terms"
+    },
+    {
+      "source": "/introduction/thornode-cloud-privacy-policy",
+      "destination": "/legal/privacy"
+    },
+    {
+      "source": "/introduction/thornode-cloud-refund-policy",
+      "destination": "/legal/refunds"
+    }
+  ]
+}

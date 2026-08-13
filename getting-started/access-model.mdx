@@ -1,0 +1,82 @@
+---
+title: "Access model"
+description: "Understand how Discord accounts, registered wallets, passes, rentals, locations, and credentials fit together."
+---
+
+ThorNode separates identity, product entitlement, and credentials. This keeps wallet ownership and payments distinct from the tokens your applications use.
+
+| Layer             | What it represents                                                                 | Where you manage it                         |
+| ----------------- | ---------------------------------------------------------------------------------- | ------------------------------------------- |
+| Account           | Your dashboard identity, authenticated with Discord                                | Sign-in flow                                |
+| Registered wallet | A Solana address whose control you proved with a signature                         | **Wallets**                                 |
+| Access source     | An eligible pass you own or an active direct rental                                | **Dashboard**, **Rent**, or **Renew**       |
+| Location token    | A secret credential scoped to one access, network, and location                    | **Endpoints**                               |
+| Product key       | A credential created for a product-specific workflow when the dashboard offers one | The corresponding **Endpoints** product tab |
+
+## Identity and wallets
+
+Your Discord account is the stable dashboard identity. Registering a Solana wallet associates that public address with the account after you sign a verification message.
+
+You can register up to three wallets. A registered wallet can be used to discover eligible owned passes and to authorize supported payments. Registration does not expose the wallet's private key and does not turn the wallet address itself into an API credential.
+
+## Owned passes and rentals
+
+An **owned pass** is an eligible NFT held by one of your registered wallets. An **active rental** grants time-limited product access without transferring pass ownership.
+
+Both can appear as access sources in the dashboard, but they have different lifecycles:
+
+- Eligible owned passes can appear in the renewal flow.
+- Rentals expire according to the time shown in the dashboard and are not eligible for owned-pass renewal.
+- Product availability follows the access source's current live entitlement, not a cached or copied plan description.
+
+<Note>
+  Use the dashboard as the source of truth for an access source's status,
+  included products, networks, locations, and effective limits.
+</Note>
+
+## Location-scoped credentials
+
+An access source can include more than one location. RPC and WebSocket credentials are deliberately independent for each location.
+
+For example, if an access source includes two locations, it has two separate token lifecycles:
+
+- Rotating the first location's token does not change the second location's token.
+- Revoking the first location's token does not remove the access source or revoke another location.
+- An IP restriction saved for a location token applies to that token's RPC and WebSocket traffic.
+
+This boundary lets you rotate, revoke, or restrict one deployment without interrupting applications in another location.
+
+## Credential lifecycle
+
+<Steps>
+  <Step title="Create">
+    Generate a credential only for a location or product you intend to use.
+  </Step>
+
+<Step title="Store">
+  Keep the secret in a server-side secret manager or protected environment
+  variable. Never ship it in browser or mobile application code.
+</Step>
+
+<Step title="Restrict">
+  When your egress address is stable, restrict an endpoint token to one public
+  IPv4 address.
+</Step>
+
+<Step title="Rotate">
+  Regenerate a token if it may have been exposed. Update the application
+  immediately because the previous token stops working for that location.
+</Step>
+
+  <Step title="Revoke">
+    Revoke credentials that are no longer needed. Revocation takes effect for that credential without deleting the underlying pass or rental.
+  </Step>
+</Steps>
+
+<Warning>
+  A wallet signature and an API token serve different purposes. Sign wallet
+  messages only inside the official dashboard, and send API tokens only to the
+  endpoint URLs copied from it.
+</Warning>
+
+Continue with [Dashboard overview](/dashboard/overview) or create your first credential in [Endpoints](/dashboard/endpoints).

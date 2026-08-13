@@ -1,0 +1,80 @@
+---
+title: "Legacy services and tools"
+description: "Understand older ThorStreamer, ThorPulse, translator, and HELM-PS material without treating it as a current product contract."
+---
+
+Older ThorNode documentation described a custom **ThorStreamer gRPC** interface, a **ThorPulse NATS** stream, and a ThorStreamer-to-Yellowstone translator. The current dashboard presents **Yellowstone** and **Pulse** for new streaming integrations.
+
+<Warning>
+  The customer-facing ThorStreamer gRPC and ThorPulse NATS products were retired
+  on June 30, 2026. Build new integrations on Yellowstone gRPC and Pulse over
+  QUIC. If you have an explicitly contracted or internal exception, confirm its
+  status with ThorNode support before changing a working production client.
+</Warning>
+
+## Current migration direction
+
+| Older integration                   | Current dashboard product | Important difference                                                                                                 |
+| ----------------------------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| ThorStreamer custom gRPC            | Yellowstone gRPC          | Uses the standard Yellowstone interface and a location token in `x-token` metadata                                   |
+| ThorStreamer Yellowstone translator | Direct Yellowstone gRPC   | New clients should connect to the dashboard-provided Yellowstone target instead of adding a legacy translation layer |
+| ThorPulse over NATS                 | Pulse over QUIC           | The transport, authentication flow, and client contract are different and are not wire-compatible                    |
+
+The mapping is architectural guidance, not a drop-in configuration change. Filters, message schemas, authentication placement, reconnect behavior, and delivery semantics must be validated for your client.
+
+## Do not reuse old connection details
+
+Historical targets, ports, subject names, tokens, and examples are not current endpoint contracts. Do not copy them into a new integration or infer a target from an internal address.
+
+For a new setup:
+
+- Copy the target and token from the current dashboard product view.
+- Keep the target and token paired with the same location.
+- Use the supported Yellowstone or Pulse client contract.
+- Treat all old and new credentials as secrets.
+
+## Migration checklist
+
+<Steps>
+  <Step title="Inventory the existing consumer">
+    Record the legacy service, client version, filters, expected messages,
+    reconnect behavior, and downstream data contract. Redact endpoints and
+    credentials.
+  </Step>
+  <Step title="Confirm current access">
+    Verify that Yellowstone or Pulse is enabled for the pass or rental and
+    location you intend to use. Ask support to confirm the status of the legacy
+    integration.
+  </Step>
+  <Step title="Build against the current contract">
+    Use the dashboard-provided target and the supported authentication flow. Do
+    not adapt legacy ports, NATS subjects, or translator configuration by
+    guesswork.
+  </Step>
+  <Step title="Validate in parallel">
+    Compare coverage, ordering, duplicates, gaps, filter behavior, and reconnect
+    recovery before moving production traffic.
+  </Step>
+  <Step title="Cut over and observe">
+    Use a reversible rollout, monitor consumer lag and downstream correctness,
+    and keep retries bounded.
+  </Step>
+  <Step title="Retire legacy credentials deliberately">
+    Revoke old credentials only after support confirms they are no longer needed
+    and the new client is stable.
+  </Step>
+</Steps>
+
+## About the Yellowstone translator
+
+The translator belongs to the legacy ThorStreamer integration path. It can still be relevant to an existing deployment whose upstream contract requires it, but it is not the recommended foundation for a new direct Yellowstone connection.
+
+If you maintain the translator, pin its version and dependencies, document its schema mapping, and test it before changing either side. Contact [ThorNode support](mailto:support@thornode.io) for the appropriate legacy guidance; do not rely on an old public example as a release or compatibility guarantee.
+
+See [Yellowstone gRPC](/products/yellowstone-grpc) and [Pulse](/products/pulse) for current connection guidance.
+
+## HELM-PS status
+
+Historical documentation described HELM-PS as a local RPC proxy and included a configuration shape, rate behavior, and update claims. This audit did not find an authoritative current release repository or release contract, so those details are not republished as supported behavior.
+
+Do not install an old binary or rely on copied configuration from the retired documentation. If you operate an existing HELM-PS deployment, pin the artifact you already use, protect credential-bearing upstream URLs, and contact [ThorNode support](mailto:support@thornode.io) before changing it.

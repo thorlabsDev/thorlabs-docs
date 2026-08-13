@@ -1,0 +1,52 @@
+---
+title: "Pulse"
+description: "Consume ThorNode's decoded shred stream over QUIC."
+---
+
+Pulse is ThorNode's QUIC streaming product for decoded Solana shred data. It is a persistent data stream, not a JSON-RPC or gRPC request endpoint.
+
+## Get access
+
+<Steps>
+  <Step title="Select an active access">
+    Open the endpoint view and select the pass or rental that includes Pulse.
+  </Step>
+  <Step title="Choose a location">
+    Select an enabled location, then copy the Pulse connection details shown by
+    the dashboard.
+  </Step>
+  <Step title="Configure the supported client">
+    Use the current ThorNode client package or onboarding instructions for the
+    QUIC connection and control-message schema.
+  </Step>
+  <Step title="Authenticate during setup">
+    Send the location token in the authenticated QUIC control message defined by
+    the supported client integration.
+  </Step>
+</Steps>
+
+<Warning>
+  Do not place a Pulse token in a URL or query string. The control-message
+  schema is versioned with the supported integration; do not infer it from older
+  ThorPulse examples.
+</Warning>
+
+ThorNode does not publish a generic wire example here because a hand-built control message can silently become incompatible. Contact [ThorNode support](mailto:support@thornode.io) if your dashboard does not provide the current client or onboarding details.
+
+## Client responsibilities
+
+- Permit outbound UDP/QUIC traffic to the target displayed by the dashboard.
+- Keep credentials outside source control, client logs, and crash reports.
+- Use bounded processing queues and monitor consumer lag.
+- Reconnect with exponential backoff and jitter.
+- Detect gaps and decide how your application will reconcile state after reconnecting.
+- Reuse connections instead of opening an unbounded number of concurrent sessions.
+
+## Troubleshooting
+
+- **Handshake or authentication failure:** verify that the target and token came from the same access and location, and that the client integration is current.
+- **No data after connecting:** confirm the access is active and the selected location exposes Pulse.
+- **Works on one network only:** check outbound UDP policies, VPN rules, and firewalls that may block QUIC.
+- **Consumer falls behind:** reduce processing in the receive path, bound queues, and move expensive work to downstream workers.
+
+The older ThorPulse NATS service used a different transport and contract. For migration context, see [Legacy services](/reference/legacy-services).
