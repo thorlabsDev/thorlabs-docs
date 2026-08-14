@@ -5,6 +5,16 @@ description: "Receive live raw Solana shreds from ThorNode at your own UDP targe
 
 ShredStream forwards live raw Solana shreds from a selected ThorNode location to a UDP receiver that you operate.
 
+## Quick reference
+
+| Item                  | Value                                                   |
+| --------------------- | ------------------------------------------------------- |
+| Transport             | Inbound UDP                                             |
+| Target                | Your public IPv4 address and port                       |
+| Port range            | `1024`–`65535`                                          |
+| Packet authentication | None; access is checked when the receiver is registered |
+| Delivery behavior     | Loss, duplication, and reordering are possible          |
+
 ## Receiver requirements
 
 Before registering a target, prepare:
@@ -50,9 +60,61 @@ sudo tcpdump -ni any "udp port ${SHREDSTREAM_PORT}"
 
 Stop the capture after you have enough evidence; raw shred traffic can produce substantial output.
 
+## Build a minimal receiver
+
+This Node.js receiver proves that UDP datagrams reach your application. It reports metadata only; it does not parse or validate shred payloads.
+
+```javascript
+import dgram from "node:dgram";
+
+const port = Number(process.env.SHREDSTREAM_PORT);
+
+if (!Number.isInteger(port) || port < 1024 || port > 65535) {
+  throw new Error(
+    "SHREDSTREAM_PORT must be an integer from 1024 through 65535",
+  );
+}
+
+const socket = dgram.createSocket({ type: "udp4", reuseAddr: true });
+
+let packets = 0;
+let bytes = 0;
+
+socket.on("message", (message) => {
+  packets += 1;
+  bytes += message.length;
+});
+
+setInterval(() => {
+  console.log({ packetsPerSecond: packets, bytesPerSecond: bytes });
+  packets = 0;
+  bytes = 0;
+}, 1_000).unref();
+
+socket.on("error", (error) => {
+  console.error(error);
+  process.exitCode = 1;
+  socket.close();
+});
+
+socket.bind(port, "0.0.0.0", () => {
+  console.log(`Listening for ShredStream UDP on port ${port}`);
+});
+```
+
+Save the example as `receiver.mjs`, then run it on the registered host with the registered port:
+
+```bash
+SHREDSTREAM_PORT='<registered-port>' node receiver.mjs
+```
+
+Keep packet parsing and expensive work off the receive callback; enqueue bounded work for downstream consumers instead.
+
 ## Design for UDP delivery
 
 UDP is connectionless. Your receiver must tolerate packet loss, duplication, and reordering. Keep the receive path small, use bounded queues, and monitor drops at both the operating-system and application layers.
+
+Packets do not contain a ThorNode customer-authentication header. Authenticate and authorize the receiver through the dashboard registration, and do not expose any internal management credential in receiver code.
 
 The number of active registrations depends on the access tier and current backend policy. The dashboard is authoritative for the limit and shows whether ShredStream is enabled for an access.
 

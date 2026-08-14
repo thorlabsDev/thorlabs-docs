@@ -1,20 +1,28 @@
 ---
 title: "ThorNode documentation"
-description: "Build low-latency Solana applications with ThorNode RPC, streaming, shred, replay, and private transaction infrastructure."
+description: "Build low-latency Solana applications with ThorNode RPC, streaming, shred, replay, and supported private transaction infrastructure."
 ---
 
-ThorNode provides location-aware Solana infrastructure through one dashboard. Create access for RPC and WebSocket traffic, stream data with Yellowstone or Pulse, receive raw shreds, replay historical shreds, and submit private transactions.
+ThorNode provides location-aware Solana infrastructure through one dashboard. Create access for RPC and FastGate account queries, prepare supported Yellowstone or Pulse integrations, receive raw shreds, replay historical shreds, and onboard to supported private transaction routes.
 
 <CardGroup cols={3}>
   <Card title="Connect to RPC" icon="bolt" href="/products/thoredge-rpc">
     Create a location token and connect your Solana HTTP and WebSocket clients.
   </Card>
   <Card
+    title="Query accounts with FastGate"
+    icon="magnifying-glass-chart"
+    href="/products/fastgate-account-queries"
+  >
+    Run account-heavy JSON-RPC methods through the same ThorEdge endpoint.
+  </Card>
+  <Card
     title="Stream Solana data"
     icon="wave-pulse"
     href="/products/yellowstone-grpc"
   >
-    Use Yellowstone gRPC or Pulse for persistent, low-latency data delivery.
+    Prepare a supported Yellowstone or Pulse integration with the required
+    onboarding contract.
   </Card>
   <Card
     title="Work with shreds"
@@ -56,14 +64,15 @@ ThorNode provides location-aware Solana infrastructure through one dashboard. Cr
 
 ## Choose a product
 
-| Need                                  | Product                                                | Transport     |
-| ------------------------------------- | ------------------------------------------------------ | ------------- |
-| Solana requests and subscriptions     | [ThorEdge RPC](/products/thoredge-rpc)                 | HTTPS and WSS |
-| Standard Geyser-compatible streams    | [Yellowstone gRPC](/products/yellowstone-grpc)         | gRPC          |
-| Decoded shred firehose                | [Pulse](/products/pulse)                               | QUIC          |
-| Live raw shreds                       | [ShredStream](/products/shredstream)                   | UDP           |
-| Historical shred delivery             | [ShredReplay](/products/shredreplay)                   | UDP           |
-| Provider-aware transaction submission | [Private transactions](/products/private-transactions) | HTTPS         |
+| Need                                | Product                                                        | Transport               |
+| ----------------------------------- | -------------------------------------------------------------- | ----------------------- |
+| Solana requests and subscriptions   | [ThorEdge RPC](/products/thoredge-rpc)                         | HTTPS and WSS           |
+| Account-heavy Solana queries        | [FastGate account queries](/products/fastgate-account-queries) | HTTPS JSON-RPC          |
+| Geyser Subscribe-compatible streams | [Yellowstone gRPC](/products/yellowstone-grpc)                 | gRPC                    |
+| Decoded-shred transaction stream    | [Pulse](/products/pulse)                                       | QUIC                    |
+| Live raw shreds                     | [ShredStream](/products/shredstream)                           | UDP                     |
+| Historical shred delivery           | [ShredReplay](/products/shredreplay)                           | UDP                     |
+| Provider-aware transaction routes   | [Private transactions](/products/private-transactions)         | HTTPS required publicly |
 
 <CardGroup cols={2}>
   <Card

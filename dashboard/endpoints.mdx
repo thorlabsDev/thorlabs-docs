@@ -98,7 +98,7 @@ Copy the full SSL RPC URL before running this request:
 ```bash
 export THORNODE_RPC_URL='<full SSL RPC URL copied from the dashboard>'
 
-curl --request POST "$THORNODE_RPC_URL" \
+curl --fail-with-body --request POST "$THORNODE_RPC_URL" \
   --header 'content-type: application/json' \
   --data '{"jsonrpc":"2.0","id":1,"method":"getLatestBlockhash"}'
 ```

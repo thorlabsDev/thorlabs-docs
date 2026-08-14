@@ -63,7 +63,7 @@ You need:
     ```bash
     export THORNODE_RPC_URL='<full SSL RPC URL copied from the dashboard>'
 
-    curl --request POST "$THORNODE_RPC_URL" \
+    curl --fail-with-body --request POST "$THORNODE_RPC_URL" \
       --header 'content-type: application/json' \
       --data '{"jsonrpc":"2.0","id":1,"method":"getLatestBlockhash"}'
     ```
@@ -82,5 +82,6 @@ You need:
 
 - Learn how accounts, passes, rentals, locations, and tokens relate in [Access model](/getting-started/access-model).
 - Configure RPC and WebSocket credentials in [Endpoints](/dashboard/endpoints).
+- Run account-heavy RPC methods through [FastGate account queries](/products/fastgate-account-queries).
 - Review effective capacity in [Usage and limits](/dashboard/usage-and-limits).
 - Explore the available services in the Products section.

@@ -1,9 +1,21 @@
 ---
 title: "Pulse"
-description: "Consume ThorNode's decoded shred stream over QUIC."
+description: "Consume ThorNode's low-latency transaction stream decoded from Solana shreds over QUIC."
 ---
 
-Pulse is ThorNode's QUIC streaming product for decoded Solana shred data. It is a persistent data stream, not a JSON-RPC or gRPC request endpoint.
+Pulse is ThorNode's QUIC streaming product for transactions decoded from Solana shreds. It is a persistent transaction stream, not a JSON-RPC or gRPC request endpoint and not a stream of raw shred objects.
+
+## Quick reference
+
+| Item                  | Value                                                       |
+| --------------------- | ----------------------------------------------------------- |
+| Transport             | QUIC over UDP                                               |
+| Payload               | Transactions decoded from Solana shreds                     |
+| Target                | Location target copied from the dashboard                   |
+| Authentication        | Control-message token; enforcement must be confirmed        |
+| Token placement       | Never in the URL or query string                            |
+| Client requirement    | Server-identity verification and a pinned schema            |
+| Integration readiness | Client trust, auth enforcement, and schema must be supplied |
 
 ## Get access
 
@@ -15,23 +27,33 @@ Pulse is ThorNode's QUIC streaming product for decoded Solana shred data. It is 
     Select an enabled location, then copy the Pulse connection details shown by
     the dashboard.
   </Step>
-  <Step title="Configure the supported client">
-    Use the current ThorNode client package or onboarding instructions for the
-    QUIC connection and control-message schema.
+  <Step title="Obtain a verification-capable client">
+    Before connecting, ThorNode onboarding or support must supply a client
+    build, schema version, and trust configuration that verifies the server's
+    identity. They must also confirm token enforcement is enabled for the
+    selected deployment.
   </Step>
-  <Step title="Authenticate during setup">
-    Send the location token in the authenticated QUIC control message defined by
-    the supported client integration.
+  <Step title="Verify, then authenticate">
+    Confirm server-identity verification and token enforcement are active, then
+    send the location token in the supported QUIC control message.
   </Step>
 </Steps>
 
 <Warning>
   Do not place a Pulse token in a URL or query string. The control-message
-  schema is versioned with the supported integration; do not infer it from older
-  ThorPulse examples.
+  schema is versioned with the supported integration. Do not use a client or
+  example that skips hostname, certificate, or server-identity verification.
+  Sending a token is not proof that the deployment enforces it.
 </Warning>
 
-ThorNode does not publish a generic wire example here because a hand-built control message can silently become incompatible. Contact [ThorNode support](mailto:support@thornode.io) if your dashboard does not provide the current client or onboarding details.
+ThorNode does not publish a generic wire example here because a hand-built control message can silently become incompatible. The dashboard target and token are not, by themselves, a complete safe integration. Contact [ThorNode support](mailto:support@thornode.io) for a verification-capable client and pinned onboarding contract before sending a credential.
+
+<Note>
+  Pulse is not currently a self-service raw-protocol integration. Do not
+  hand-roll the control message or disable certificate verification. Start
+  implementation only after you have a verification-capable client, pinned
+  schema, and trust configuration for your location.
+</Note>
 
 ## Client responsibilities
 
@@ -45,8 +67,7 @@ ThorNode does not publish a generic wire example here because a hand-built contr
 ## Troubleshooting
 
 - **Handshake or authentication failure:** verify that the target and token came from the same access and location, and that the client integration is current.
+- **A connection succeeds without a token:** stop using the target and report it to ThorNode; token enforcement may not be enabled.
 - **No data after connecting:** confirm the access is active and the selected location exposes Pulse.
 - **Works on one network only:** check outbound UDP policies, VPN rules, and firewalls that may block QUIC.
 - **Consumer falls behind:** reduce processing in the receive path, bound queues, and move expensive work to downstream workers.
-
-The older ThorPulse NATS service used a different transport and contract. For migration context, see [Legacy services](/reference/legacy-services).

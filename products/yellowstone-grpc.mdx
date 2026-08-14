@@ -1,9 +1,34 @@
 ---
 title: "Yellowstone gRPC"
-description: "Stream Solana data through ThorNode's standard Yellowstone gRPC interface."
+description: "Build a filtered Solana stream with ThorNode's Yellowstone Subscribe-compatible service."
 ---
 
-ThorNode's Yellowstone service exposes the standard Yellowstone gRPC streaming interface. The dashboard may label this service **Yellowstone DM**.
+ThorNode's Yellowstone service provides a managed `geyser.Geyser/Subscribe`-compatible stream. The dashboard may label this service **Yellowstone DM**.
+
+## Quick reference
+
+| Item                  | Value                                                   |
+| --------------------- | ------------------------------------------------------- |
+| Interface             | `geyser.Geyser/Subscribe`                               |
+| Transport             | gRPC with explicitly supplied transport and trust setup |
+| Target                | Location dial target copied from the dashboard          |
+| Authentication        | `x-token` request metadata                              |
+| Credential scope      | Selected location                                       |
+| Proto/client version  | Must be supplied for the ThorNode endpoint              |
+| Integration readiness | The bare dashboard target is not sufficient by itself   |
+| Limits                | Concurrent streams and filters shown by the dashboard   |
+
+## Dragon's Mouth compatibility
+
+[Yellowstone Dragon's Mouth](https://github.com/rpcpool/yellowstone-grpc) is the open-source, Geyser-based gRPC interface built and maintained by Triton One. ThorNode uses its Subscribe protocol conventions to provide compatible managed access; the reference is about protocol compatibility and does not imply affiliation.
+
+Use the upstream project as the source for:
+
+- The [`geyser.proto` service definition](https://github.com/rpcpool/yellowstone-grpc/blob/master/yellowstone-grpc-proto/proto/geyser.proto)
+- The [official Node.js client](https://github.com/rpcpool/yellowstone-grpc/tree/master/yellowstone-grpc-client-nodejs)
+- The [language examples](https://github.com/rpcpool/yellowstone-grpc/tree/master/examples)
+
+The links above track the upstream `master` branch and are conceptual references, not a ThorNode version pin. ThorNode does not publish its deployed proto/client version on this page. Obtain the exact compatible version during onboarding before implementation; upstream examples can evolve independently from the deployed service.
 
 ## Connection details
 
@@ -13,11 +38,11 @@ Your client needs two values from the dashboard:
 - The location-bound token, sent as `x-token` request metadata
 
 ```bash
-export THOR_YELLOWSTONE_TARGET='<copied-grpc-target>'
-export THOR_TOKEN='<location-token>'
+export THORNODE_YELLOWSTONE_TARGET='<copied-grpc-target>'
+export THORNODE_YELLOWSTONE_TOKEN='<location-token>'
 ```
 
-Configure your Yellowstone-compatible client to dial `THOR_YELLOWSTONE_TARGET` and attach this metadata to authenticated requests:
+Configure your Yellowstone-compatible client to dial `THORNODE_YELLOWSTONE_TARGET` and attach `THORNODE_YELLOWSTONE_TOKEN` to authenticated requests as this metadata:
 
 ```text
 x-token: <location-token>
@@ -26,6 +51,14 @@ x-token: <location-token>
 <Warning>
   Do not append the token to the target URL or send it as a query parameter.
   Keep it in protected runtime configuration and attach it as gRPC metadata.
+</Warning>
+
+<Warning>
+  The dashboard currently supplies a bare gRPC target, which does not disclose
+  TLS or trust settings. Do not send a token or attempt a public connection
+  until ThorNode onboarding or support supplies a TLS-verified target or an
+  explicitly trusted private path with its exact transport configuration. Never
+  bypass certificate verification to make a connection succeed.
 </Warning>
 
 ## Connect
@@ -39,10 +72,15 @@ x-token: <location-token>
     Use the values displayed together for that location. Do not combine a target
     from one location with a token from another.
   </Step>
+  <Step title="Obtain the integration contract">
+    Get the endpoint's explicit TLS and trust configuration plus its compatible
+    proto/client version from ThorNode onboarding or support. A host and port
+    alone are not enough to connect safely.
+  </Step>
   <Step title="Configure a compatible client">
-    Use a Yellowstone client and protobuf definitions compatible with the
-    service. Pass the copied target through the client's endpoint setting and
-    the token through `x-token` metadata.
+    Pin the supplied compatible version and apply the verified transport
+    configuration for your endpoint. Pass the target through the client's
+    endpoint setting and the token through `x-token` metadata.
   </Step>
   <Step title="Subscribe with narrow filters">
     Request only the accounts, transactions, slots, or other data your
@@ -50,6 +88,19 @@ x-token: <location-token>
     within live limits.
   </Step>
 </Steps>
+
+## Design the subscription
+
+The supplied Yellowstone proto can define maps for accounts, transactions, slots, blocks, and block metadata. Confirm which maps the exact ThorNode endpoint supports during onboarding, then create a single Subscribe stream containing only verified fields your application needs.
+
+Use stable, descriptive filter names in your request, but do not assume the endpoint populates those names on every update until you verify a response. Begin with one narrow, supported filter, verify its payloads, then add more while watching the live account and stream limits. Avoid wildcard account subscriptions unless the current access explicitly permits them.
+
+<Note>
+  This page intentionally does not provide a generic connection snippet. A safe
+  runnable example requires verified transport and trust settings plus the
+  endpoint's compatible client/protobuf release. Adapt an upstream example only
+  after ThorNode supplies those settings for your location.
+</Note>
 
 ## Reliability
 
@@ -67,7 +118,6 @@ The dashboard is authoritative for the concurrent stream, account, and availabil
 
 - **Unauthenticated:** verify that the metadata key is exactly `x-token` and that the token belongs to the selected location.
 - **Connection failure:** use the target exactly as displayed and confirm that your network allows outbound gRPC traffic.
+- **TLS or certificate error:** stop and verify the endpoint's supplied transport mode; do not switch to insecure verification as a workaround.
 - **Subscription rejected:** reduce the requested filters and check current account and stream limits.
 - **Repeated disconnects:** inspect client backpressure, keepalive settings, and retry behavior before opening additional streams.
-
-If you are migrating from a legacy ThorStreamer integration, read [Legacy services](/reference/legacy-services) before changing your client.

@@ -3,7 +3,19 @@ title: "Private transactions"
 description: "Submit Solana transactions through ThorNode's Bifrost routing catalog."
 ---
 
-Private transactions use Bifrost to expose provider submission routes through a dashboard-managed access key. Treat the catalog and connection details shown by the current dashboard as authoritative for your access.
+Private transactions use Bifrost to expose provider routes through a dashboard-generated key path. Treat the dashboard as authoritative for route availability and complete URLs. It does not expose the full provider request schema or prove that the selected deployment enforces key authentication, so obtain both confirmations before integrating.
+
+## Quick reference
+
+| Item                  | Value                                                            |
+| --------------------- | ---------------------------------------------------------------- |
+| Transport             | Dashboard-supplied HTTP(S); HTTPS required for public traffic    |
+| Endpoint              | Complete provider route URL copied from the dashboard            |
+| Authentication        | Deployment mode must be confirmed; a key path alone is not proof |
+| Method, headers, body | Provider-specific contract supplied separately                   |
+| Route catalog         | Current dashboard options for the selected access                |
+| Integration readiness | Auth enforcement, safe transport, and route contract required    |
+| Success semantics     | A 2xx is transport success only                                  |
 
 ## Copy a route
 
@@ -19,23 +31,46 @@ Private transactions use Bifrost to expose provider submission routes through a 
   </Step>
   <Step title="Copy the complete URL">
     Copy the full URL for the route you intend to call. The URL includes the
-    access path required for authentication, so treat it as a secret.
+    intended credential path, so treat it as a secret even before enforcement is
+    confirmed.
   </Step>
-  <Step title="Send the provider-compatible body">
-    POST the request body expected by the selected provider and route. Bifrost
-    forwards the body; it does not make different provider contracts
-    interchangeable.
+  <Step title="Confirm authentication and transport">
+    ThorNode onboarding or support must confirm that the selected deployment
+    enforces key authentication and provide either HTTPS or an explicitly
+    trusted private-network path. Do not infer either property from the URL.
+  </Step>
+  <Step title="Obtain the route contract">
+    Get the current method, required headers, content type, and body schema from
+    ThorNode onboarding or support for that exact route. Do not infer them from
+    the route label.
   </Step>
 </Steps>
 
-```bash
-export BIFROST_ROUTE_URL='<complete-url-copied-from-dashboard>'
+## Build the request
 
-curl --fail-with-body --request POST \
-  --url "$BIFROST_ROUTE_URL" \
-  --header 'content-type: application/json' \
-  --data-binary @request.json
-```
+There is no universal Bifrost request. The dashboard supplies the credential-bearing URL but does not fully define the remaining request parts:
+
+| Request part | Source                                                    |
+| ------------ | --------------------------------------------------------- |
+| URL          | Copy the complete route URL from the dashboard            |
+| HTTP method  | Use the current contract supplied for that exact route    |
+| Headers      | Use only the headers required by that provider route      |
+| Body         | Preserve the provider-compatible payload and content type |
+
+A runnable universal snippet would be misleading. Do not assume every route uses `POST` or JSON, and do not convert an arbitrary provider payload. Validate the supplied contract in a non-critical workflow before sending production traffic.
+
+<Warning>
+  A dashboard-generated key path does not prove that the selected Bifrost
+  deployment enforces authentication. Do not send production traffic until
+  ThorNode confirms authenticated mode for that exact route and location.
+</Warning>
+
+<Warning>
+  Because the URL contains an access key, do not send it over plain HTTP on the
+  public internet. If the dashboard supplies an `http://` URL, obtain an HTTPS
+  endpoint or an explicitly trusted private-network path from ThorNode before
+  using it.
+</Warning>
 
 <Warning>
   Do not build Bifrost URLs from old documentation or hard-code a provider list.
@@ -44,20 +79,21 @@ curl --fail-with-body --request POST \
 
 ## Understand route behavior
 
-Capabilities and delivery semantics belong to the live route entry, not to a provider name you remember from an older integration. Do not infer MEV protection, revert protection, bundle behavior, fallback behavior, or landing guarantees unless the current dashboard catalog states them for the exact route you copied.
+Capabilities and delivery semantics belong to the current contract supplied for the exact route, not to a provider name or dashboard label. Do not infer MEV protection, revert protection, bundle behavior, fallback behavior, or landing guarantees unless that contract states them.
 
-An accepted HTTP response means the route accepted the request for processing. It does **not** mean the transaction landed or finalized. When a route returns a transaction signature, track it through Solana status APIs and apply your application's own expiry and confirmation policy.
+A 2xx response means the Bifrost transport completed successfully. It does **not** prove that the provider accepted a transaction: parse the route-specific response body and handle provider or JSON-RPC errors. For a submission route that returns a valid transaction signature, track that signature through Solana status APIs and apply your application's own expiry and confirmation policy.
 
 ## Credential handling
 
-The Bifrost key is scoped to the selected access and works across the Bifrost locations enabled for that access. The copied base and route URLs remain location-specific, so do not reuse one location's URL for another location or access source. Because the URL carries the key in its access path, keep the entire URL in a server-side secret store and redact it from logs, traces, analytics, and error reports.
+The dashboard intends the Bifrost key to be scoped to the selected access and usable across the Bifrost locations enabled for that access. Authentication enforcement must still be confirmed for the selected deployment. The copied base and route URLs remain location-specific, so do not reuse one location's URL for another location or access source. Keep the entire URL in a server-side secret store and redact it from logs, traces, analytics, and error reports.
 
 ## Troubleshooting
 
 - **Unauthorized or forbidden:** confirm the key is active and the selected option belongs to the current access.
+- **A request succeeds without the key path:** stop using the route and report it to ThorNode; authenticated mode may not be enforced.
 - **Route not found:** refresh the dashboard catalog and replace stale route URLs.
 - **Provider error:** validate the request body against the contract for the selected provider and route.
-- **Accepted but not landed:** check the transaction signature on-chain; acceptance is not a landing guarantee.
+- **2xx but no usable result:** parse the route-specific response for provider or JSON-RPC errors. For submission routes, track a returned transaction signature on-chain.
 - **Rate limited or unavailable:** respect retry guidance, use bounded exponential backoff, and recheck the live route status before retrying.
 
 See [Security](/reference/security) for guidance on storing and rotating access credentials.

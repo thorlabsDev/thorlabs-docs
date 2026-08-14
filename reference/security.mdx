@@ -7,24 +7,24 @@ Treat every ThorNode token, access key, replay key, and credential-bearing endpo
 
 ## Know what must remain secret
 
-| Product                    | Secret material                            | How the client uses it                                                      |
-| -------------------------- | ------------------------------------------ | --------------------------------------------------------------------------- |
-| ThorEdge RPC and WebSocket | The location token and complete copied URL | The dashboard-provided URL carries or resolves to the token                 |
-| Yellowstone gRPC           | Location token                             | Send as `x-token` request metadata, not in the target URL                   |
-| Pulse                      | Location token                             | Send through the authenticated control flow supported by the current client |
-| Private transactions       | Access key and complete copied route URL   | The route URL contains the authentication path                              |
-| ShredReplay                | Per-access replay key                      | Use only through the supported replay flow                                  |
+| Product                    | Secret material                            | How the client uses it                                              |
+| -------------------------- | ------------------------------------------ | ------------------------------------------------------------------- |
+| ThorEdge RPC and WebSocket | The location token and complete copied URL | The dashboard-provided URL carries or resolves to the token         |
+| Yellowstone gRPC           | Location token                             | Send as `x-token` request metadata, not in the target URL           |
+| Pulse                      | Location token                             | Send only after server identity and token enforcement are confirmed |
+| Private transactions       | Access key and complete copied route URL   | Use only after deployment auth enforcement is explicitly confirmed  |
+| ShredReplay                | Per-access replay key                      | Use only through the supported replay flow                          |
 
-Wallet private keys and seed phrases are never ThorNode support credentials. Never share them with ThorNode, a vendor, or anyone claiming to troubleshoot your access.
+Wallet private keys and seed phrases are never ThorNode support credentials. Never share them with ThorNode or any third party claiming to troubleshoot your access.
 
 ## Store secrets outside code
 
 Inject production secrets through your deployment platform or a secret manager. Use placeholders in committed configuration:
 
 ```dotenv
-THOR_RPC_URL=<complete-url-copied-from-dashboard>
-THOR_YELLOWSTONE_TARGET=<target-copied-from-dashboard>
-THOR_YELLOWSTONE_TOKEN=<location-token>
+THORNODE_RPC_URL=<complete-url-copied-from-dashboard>
+THORNODE_YELLOWSTONE_TARGET=<target-copied-from-dashboard>
+THORNODE_YELLOWSTONE_TOKEN=<location-token>
 BIFROST_ROUTE_URL=<complete-route-url-copied-from-dashboard>
 SHREDREPLAY_KEY=<replay-key>
 ```
@@ -54,7 +54,9 @@ Redact the credential path as well as query parameters. Keeping only the hostnam
 
 ## Use transport and network controls
 
-- Prefer the dashboard-provided `https://`, `wss://`, and TLS-enabled gRPC targets.
+- Prefer the dashboard-provided `https://` and `wss://` endpoints. A bare gRPC target does not disclose TLS; do not send a token until ThorNode supplies a TLS-verified target or an explicitly trusted private path and its trust configuration.
+- For Pulse, use only a client and trust configuration that verifies server identity. Never bypass hostname or certificate verification to make a stream connect.
+- For Bifrost, confirm the selected deployment enforces key authentication before use. A key-shaped URL path is not evidence that authentication is active.
 - Do not replace a public hostname with a raw IP; doing so can break certificate validation and routing.
 - Restrict an RPC token to a stable public egress IP when the dashboard offers that option.
 - Apply host firewall and cloud security-group rules to ShredStream and ShredReplay receivers.
@@ -64,7 +66,7 @@ An IP restriction reduces exposure but does not make a leaked token safe. Contin
 
 ## Rotate or revoke credentials
 
-Regenerate a location token when it may have been exposed or when the consuming system changes ownership. Regeneration or revocation invalidates the old token for that location; other location tokens are unaffected.
+Regenerate a location token when it may have been exposed or when the consuming system changes ownership. Regeneration or revocation invalidates future authentication with the old token for that location; other location tokens are unaffected. A streaming connection that authenticated earlier may remain open until it disconnects or the service closes it, so restart long-lived clients during rotation.
 
 <Steps>
   <Step title="Prepare the client">

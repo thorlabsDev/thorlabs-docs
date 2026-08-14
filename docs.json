@@ -25,28 +25,28 @@
         ]
       },
       {
-        "group": "Dashboard",
-        "icon": "gauge-high",
-        "pages": [
-          "dashboard/overview",
-          "dashboard/wallets",
-          "dashboard/endpoints",
-          "dashboard/usage-and-limits",
-          "dashboard/rentals",
-          "dashboard/vendor-marketplace",
-          "dashboard/renewals"
-        ]
-      },
-      {
         "group": "Products",
         "icon": "server",
         "pages": [
           "products/thoredge-rpc",
+          "products/fastgate-account-queries",
           "products/yellowstone-grpc",
           "products/pulse",
           "products/shredstream",
           "products/shredreplay",
           "products/private-transactions"
+        ]
+      },
+      {
+        "group": "Dashboard",
+        "icon": "gauge-high",
+        "pages": [
+          "dashboard/overview",
+          "dashboard/endpoints",
+          "dashboard/wallets",
+          "dashboard/usage-and-limits",
+          "dashboard/rentals",
+          "dashboard/renewals"
         ]
       },
       {
@@ -56,8 +56,7 @@
           "reference/plans-and-limits",
           "reference/locations",
           "reference/security",
-          "reference/troubleshooting",
-          "reference/legacy-services"
+          "reference/troubleshooting"
         ]
       },
       {
@@ -128,11 +127,11 @@
     },
     {
       "source": "/introduction/node-locations-and-access/rental-system/:slug*",
-      "destination": "/dashboard/vendor-marketplace"
+      "destination": "/dashboard/rentals"
     },
     {
       "source": "/introduction/node-locations-and-access/rental-system",
-      "destination": "/dashboard/vendor-marketplace"
+      "destination": "/dashboard/rentals"
     },
     {
       "source": "/introduction/node-locations-and-access/troubleshooting",
@@ -172,11 +171,11 @@
     },
     {
       "source": "/infrastructure/fastgate-rpc/:slug*",
-      "destination": "/products/thoredge-rpc"
+      "destination": "/products/fastgate-account-queries"
     },
     {
       "source": "/infrastructure/fastgate-rpc",
-      "destination": "/products/thoredge-rpc"
+      "destination": "/products/fastgate-account-queries"
     },
     {
       "source": "/infrastructure/thor-shredstream/:slug*",
@@ -188,31 +187,39 @@
     },
     {
       "source": "/infrastructure/thorstreamer-grpc/:slug*",
-      "destination": "/reference/legacy-services"
+      "destination": "/products/yellowstone-grpc"
     },
     {
       "source": "/infrastructure/thorstreamer-grpc",
-      "destination": "/reference/legacy-services"
+      "destination": "/products/yellowstone-grpc"
     },
     {
       "source": "/infrastructure/thorpulse-nats/:slug*",
-      "destination": "/reference/legacy-services"
+      "destination": "/products/pulse"
     },
     {
       "source": "/infrastructure/thorpulse-nats",
-      "destination": "/reference/legacy-services"
+      "destination": "/products/pulse"
     },
     {
       "source": "/infrastructure/tools/helm-ps",
-      "destination": "/reference/legacy-services"
+      "destination": "/getting-started/quickstart"
     },
     {
       "source": "/infrastructure/tools/thorstreamer-yellowstone-translator",
-      "destination": "/reference/legacy-services"
+      "destination": "/products/yellowstone-grpc"
     },
     {
       "source": "/infrastructure/tools",
-      "destination": "/reference/legacy-services"
+      "destination": "/getting-started/quickstart"
+    },
+    {
+      "source": "/dashboard/vendor-marketplace",
+      "destination": "/dashboard/rentals"
+    },
+    {
+      "source": "/reference/legacy-services",
+      "destination": "/getting-started/quickstart"
     },
     {
       "source": "/guides/:slug*",

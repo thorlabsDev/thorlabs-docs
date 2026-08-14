@@ -1,0 +1,92 @@
+---
+title: "FastGate account queries"
+description: "Run account-heavy Solana JSON-RPC queries through your existing ThorEdge endpoint."
+---
+
+FastGate is ThorNode's account-query engine behind ThorEdge RPC. It is not a second public endpoint: send supported methods to the complete ThorEdge HTTPS URL copied from the dashboard, using the same location-bound credential.
+
+## Quick reference
+
+| Item                  | Value                                               |
+| --------------------- | --------------------------------------------------- |
+| Transport             | HTTPS JSON-RPC 2.0                                  |
+| Endpoint              | Complete ThorEdge RPC URL copied from the dashboard |
+| Authentication        | Location credential carried by the copied URL       |
+| Separate FastGate key | None                                                |
+| Limits                | Current values shown under **Usage** and **Limits** |
+
+<Note>
+  ThorEdge selects the query engine from the JSON-RPC method. Do not construct a
+  FastGate hostname, append a second key, or reuse an endpoint from archived
+  documentation.
+</Note>
+
+## Send your first account query
+
+Create or select a location token under **Endpoints → Endpoints**, then copy its complete HTTPS RPC URL.
+
+```bash
+export THORNODE_RPC_URL='<copied-https-url>'
+
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getAccountInfo",
+    "params": [
+      "11111111111111111111111111111111",
+      { "encoding": "base64" }
+    ]
+  }'
+```
+
+The example reads Solana's System Program account, so it is safe to run as a connectivity check. Replace the address and method with values appropriate for your application.
+
+For program-wide queries, review the [Solana `getProgramAccounts` reference](https://solana.com/docs/rpc/http/getprogramaccounts) and add selective filters before sending production traffic.
+
+<Warning>
+  Account queries can return large responses. Start with narrow filters and a
+  small data slice where the method supports them, enforce response-size and
+  request timeouts, and do not assume JSON-RPC batch behavior unless your
+  current access contract explicitly documents it.
+</Warning>
+
+## Routed methods
+
+The current FastGate route recognizes these standard Solana JSON-RPC methods:
+
+- `getAccountInfo`
+- `getMultipleAccounts`
+- `getBalance`
+- `getTokenAccountBalance`
+- `getTokenSupply`
+- `getLargestAccounts`
+- `getMinimumBalanceForRentExemption`
+- `getTokenLargestAccounts`
+- `getProgramAccounts`
+- `getTokenAccountsByOwner`
+- `getTokenAccountsByDelegate`
+
+ThorNode also routes `getProgramAccountsV2`, `getTokenAccountsByOwnerV2`, and `getTokenAccountsByDelegateV2`. Their public response contract is not pinned in this documentation. Contact [ThorNode support](mailto:support@thornode.io) before building a production dependency on a V2 method.
+
+Use the [Solana JSON-RPC documentation](https://solana.com/docs/rpc) as the baseline reference for standard method fields and result shapes. Do not assume every optional configuration field or commitment behavior is implemented identically; validate the options your application depends on against the current ThorNode response. ThorNode-specific authentication, access, and live limits still apply.
+
+## Build for production
+
+- Send one operation per request unless your access documentation explicitly confirms batch support.
+- Reuse HTTP connections and set explicit connect, request, and response-size limits.
+- Treat both non-2xx HTTP responses and JSON-RPC `error` objects as failures.
+- Retry only transient failures with bounded exponential backoff and jitter.
+- Cache immutable or slowly changing data when application correctness permits it.
+- Keep the full RPC URL in a server-side secret store and redact it from telemetry.
+
+## Troubleshooting
+
+- **Unauthorized or forbidden:** recopy the complete URL and verify its access, network, location, and optional IP restriction.
+- **Method not found:** confirm the exact method spelling and check whether it appears in the routed list above.
+- **Invalid params:** validate the request against the matching Solana method definition.
+- **Rate limited:** reduce concurrency and compare traffic with the live dashboard limits.
+- **Response is too large or slow:** narrow filters, request less account data, and paginate only when the selected method's current contract supports it.
+
+For endpoint creation and rotation, see [ThorEdge RPC](/products/thoredge-rpc). For credential hygiene, see [Security](/reference/security).

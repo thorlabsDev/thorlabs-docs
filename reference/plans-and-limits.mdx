@@ -13,7 +13,9 @@ The current standard tiers are **Flash**, **Classic**, **Elite**, and **Prime**.
 
 ## No monthly request cap
 
-ThorEdge RPC access does **not** have a monthly request quota. Your requests do not stop because you reach a monthly request count.
+ThorEdge RPC does not currently enforce a monthly request-count cutoff. Your requests do not stop because a monthly counter reaches a value.
+
+Some API payloads can retain quota-style compatibility metadata. Do not interpret that metadata as an enforced cutoff unless the authenticated dashboard explicitly presents a monthly limit for the selected access. Live router behavior and the current dashboard remain authoritative.
 
 Live throughput and concurrency limits still apply. Depending on the product, these can include RPC requests per second, transaction submissions per second, WebSocket subscriptions, Yellowstone streams and account filters, ShredStream registrations, or accessible locations.
 

@@ -5,6 +5,17 @@ description: "Connect to ThorNode's Solana JSON-RPC and WebSocket endpoints."
 
 ThorEdge provides Solana JSON-RPC over HTTP and subscriptions over WebSocket. The dashboard creates the complete URLs for each access, network, and location.
 
+## Quick reference
+
+| Item                   | Value                                               |
+| ---------------------- | --------------------------------------------------- |
+| Request transport      | HTTPS JSON-RPC 2.0                                  |
+| Subscription transport | WSS                                                 |
+| Endpoint               | Complete location URL copied from the dashboard     |
+| Authentication         | Location credential carried by the copied URL       |
+| Optional restriction   | One stable public IPv4 egress address               |
+| Limits                 | Current values shown under **Usage** and **Limits** |
+
 ## Before you connect
 
 You need an active pass or rental with access to the location you want to use. You also need a token for that location.
@@ -42,14 +53,58 @@ Use the secure `https://` and `wss://` URLs unless you have a specific, controll
 Store the copied URL in your secret manager or runtime environment:
 
 ```bash
-export THOR_RPC_URL='<copied-https-url>'
+export THORNODE_RPC_URL='<copied-https-url>'
 
-curl --fail-with-body "$THOR_RPC_URL" \
+curl --fail-with-body "$THORNODE_RPC_URL" \
   --header 'content-type: application/json' \
   --data '{"jsonrpc":"2.0","id":1,"method":"getLatestBlockhash"}'
 ```
 
 For subscriptions, configure your Solana WebSocket client with the complete `wss://` URL copied from the same location panel.
+
+Use the same endpoint from Node.js 20 or newer without installing a ThorNode-specific SDK:
+
+```javascript
+const endpoint = process.env.THORNODE_RPC_URL;
+
+if (!endpoint) {
+  throw new Error("THORNODE_RPC_URL is required");
+}
+
+const response = await fetch(endpoint, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({
+    jsonrpc: "2.0",
+    id: 1,
+    method: "getLatestBlockhash",
+  }),
+});
+
+const responseBody = await response.text();
+
+let payload;
+
+try {
+  payload = JSON.parse(responseBody);
+} catch {
+  throw new Error(
+    `ThorEdge returned a non-JSON response (HTTP ${response.status})`,
+  );
+}
+
+if (!response.ok) {
+  throw new Error(`ThorEdge HTTP ${response.status}`);
+}
+
+if (payload.error) {
+  throw new Error(`Solana RPC ${payload.error.code}: ${payload.error.message}`);
+}
+
+console.log(payload.result.value.blockhash);
+```
+
+For account-heavy calls such as `getProgramAccounts`, continue with [FastGate account queries](/products/fastgate-account-queries). FastGate uses this same ThorEdge endpoint; it does not require a second credential.
 
 ## Operate safely
 
