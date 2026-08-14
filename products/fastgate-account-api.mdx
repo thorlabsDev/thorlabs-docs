@@ -1,9 +1,9 @@
 ---
-title: "FastGate account queries"
-description: "Run account-heavy Solana JSON-RPC queries through your existing ThorEdge endpoint."
+title: "FastGate Account API"
+description: "Call account-query methods through your existing ThorEdge RPC endpoint."
 ---
 
-FastGate is ThorNode's account-query engine behind ThorEdge RPC. It is not a second public endpoint: send supported methods to the complete ThorEdge HTTPS URL copied from the dashboard, using the same location-bound credential.
+The FastGate Account API is ThorNode's account-query engine behind ThorEdge RPC. It is not a second public endpoint: send supported methods to the complete ThorEdge HTTPS URL copied from the dashboard, using the same location-bound credential.
 
 ## Quick reference
 
@@ -54,7 +54,7 @@ For program-wide queries, review the [Solana `getProgramAccounts` reference](htt
 
 ## Routed methods
 
-The current FastGate route recognizes these standard Solana JSON-RPC methods:
+The current FastGate Account API route recognizes these standard Solana JSON-RPC methods:
 
 - `getAccountInfo`
 - `getMultipleAccounts`

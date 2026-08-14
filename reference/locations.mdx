@@ -21,7 +21,7 @@ Consider:
 - Network path and observed tail latency from your application
 - Your application's public egress address when using an IP restriction
 - Regional resilience and a tested failover location
-- Inbound UDP reachability when receiving ShredStream or ShredReplay data
+- Inbound UDP reachability when receiving Raw Shred Stream or Replay data
 
 ## Copy connection details from the dashboard
 
@@ -62,7 +62,7 @@ Some products use a different credential scope from RPC. Always follow the crede
 
 An RPC IP restriction refers to your client's **public egress IP**, after NAT or a cloud gateway. If your provider uses multiple or changing egress addresses, confirm the real outbound address before enabling the restriction.
 
-ShredStream and ShredReplay work in the opposite direction: ThorNode sends UDP data to a public receiver that you provide. The receiver host and selected port must be reachable through its firewall, security group, and NAT configuration. ShredStream registration specifically requires a public IPv4 address.
+Raw Shred Stream and Replay work in the opposite direction: ThorNode sends UDP data to a public receiver that you provide. The receiver host and selected port must be reachable through its firewall, security group, and NAT configuration. Raw Shred Stream registration specifically requires a public IPv4 address.
 
 ## Design regional failover
 

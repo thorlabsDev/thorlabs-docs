@@ -1,9 +1,9 @@
 ---
-title: "Private transactions"
-description: "Submit Solana transactions through ThorNode's Bifrost routing catalog."
+title: "Bifrost Transaction Routes"
+description: "Integrate with provider-specific Solana transaction routes through ThorNode's Bifrost catalog."
 ---
 
-Private transactions use Bifrost to expose provider routes through a dashboard-generated key path. Treat the dashboard as authoritative for route availability and complete URLs. It does not expose the full provider request schema or prove that the selected deployment enforces key authentication, so obtain both confirmations before integrating.
+Bifrost Transaction Routes expose provider-specific operations through a dashboard-generated key path. You choose the route; Bifrost does not promise automatic best-route selection. Treat the dashboard as authoritative for route availability and complete URLs. It does not expose the full provider request schema or prove that the selected deployment enforces key authentication, so obtain both confirmations before integrating.
 
 ## Quick reference
 
@@ -20,7 +20,7 @@ Private transactions use Bifrost to expose provider routes through a dashboard-g
 ## Copy a route
 
 <Steps>
-  <Step title="Open Private TX">
+  <Step title="Open Bifrost Transaction Routes">
     Go to **Endpoints → Private TX** and select an eligible access shown by the
     dashboard.
   </Step>

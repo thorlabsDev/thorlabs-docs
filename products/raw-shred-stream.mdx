@@ -1,9 +1,9 @@
 ---
-title: "ShredStream"
+title: "Raw Shred Stream"
 description: "Receive live raw Solana shreds from ThorNode at your own UDP target."
 ---
 
-ShredStream forwards live raw Solana shreds from a selected ThorNode location to a UDP receiver that you operate.
+Raw Shred Stream forwards live raw Solana shreds from a selected ThorNode location to a UDP receiver that you operate. The dashboard currently labels this product **ShredStream**.
 
 ## Quick reference
 
@@ -33,7 +33,7 @@ Before registering a target, prepare:
 ## Register a receiver
 
 <Steps>
-  <Step title="Open ShredStream">
+  <Step title="Open Raw Shred Stream">
     Go to **Endpoints → ShredStream** and select an active access that the
     dashboard marks as eligible.
   </Step>
@@ -98,7 +98,7 @@ socket.on("error", (error) => {
 });
 
 socket.bind(port, "0.0.0.0", () => {
-  console.log(`Listening for ShredStream UDP on port ${port}`);
+  console.log(`Listening for Raw Shred Stream UDP on port ${port}`);
 });
 ```
 
@@ -116,7 +116,7 @@ UDP is connectionless. Your receiver must tolerate packet loss, duplication, and
 
 Packets do not contain a ThorNode customer-authentication header. Authenticate and authorize the receiver through the dashboard registration, and do not expose any internal management credential in receiver code.
 
-The number of active registrations depends on the access tier and current backend policy. The dashboard is authoritative for the limit and shows whether ShredStream is enabled for an access.
+The number of active registrations depends on the access tier and current backend policy. The dashboard is authoritative for the limit and shows whether Raw Shred Stream, labeled **ShredStream** in the current interface, is enabled for an access.
 
 ## Troubleshooting
 

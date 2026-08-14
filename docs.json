@@ -2,7 +2,7 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
   "name": "ThorNode Documentation",
-  "description": "Build on ThorNode's Solana RPC, streaming, shred, replay, and private transaction infrastructure.",
+  "description": "Build with ThorNode RPC, the FastGate Account API, low-latency streams, raw shreds, replay, and Bifrost transaction routes.",
   "colors": {
     "primary": "#92400E",
     "light": "#FBB03B",
@@ -29,12 +29,16 @@
         "icon": "server",
         "pages": [
           "products/thoredge-rpc",
-          "products/fastgate-account-queries",
+          "products/fastgate-account-api",
           "products/yellowstone-grpc",
           "products/pulse",
-          "products/shredstream",
-          "products/shredreplay",
-          "products/private-transactions"
+          {
+            "group": "Raw Shred Stream",
+            "root": "products/raw-shred-stream",
+            "expanded": true,
+            "pages": ["products/shredreplay"]
+          },
+          "products/bifrost-transaction-routes"
         ]
       },
       {
@@ -163,27 +167,27 @@
     },
     {
       "source": "/infrastructure/bifrost-api/:slug*",
-      "destination": "/products/private-transactions"
+      "destination": "/products/bifrost-transaction-routes"
     },
     {
       "source": "/infrastructure/bifrost-api",
-      "destination": "/products/private-transactions"
+      "destination": "/products/bifrost-transaction-routes"
     },
     {
       "source": "/infrastructure/fastgate-rpc/:slug*",
-      "destination": "/products/fastgate-account-queries"
+      "destination": "/products/fastgate-account-api"
     },
     {
       "source": "/infrastructure/fastgate-rpc",
-      "destination": "/products/fastgate-account-queries"
+      "destination": "/products/fastgate-account-api"
     },
     {
       "source": "/infrastructure/thor-shredstream/:slug*",
-      "destination": "/products/shredstream"
+      "destination": "/products/raw-shred-stream"
     },
     {
       "source": "/infrastructure/thor-shredstream",
-      "destination": "/products/shredstream"
+      "destination": "/products/raw-shred-stream"
     },
     {
       "source": "/infrastructure/thorstreamer-grpc/:slug*",
@@ -260,6 +264,18 @@
     {
       "source": "/introduction/thornode-cloud-refund-policy",
       "destination": "/legal/refunds"
+    },
+    {
+      "source": "/products/fastgate-account-queries",
+      "destination": "/products/fastgate-account-api"
+    },
+    {
+      "source": "/products/shredstream",
+      "destination": "/products/raw-shred-stream"
+    },
+    {
+      "source": "/products/private-transactions",
+      "destination": "/products/bifrost-transaction-routes"
     }
   ]
 }

@@ -1,9 +1,10 @@
 ---
-title: "ShredReplay"
-description: "Replay captured historical shreds to your UDP receiver."
+title: "Replay raw shreds"
+sidebarTitle: "Replay"
+description: "Replay recently captured shreds from ThorNode's rolling window to your UDP receiver."
 ---
 
-ShredReplay sends captured shreds from ThorNode's rolling availability window to a UDP target that you operate. Use it to reproduce a past slot range without changing your live ShredStream registration.
+Replay sends recently captured shreds from ThorNode's rolling availability window to a UDP target that you operate. It has a separate key and job flow from Raw Shred Stream, and it does not change your live **ShredStream** registration.
 
 ## Quick reference
 
@@ -56,7 +57,7 @@ ShredReplay sends captured shreds from ThorNode's rolling availability window to
 
 As with any UDP delivery, your application must tolerate packet loss, duplication, and reordering. A completed dashboard job means the replay sender finished its work; it does not prove that the receiver processed every packet.
 
-You can use the [minimal ShredStream receiver](/products/shredstream#build-a-minimal-receiver) for a connectivity test because both products deliver UDP datagrams. Parsing and replay semantics remain application responsibilities.
+You can use the [minimal Raw Shred Stream receiver](/products/raw-shred-stream#build-a-minimal-receiver) for a connectivity test because both products deliver UDP datagrams. Parsing and replay semantics remain application responsibilities.
 
 ## Key security
 

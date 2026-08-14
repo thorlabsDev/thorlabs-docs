@@ -11,9 +11,9 @@ Treat every ThorNode token, access key, replay key, and credential-bearing endpo
 | -------------------------- | ------------------------------------------ | ------------------------------------------------------------------- |
 | ThorEdge RPC and WebSocket | The location token and complete copied URL | The dashboard-provided URL carries or resolves to the token         |
 | Yellowstone gRPC           | Location token                             | Send as `x-token` request metadata, not in the target URL           |
-| Pulse                      | Location token                             | Send only after server identity and token enforcement are confirmed |
-| Private transactions       | Access key and complete copied route URL   | Use only after deployment auth enforcement is explicitly confirmed  |
-| ShredReplay                | Per-access replay key                      | Use only through the supported replay flow                          |
+| Pulse Decoded Shreds       | Location token                             | Send only after server identity and token enforcement are confirmed |
+| Bifrost Transaction Routes | Access key and complete copied route URL   | Use only after deployment auth enforcement is explicitly confirmed  |
+| Replay                     | Per-access replay key                      | Use only through the supported replay flow                          |
 
 Wallet private keys and seed phrases are never ThorNode support credentials. Never share them with ThorNode or any third party claiming to troubleshoot your access.
 
@@ -55,11 +55,11 @@ Redact the credential path as well as query parameters. Keeping only the hostnam
 ## Use transport and network controls
 
 - Prefer the dashboard-provided `https://` and `wss://` endpoints. A bare gRPC target does not disclose TLS; do not send a token until ThorNode supplies a TLS-verified target or an explicitly trusted private path and its trust configuration.
-- For Pulse, use only a client and trust configuration that verifies server identity. Never bypass hostname or certificate verification to make a stream connect.
+- For Pulse Decoded Shreds, use only a client and trust configuration that verifies server identity. Never bypass hostname or certificate verification to make a stream connect.
 - For Bifrost, confirm the selected deployment enforces key authentication before use. A key-shaped URL path is not evidence that authentication is active.
 - Do not replace a public hostname with a raw IP; doing so can break certificate validation and routing.
 - Restrict an RPC token to a stable public egress IP when the dashboard offers that option.
-- Apply host firewall and cloud security-group rules to ShredStream and ShredReplay receivers.
+- Apply host firewall and cloud security-group rules to Raw Shred Stream and Replay receivers.
 - Keep internal services and local proxies off the public internet unless you add explicit authentication and network controls.
 
 An IP restriction reduces exposure but does not make a leaked token safe. Continue to store and redact the token as a secret.
@@ -87,7 +87,7 @@ Regenerate a location token when it may have been exposed or when the consuming 
   </Step>
 </Steps>
 
-For Bifrost and ShredReplay, use the key-specific revoke or regeneration control shown by the dashboard. If no safe control is available, contact support before sharing any diagnostic material.
+For Bifrost Transaction Routes and Replay, use the key-specific revoke or regeneration control shown by the dashboard. If no safe control is available, contact support before sharing any diagnostic material.
 
 ## Respond to suspected exposure
 

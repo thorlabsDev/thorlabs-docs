@@ -81,7 +81,7 @@ If egress changes dynamically, route traffic through a stable gateway before rel
 - Add bounded queues, reconnect with backoff and jitter, and detect gaps after reconnecting.
 - Obtain the endpoint's explicit transport and trust configuration before connecting; the bare dashboard target does not disclose TLS.
 
-## Pulse streaming
+## Pulse Decoded Shreds
 
 - Use only a ThorNode-supplied Pulse client and control-message contract that verifies server identity; unsupported examples may be incompatible or insecure.
 - Confirm the target and token belong to the same location and access.
@@ -89,9 +89,9 @@ If egress changes dynamically, route traffic through a stable gateway before rel
 - Move expensive work out of the receive path and monitor consumer lag.
 - Back off reconnect attempts instead of opening parallel sessions.
 
-## ShredStream or ShredReplay sends no UDP data
+## Raw Shred Stream or Replay sends no UDP data
 
-1. Confirm the dashboard contains the intended public receiver and UDP port. ShredStream and ShredReplay require a numeric public IPv4 address; do not use a DNS hostname for replay.
+1. Confirm the dashboard contains the intended public receiver and UDP port. Raw Shred Stream and Replay require a numeric public IPv4 address; do not use a DNS hostname for replay.
 2. Verify the process is listening on that exact port.
 3. Check cloud security groups, host firewalls, router forwarding, and network ACLs.
 4. Confirm the host is not behind carrier-grade NAT without explicit forwarding.
@@ -102,7 +102,7 @@ export UDP_PORT='<registered-port>'
 sudo tcpdump -ni any "udp port ${UDP_PORT}"
 ```
 
-For ShredReplay, also confirm that the slot range remains inside the rolling availability window and that another job is not queued or running.
+For Replay, also confirm that the slot range remains inside the rolling availability window and that another job is not queued or running.
 
 ## Payment is signed but access is not updated
 
@@ -128,4 +128,4 @@ Use [email](mailto:support@thornode.io) or the official [Thor Labs Discord](http
 - A short description of what changed before the failure
 - A transaction signature for payment recovery, when relevant
 
-Never include endpoint tokens, Bifrost keys, replay keys, complete private route URLs, wallet private keys, or seed phrases.
+Never include endpoint tokens, Bifrost keys, replay keys, complete Bifrost route URLs, wallet private keys, or seed phrases.

@@ -17,7 +17,7 @@ ThorEdge RPC does not currently enforce a monthly request-count cutoff. Your req
 
 Some API payloads can retain quota-style compatibility metadata. Do not interpret that metadata as an enforced cutoff unless the authenticated dashboard explicitly presents a monthly limit for the selected access. Live router behavior and the current dashboard remain authoritative.
 
-Live throughput and concurrency limits still apply. Depending on the product, these can include RPC requests per second, transaction submissions per second, WebSocket subscriptions, Yellowstone streams and account filters, ShredStream registrations, or accessible locations.
+Live throughput and concurrency limits still apply. Depending on the product, these can include RPC requests per second, transaction submissions per second, WebSocket subscriptions, Yellowstone streams and account filters, Raw Shred Stream registrations, or accessible locations.
 
 ## Check an access before you integrate
 
@@ -43,20 +43,20 @@ Live throughput and concurrency limits still apply. Depending on the product, th
 
 ## Limit types
 
-| Limit                | What it controls                                | What to monitor                                               |
-| -------------------- | ----------------------------------------------- | ------------------------------------------------------------- |
-| RPC RPS              | JSON-RPC request throughput                     | Request rate, `429` responses, and retry volume               |
-| Transaction TPS      | Transaction-submission throughput               | Submission rate and application retries                       |
-| WebSocket capacity   | Active subscriptions and related connection use | Open subscriptions, reconnects, and consumer lag              |
-| Yellowstone capacity | Concurrent streams and account/filter usage     | Active streams, requested filters, and rejected subscriptions |
-| ShredStream capacity | Active UDP receiver registrations               | Registrations for the selected access and location            |
-| Location access      | Locations that can be used by an access         | The live location selector for each product                   |
+| Limit                     | What it controls                                | What to monitor                                               |
+| ------------------------- | ----------------------------------------------- | ------------------------------------------------------------- |
+| RPC RPS                   | JSON-RPC request throughput                     | Request rate, `429` responses, and retry volume               |
+| Transaction TPS           | Transaction-submission throughput               | Submission rate and application retries                       |
+| WebSocket capacity        | Active subscriptions and related connection use | Open subscriptions, reconnects, and consumer lag              |
+| Yellowstone capacity      | Concurrent streams and account/filter usage     | Active streams, requested filters, and rejected subscriptions |
+| Raw Shred Stream capacity | Active UDP receiver registrations               | Registrations for the selected access and location            |
+| Location access           | Locations that can be used by an access         | The live location selector for each product                   |
 
 Limits are safeguards for shared infrastructure. Creating extra clients, tokens, or reconnect loops does not increase the entitlement attached to an access.
 
 ## Product availability
 
-Product availability is access-specific. For example, seeing ThorEdge RPC for an access does not imply that the same access includes ShredStream, Yellowstone, Pulse, ShredReplay, or private transaction routes.
+Product availability is access-specific. For example, seeing ThorEdge RPC for an access does not imply that the same access includes Raw Shred Stream, Yellowstone gRPC, Pulse Decoded Shreds, Replay, or Bifrost Transaction Routes.
 
 Product tabs can remain visible when the selected access is not eligible. Verify availability from enabled controls, offered locations, and current backend responses. Do not build a target from an older document or another access.
 
