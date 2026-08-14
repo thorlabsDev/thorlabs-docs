@@ -1,0 +1,61 @@
+---
+title: "Choose a product"
+description: "Match a Solana workload to ThorEdge RPC, FastGate, Yellowstone, Pulse, Raw Shred Stream, Replay, or Bifrost."
+---
+
+Choose the product by the data your application needs and how it can receive that data. If you only need standard Solana requests or subscriptions, start with ThorEdge RPC.
+
+## Product map
+
+| Goal                                         | Choose                                                             | Input                                                    | Output and transport                                |
+| -------------------------------------------- | ------------------------------------------------------------------ | -------------------------------------------------------- | --------------------------------------------------- |
+| Call Solana JSON-RPC methods                 | [ThorEdge RPC](/products/thoredge-rpc)                             | JSON-RPC request                                         | JSON-RPC response over HTTPS                        |
+| Subscribe through Solana WebSocket methods   | [ThorEdge RPC](/products/thoredge-rpc)                             | JSON-RPC subscription                                    | Events over WSS                                     |
+| Run supported account-heavy queries          | [FastGate Account API](/products/fastgate-account-api)             | Supported account method sent to ThorEdge                | Solana account data over HTTPS JSON-RPC             |
+| Receive filtered Geyser-compatible data      | [Yellowstone gRPC](/products/yellowstone-grpc)                     | Subscribe request and filters                            | Persistent gRPC stream                              |
+| Prepare a planned decoded-transaction stream | [Pulse Decoded Shreds](/products/pulse)                            | Owner-confirmed QUIC integration contract                | Persistent decoded-transaction stream when deployed |
+| Decode and process live shreds yourself      | [Raw Shred Stream](/products/raw-shred-stream)                     | Registered public IPv4 and UDP port                      | Live raw shred datagrams over UDP                   |
+| Re-run recently captured raw shreds          | [Replay](/products/shredreplay)                                    | Availability-confirmed job, slot range, and UDP receiver | Raw shred datagrams over UDP                        |
+| Call a provider-specific transaction route   | [Bifrost Transaction Routes](/products/bifrost-transaction-routes) | Route-specific request                                   | Route-specific HTTP response                        |
+
+## RPC or FastGate
+
+Choose **ThorEdge RPC** for ordinary Solana JSON-RPC calls and WebSocket subscriptions.
+
+Choose **FastGate Account API** when your workload uses its supported account-query methods. FastGate is not a separate public endpoint: send those methods to the same ThorEdge HTTPS URL. ThorEdge selects the query path from the method.
+
+Use the [RPC quickstart](/getting-started/quickstart) for either path, then verify your required method against the [FastGate method list](/products/fastgate-account-api#routed-methods).
+
+## Yellowstone or Pulse
+
+Choose **Yellowstone gRPC** when you need a Geyser Subscribe-compatible stream with server-side filters.
+
+Choose **Pulse Decoded Shreds** only after ThorNode confirms that its replacement QUIC service is deployed for your environment and supplies the supported client contract. Pulse is defined to send decoded transactions, not raw shred objects.
+
+Both require a supported onboarding contract before production use. Obtain the current client or schema version, authentication placement, and transport trust configuration for the selected location.
+
+## Raw Shred Stream or Replay
+
+Choose **Raw Shred Stream** for continuous live raw shreds. You operate a UDP receiver and handle loss, duplication, reordering, decoding, and downstream backpressure.
+
+Choose **Replay** to resend a slot range from the current rolling availability window only after the environment confirms replay job creation, status, and cancellation. Replay is for recent captured data, not an archive and not a replacement for the live stream.
+
+Both deliver UDP datagrams to a receiver you operate. Confirm that the host has a reachable public IPv4 address and that its firewall and NAT rules permit the configured UDP port.
+
+## Bifrost for provider-specific routes
+
+Choose **Bifrost Transaction Routes** only when you have a contract for the exact provider route you intend to call. The dashboard presents a provider catalog, but a displayed route is not proof of access or location availability. The guided route contract and server response confirm availability and supply the HTTPS endpoint, authentication placement, HTTP method, headers, request body, response, and transaction semantics.
+
+Bifrost does not imply automatic route selection, transaction landing, or confirmation. Track any returned transaction signature according to the selected route contract and your Solana confirmation policy.
+
+## Confirm access before implementation
+
+Use **Endpoints → Endpoints** for RPC and WebSocket, **Endpoints → Streaming** for Yellowstone and Pulse, or the separate **ShredStream**, **ShredReplay**, and **Private TX** tabs for those product flows. Select the intended pass or rental, but do not treat a visible tab as proof of eligibility. Continue only when the product's controls and server response confirm support for that access and location.
+
+The selected product's response and location controls establish availability. **Limits** shows the published tier row, while runtime responses and live activity reveal actual constraints.
+
+## Next steps
+
+- [Create application credentials](/dashboard/endpoints) for RPC, WebSocket, and location-based streaming access.
+- [Review live usage and limits](/dashboard/usage-and-limits) before sizing concurrency.
+- [Protect tokens and credential-bearing URLs](/reference/security).

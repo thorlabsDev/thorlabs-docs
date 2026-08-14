@@ -1,79 +1,90 @@
 ---
 title: "Locations"
-description: "Choose a ThorNode location and use its dashboard-provided public connection details safely."
+description: "Select, configure, and fail over between the ThorNode locations enabled for your access."
 ---
 
-ThorNode runs services in multiple locations. The available location list is dynamic and depends on the selected pass or rental, network, and product.
+Use this page when you need to choose a ThorNode location, move a workload, or prepare regional failover. A location is ready when the target and credential match the same access and location under the applicable product contract, and a low-impact test succeeds from the application runtime.
 
 <Note>
-  The location selector in the dashboard is the current source of truth. A
-  location named in an old guide, integration, or screenshot may no longer be
-  available to your access.
+  The dashboard location selector is the current source of truth. Available
+  locations depend on the selected pass or rental, product, and network, and can
+  differ from old guides or screenshots.
 </Note>
 
-## Choose a location
-
-Start with the closest available location to your application's infrastructure, then validate it under real traffic. Geographic distance is useful for an initial choice, but your measured latency, stability, and product availability should decide the final placement.
-
-Consider:
-
-- Whether the selected access exposes the required product there
-- Network path and observed tail latency from your application
-- Your application's public egress address when using an IP restriction
-- Regional resilience and a tested failover location
-- Inbound UDP reachability when receiving Raw Shred Stream or Replay data
-
-## Copy connection details from the dashboard
+## Choose and verify a location
 
 <Steps>
-  <Step title="Select the access">
-    Choose the exact pass or rental that your client will use.
+  <Step title="Select the exact access">
+    In the dashboard, choose the pass or rental, product, and network that the
+    application will use.
   </Step>
-  <Step title="Select the product and network">
-    Open its endpoint view and choose the intended network when the product
-    offers one.
+  <Step title="Choose an enabled location">
+    Start with the available location nearest your application infrastructure.
+    Product availability and measurements from the real runtime should decide
+    the final choice.
   </Step>
-  <Step title="Select a location">
-    Choose from the locations currently enabled for that access and product.
+  <Step title="Copy the matching configuration">
+    Use the source required by the product contract. Copy dashboard-supplied
+    target and credential pairs from the same location view; for a guided
+    integration, obtain the endpoint and authentication contract for that exact
+    selection. Do not assemble a target manually or combine values from
+    different locations.
   </Step>
-  <Step title="Copy the complete public target">
-    Use the hostname, URL, or dial target exactly as displayed. Keep
-    credential-bearing URLs secret.
+  <Step title="Test from the application runtime">
+    Run one low-impact request, connection, or subscription from the network
+    that will carry production traffic. Confirm authentication succeeds and
+    measure the latency and stability relevant to your workload.
   </Step>
 </Steps>
 
-Do not replace a public hostname with a resolved IP address. TLS certificates, routing, and service addresses can change independently of the hostname. Never use an internal URL or raw infrastructure address obtained from logs, source code, or an older deployment.
+Use the public hostname exactly as displayed. Do not replace it with a resolved IP address: TLS certificates, routing, and service addresses can change independently of DNS. Never use an internal URL or raw infrastructure address found in logs or source code.
 
-## Location-bound credentials
+## Apply location scope correctly
 
-ThorEdge and streaming tokens are associated with the location shown alongside them. A token from one location must not be combined with a target from another location.
+| Configuration              | Location behavior                                                                                                                                                                                                                                                      |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ThorEdge RPC and WebSocket | The target and token are location-bound and must be copied together.                                                                                                                                                                                                   |
+| Yellowstone gRPC           | The dial target and `x-token` credential must belong to the same location.                                                                                                                                                                                             |
+| Pulse Decoded Shreds       | After deployment confirmation, the target and control-message token must belong to the same location and the owner-supplied contract.                                                                                                                                  |
+| Bifrost Transaction Routes | The guided integration contract is specific to the selected access, location, provider, and operation. Its contract and server response—not the visible catalog alone—establish availability. Use the endpoint and authentication scope supplied for that exact route. |
+| Raw Shred Stream           | The registration selects the ThorNode location that sends UDP to your receiver.                                                                                                                                                                                        |
+| Replay                     | After the server confirms job availability, use the target and replay flow for the selected access; Replay has its own per-access key.                                                                                                                                 |
 
-When moving a client:
+See [Security](/reference/security#credential-scope-and-placement) for where each credential belongs and how to store it.
 
-1. Select the destination location in the dashboard.
-2. Create or retrieve the credential shown for that location.
-3. Copy the destination target and credential as one configuration change.
-4. Test the new path before removing the old one.
-5. Revoke credentials that are no longer required.
+## Account for network direction
 
-Some products use a different credential scope from RPC. Always follow the credential and location scope stated in that product's current dashboard view.
+An RPC IP restriction matches the client's **public egress IPv4 address** after NAT, a cloud gateway, VPN, or proxy. Verify the address from the production runtime before saving a restriction.
 
-## IP restrictions and UDP receivers
+Raw Shred Stream and Replay send UDP in the other direction, from ThorNode to a public receiver you operate. The configured address and port must be reachable through the receiver's firewall, security group, and NAT rules. Raw Shred Stream registration requires a public IPv4 address; [prepare and test the receiver](/products/raw-shred-stream#receive-your-first-packets) before registering it.
 
-An RPC IP restriction refers to your client's **public egress IP**, after NAT or a cloud gateway. If your provider uses multiple or changing egress addresses, confirm the real outbound address before enabling the restriction.
+## Move a workload to another location
 
-Raw Shred Stream and Replay work in the opposite direction: ThorNode sends UDP data to a public receiver that you provide. The receiver host and selected port must be reachable through its firewall, security group, and NAT configuration. Raw Shred Stream registration specifically requires a public IPv4 address.
+1. Confirm the destination is enabled for the same access, product, and network.
+2. Prepare the destination according to its scope:
+   - For ThorEdge or Yellowstone, obtain the destination target and location token together. Do the same for Pulse only after its deployment contract is confirmed.
+   - For Bifrost, obtain the guided route contract for the exact destination, provider, and operation.
+   - For Raw Shred Stream, create the receiver registration for the destination location; packets do not use a customer credential.
+   - Availability-confirmed Replay uses its per-access key and job contract rather than a location-token pair.
+3. Add the destination as separate configuration or registration. Do not edit only a hostname in an existing target.
+4. Test a low-impact operation and observe the new path before moving production traffic.
+5. Keep the old path only for the planned rollback window, then remove stale registrations and revoke only credentials that are no longer needed.
 
-## Design regional failover
+Regenerating or revoking one ThorEdge location token does not affect other locations. For a credential exposure, follow the [rotation procedure](/reference/security#rotate-or-revoke-a-credential) instead of treating a regional move as sufficient remediation.
 
-A resilient client should keep targets and credentials separate per location. Do not create a failover URL by changing only the hostname while reusing a location-bound token.
+## Prepare regional failover
 
-Before relying on failover:
+- For location-bound products, keep each target paired with its own location credential. Keep Raw Shred registrations and Replay job configuration separate from those credentials.
+- Confirm the backup location is currently enabled for the access and product.
+- Test authentication and one representative operation before an incident.
+- Use bounded retries with backoff and jitter to prevent reconnect storms.
+- Decide how streaming consumers will detect and reconcile gaps after reconnecting.
+- Load the location catalog from configuration instead of compiling it into application code.
 
-- Confirm the backup location is enabled for the access and product.
-- Test authentication and a low-impact request or subscription.
-- Use bounded retries so an outage does not create a reconnect storm.
-- Decide how streaming consumers will detect and reconcile gaps.
-- Keep the location catalog configurable rather than compiled into application code.
+If a location disappears or a copied target stops working, refresh the dashboard first, then use the [symptom-based checks](/reference/troubleshooting#connection-dns-or-tls-fails).
 
-If a location disappears or a copied target stops working, refresh the dashboard before contacting [ThorNode support](mailto:support@thornode.io).
+## Next steps
+
+- [Check the products and limits granted to an access](/reference/plans-and-limits)
+- [Store and rotate credentials safely](/reference/security)
+- [Diagnose connection and authentication failures](/reference/troubleshooting)

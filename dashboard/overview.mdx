@@ -1,69 +1,65 @@
 ---
 title: "Dashboard overview"
-description: "Find passes, rentals, endpoints, usage, live limits, payments, and service status in the ThorNode dashboard."
+description: "Find access, create credentials, inspect traffic and limits, register wallets, rent access, and renew passes."
 ---
 
-The dashboard is the control plane for your ThorNode access. Open it from [thornode.io](https://www.thornode.io) and sign in with Discord.
+Use the ThorNode dashboard to turn an owned pass or active rental into an RPC credential or another explicitly supported product flow, then verify that the access remains operational.
 
-If the website's dashboard link is unavailable, contact [ThorNode support](mailto:support@thornode.io) instead of using an old bookmarked hostname.
+Open it from [thornode.io](https://www.thornode.io) and choose **Login with Discord**. The authenticated dashboard is the source of truth for your current access and dynamic product values.
 
-<Note>
-  Dashboard values are live. When a value here differs from a saved document,
-  screenshot, or older announcement, use the dashboard value.
-</Note>
-
-## Main areas
-
-| Area              | Use it to                                                                     |
-| ----------------- | ----------------------------------------------------------------------------- |
-| **Dashboard**     | Review owned passes, rentals, status, and expiration information              |
-| **Endpoints**     | Create and manage location or product credentials and copy connection details |
-| **Usage**         | Inspect request activity, methods, recent traffic, and token-level usage      |
-| **Limits**        | See the effective throughput and concurrency limits for your current access   |
-| **Rent**          | Purchase time-limited access when the direct-rental catalog is enabled        |
-| **Renew**         | Extend an eligible owned pass                                                 |
-| **Wallets**       | Register and remove Solana wallets associated with your account               |
-| **Compare Tiers** | Compare plan capabilities when this view is available                         |
-| **Node Status**   | Check service health and active incidents when this view is available         |
-
-## A typical workflow
+## Start with your access
 
 <Steps>
-  <Step title="Establish identity">
-    Sign in with Discord, then register the Solana wallet that owns your pass or will make a payment.
+  <Step title="Review passes and rentals">
+    Open **Overview**. The **Your passes** and **Your rentals** sections show the active access sources associated with the Discord account.
+
+    An expected pass can appear after you register its owning address under **Wallets**. An activated rental appears under **Your rentals** without transferring an NFT.
+
   </Step>
-
-<Step title="Confirm access">
-  Select an owned pass or active rental and review its current products,
-  networks, locations, and expiration.
-</Step>
-
-<Step title="Create credentials">
-  Open **Endpoints**, choose a product or location, and create the credential
-  required by your application.
-</Step>
-
-  <Step title="Operate">
-    Monitor **Usage**, compare it with **Limits**, rotate exposed credentials, and check **Node Status** when that view is available and behavior changes unexpectedly.
+  <Step title="Choose the access your application will use">
+    Note whether you are using an owned pass or rental and check its status and expiration. You will select this same access in **Endpoints**, **Usage**, and **Limits**.
+  </Step>
+  <Step title="Open the task area">
+    Use the sidebar to create credentials, monitor traffic, check capacity, or manage billing. The result to expect from each area is listed below.
   </Step>
 </Steps>
 
-## Source-of-truth rules
+## Find a task
 
-Use the dashboard for values that can change without a documentation release, including:
+| Task                                  | Shortest UI path                                        | Result                                                                                    |
+| ------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Review access                         | **Overview → Your passes** or **Your rentals**          | The access card shows its current state and expiration                                    |
+| Create an RPC or WebSocket credential | **Endpoints → Endpoints → access → Network → Location** | **Token & Endpoints** shows a masked token and connection details                         |
+| Inspect request traffic               | **Usage → access → time range → Network → Location**    | **Usage overview** and **Per-method analytics** show recorded activity                    |
+| Check published capacity              | **Limits → access**                                     | **Live throughput** shows activity and **Plan limits** shows the resolved tier row        |
+| Purchase time-limited access          | **Rent → Choose a tier → Choose a duration**            | A fulfilled purchase appears under **Your rentals**                                       |
+| Extend an eligible owned pass         | **Renew → Renew → Select passes → Renewal term**        | **Renewal Complete** shows the updated expiration                                         |
+| Associate a Solana address            | **Wallets → Connect Wallet → Register**                 | The address appears under **Verified wallets**                                            |
+| Compare current tier capabilities     | **Overview → Compare tiers**                            | The current comparison displays published tier data                                       |
+| Check service health                  | **Overview → Network status**                           | The overview shows current network state; use **Node Status** when that view is available |
 
-- Product and location availability
-- Direct-rental catalog entries, durations, and USDC amounts, when available
-- Renewal eligibility, options, and deadlines
-- Effective RPC, WebSocket, and streaming limits
-- Credential state and IP restrictions
-- Maintenance notices and service status
+## Read live values from the dashboard
 
-Static documentation explains how each workflow behaves. It does not override live entitlement or payment data.
+Use the dashboard rather than a saved screenshot or copied plan table for values that can change:
+
+- Enabled products, networks, and locations for a selected access
+- Credential state and optional IP restriction
+- Rental offers, durations, displayed USDC amount, and expiration
+- Renewal eligibility, calculated amount, and resulting expiration
+- Published tier limits and live request, transaction, and token activity
+- Usage telemetry and service incidents
+
+Static documentation defines the workflow and credential semantics. It does not override the values returned for your authenticated account.
 
 <Warning>
-  Never share endpoint tokens, replay keys, Bifrost route keys, payment recovery
-  codes, wallet private keys, or seed phrases in a public issue or chat.
+  Do not share endpoint tokens, replay keys, Bifrost route URLs, wallet private
+  keys, or seed phrases. Redact credential-bearing URLs before adding them to
+  logs or support requests.
 </Warning>
 
-Start with [Wallets](/dashboard/wallets), [Endpoints](/dashboard/endpoints), or [Rentals](/dashboard/rentals).
+## Next steps
+
+- [Create and test an endpoint](/dashboard/endpoints).
+- [Register a wallet](/dashboard/wallets) for pass discovery and payments.
+- [Read usage and live limits](/dashboard/usage-and-limits).
+- [Choose the correct product](/getting-started/choose-a-product) before generating a product-specific key.

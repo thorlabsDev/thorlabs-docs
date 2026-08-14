@@ -1,14 +1,32 @@
 ---
 title: "Refund policy status"
-description: "Publication status of the current ThorNode refund policy."
+description: "Check the refund-policy status and distinguish a refund request from payment recovery."
 ---
 
+No business- and legal-approved refund policy for current ThorNode rentals, renewals, or other paid flows has been published in this documentation.
+
 <Warning>
-  This page is not a refund policy and does not promise eligibility. A business-
-  and legal-approved policy for current rental, renewal, and other paid flows
-  has not yet been published in this documentation.
+  This page is a status notice, not a refund policy. It does not promise
+  eligibility, timing, payment method, or an outcome for any refund request.
 </Warning>
 
-The previous ThorNode Cloud refund policy covered a different service and is not represented here as the policy for current ThorNode purchases. Before paying, contact [support@thornode.io](mailto:support@thornode.io) to obtain the applicable approved refund terms.
+## Choose the correct path
 
-For an already submitted payment, preserve the public wallet address, transaction signature, approximate payment time, and any recovery or support code the dashboard displays. Do not pay twice while a transaction is being verified, and never send a seed phrase or private key.
+| Situation                                          | What it means                                                                                                                  | Action                                                                                                                                                                   |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| A signed payment exists but access has not updated | The existing transaction and dashboard state need operational reconciliation. This is payment recovery, not a refund decision. | Do not pay again. Preserve the transaction signature and use [payment recovery troubleshooting](/reference/troubleshooting#payment-is-signed-but-access-is-not-updated). |
+| You want money returned                            | Eligibility and handling depend on an approved policy or an authorized decision that is not documented here.                   | Contact [support@thornode.io](mailto:support@thornode.io) for the applicable approved refund terms and request process.                                                  |
+
+Before paying, request the current approved refund terms and review the amount, currency, duration, and other details shown in the payment flow. The previous ThorNode Cloud refund policy covered a different service and is not presented as the policy for current purchases.
+
+## Prepare a safe support request
+
+Keep the public transaction signature, connected public wallet address, approximate payment time and timezone, and any recovery or support reference shown by the dashboard. Share only what official support asks for.
+
+Never send a seed phrase, private key, endpoint token, replay key, Bifrost credential, credential-bearing URL, or another payment secret.
+
+## Next steps
+
+- [Recover a payment without paying twice](/reference/troubleshooting#payment-is-signed-but-access-is-not-updated)
+- [Check all legal document publication statuses](/legal/policies)
+- [Prepare a safe support request](/reference/troubleshooting#contact-support-safely)

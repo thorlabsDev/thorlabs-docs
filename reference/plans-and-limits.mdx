@@ -1,78 +1,81 @@
 ---
 title: "Plans and limits"
-description: "Understand ThorNode access tiers, live entitlements, and how service limits are applied."
+description: "Verify product and location support, then compare activity with published ThorNode tier limits."
 ---
 
-The current standard tiers are **Flash**, **Classic**, **Elite**, and **Prime**. Special pass types can exist outside that standard tier list. Every pass or rental grants the specific products, locations, and limits shown for its active term.
+Use this page to decide whether an access can support a workload. The standard tiers are **Flash**, **Classic**, **Elite**, and **Prime**; ThorNode can also grant non-standard special access. The tier name is a planning input. Product controls and server responses determine availability, while **Limits** shows the published tier row resolved for the selected access.
 
-<Warning>
-  The dashboard and backend are the source of truth for pricing, limits, and
-  product availability. This page intentionally does not publish a static
-  numeric tier table, because entitlements can change and may differ by access.
-</Warning>
+<Note>
+  Prices, locations, product responses, usage, and published limits can change.
+  Read them from the authenticated flow for the exact access you will use; do
+  not copy values from a screenshot, another access, or an old integration.
+</Note>
 
-## No monthly request cap
-
-ThorEdge RPC does not currently enforce a monthly request-count cutoff. Your requests do not stop because a monthly counter reaches a value.
-
-Some API payloads can retain quota-style compatibility metadata. Do not interpret that metadata as an enforced cutoff unless the authenticated dashboard explicitly presents a monthly limit for the selected access. Live router behavior and the current dashboard remain authoritative.
-
-Live throughput and concurrency limits still apply. Depending on the product, these can include RPC requests per second, transaction submissions per second, WebSocket subscriptions, Yellowstone streams and account filters, Raw Shred Stream registrations, or accessible locations.
-
-## Check an access before you integrate
+## Verify an access before integration
 
 <Steps>
   <Step title="Select the pass or rental">
-    Open the dashboard and select the exact access your application will use. Do
-    not assume that two accesses with the same tier name have identical active
-    configuration.
+    Choose the exact active access your application will use. Do not assume two
+    accesses with the same tier label have identical current configuration.
   </Step>
-  <Step title="Review products and locations">
-    Open the endpoint views and confirm which products and locations are enabled
-    for the selected access.
+  <Step title="Confirm product and location access">
+    Open the relevant endpoint view and check its enabled controls and offered
+    locations, then confirm support through the product's server response.
   </Step>
-  <Step title="Review live limits">
-    Open **Usage** and **Limits** for current RPC, transaction, WebSocket, and
-    streaming entitlements.
+  <Step title="Read activity and published capacity">
+    Open **Usage** to review current activity and **Limits** to see the
+    published tier row resolved for the selected access. Legacy access can use a
+    fallback row, so treat runtime responses as authoritative for enforcement.
   </Step>
-  <Step title="Copy current connection details">
-    Copy targets and credentials from the dashboard only after selecting the
-    intended access, network, and location.
+  <Step title="Test the intended configuration">
+    Obtain the target and credential through the product's self-service or
+    guided integration path after selecting the access, network, and location,
+    then run one low-impact operation.
   </Step>
 </Steps>
 
-## Limit types
+Success means the product's server response supports the access and location, the test reaches the product's documented success signal, and the workload stays below the relevant published and runtime-enforced constraints.
 
-| Limit                     | What it controls                                | What to monitor                                               |
-| ------------------------- | ----------------------------------------------- | ------------------------------------------------------------- |
-| RPC RPS                   | JSON-RPC request throughput                     | Request rate, `429` responses, and retry volume               |
-| Transaction TPS           | Transaction-submission throughput               | Submission rate and application retries                       |
-| WebSocket capacity        | Active subscriptions and related connection use | Open subscriptions, reconnects, and consumer lag              |
-| Yellowstone capacity      | Concurrent streams and account/filter usage     | Active streams, requested filters, and rejected subscriptions |
-| Raw Shred Stream capacity | Active UDP receiver registrations               | Registrations for the selected access and location            |
-| Location access           | Locations that can be used by an access         | The live location selector for each product                   |
+## Understand the monthly and live limits
 
-Limits are safeguards for shared infrastructure. Creating extra clients, tokens, or reconnect loops does not increase the entitlement attached to an access.
+ThorEdge RPC does **not currently enforce a monthly request-count cutoff**. Requests do not stop because a monthly compatibility counter reaches a value. If an API payload contains quota-style metadata, do not treat it as an enforced cutoff unless the authenticated dashboard explicitly presents a monthly limit for the selected access.
 
-## Product availability
+Live constraints still apply:
 
-Product availability is access-specific. For example, seeing ThorEdge RPC for an access does not imply that the same access includes Raw Shred Stream, Yellowstone gRPC, Pulse Decoded Shreds, Replay, or Bifrost Transaction Routes.
+| Limit                     | What it governs                                       | When it is reached                                                         |
+| ------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------- |
+| RPC RPS                   | JSON-RPC request throughput                           | Requests can be throttled; inspect `429` responses and retry volume.       |
+| Transaction TPS           | Transaction-submission throughput                     | Submissions can be throttled; bound application concurrency and retries.   |
+| WebSocket capacity        | Connections, subscriptions, or related concurrent use | New work can be rejected; reuse connections and close idle subscriptions.  |
+| Yellowstone capacity      | Concurrent streams and account or filter usage        | Subscriptions can be rejected; narrow filters and close unused streams.    |
+| Raw Shred Stream capacity | Active UDP receiver registrations                     | A new registration can be rejected; remove registrations no longer in use. |
+| Location access           | Locations enabled for a product and access            | A location does not appear as an available choice.                         |
 
-Product tabs can remain visible when the selected access is not eligible. Verify availability from enabled controls, offered locations, and current backend responses. Do not build a target from an older document or another access.
+The dashboard can show additional product-specific constraints. [Read **Usage** and **Limits**](/dashboard/usage-and-limits) for the selected access instead of encoding a tier table into application logic. RPC rate and subscription caps apply per active location token where the published table says so.
 
-## Pricing and terms
+Creating extra clients, credentials, reconnect loops, or location targets does not increase the entitlement attached to an access.
 
-The amount, currency, duration, and other transaction details shown in the current payment flow are authoritative for that transaction. Review them before signing a wallet request. Documentation, screenshots, and previously quoted prices can become stale.
+## Distinguish tier, access, and availability
 
-If a signed payment remains unresolved, do not send a second payment. Preserve the transaction signature and follow the recovery guidance in [Troubleshooting](/reference/troubleshooting#payment-is-signed-but-access-is-not-updated).
+- A **tier** is the named standard class: Flash, Classic, Elite, or Prime.
+- An **access** is the specific active pass, rental, or special grant selected in the dashboard.
+- An **entitlement** is a product, location, or capacity currently granted to that access.
 
-## Operate within the live limits
+Product availability is access-specific. Access to ThorEdge RPC does not imply access to Yellowstone gRPC, Pulse Decoded Shreds, Raw Shred Stream, Replay, or Bifrost Transaction Routes. Non-standard access can also differ from the standard tier that appears closest to it.
 
-- Keep sustained traffic below the displayed ceiling so bursts and retries have headroom.
-- Use exponential backoff with jitter for transient failures and `429` responses.
-- Reuse connections and subscriptions instead of reconnecting on every operation.
-- Request narrow Yellowstone filters and close streams that are no longer needed.
-- Monitor **Usage** and **Limits** after releases or traffic changes.
+## Operate below the live limits
+
+- Leave headroom for bursts and retries instead of targeting the displayed ceiling.
+- Bound concurrency and use exponential backoff with jitter for retryable throttling.
+- Reuse WebSocket and streaming connections where the protocol permits.
+- Keep Yellowstone filters narrow and close streams that are no longer needed.
+- Review **Usage** and **Limits** after releases or material traffic changes.
 - Contact [ThorNode support](mailto:support@thornode.io) before a planned workload needs more capacity.
 
-For response-specific guidance, see [Troubleshooting](/reference/troubleshooting).
+For a `429`, rejected subscription, or other capacity symptom, use the [limit troubleshooting table](/reference/troubleshooting#requests-or-subscriptions-are-rate-limited).
+
+## Next steps
+
+- [Choose and test a location](/reference/locations)
+- [Read live usage and capacity in the dashboard](/dashboard/usage-and-limits)
+- [Diagnose throttling and availability failures](/reference/troubleshooting)

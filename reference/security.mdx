@@ -1,101 +1,115 @@
 ---
 title: "Security"
-description: "Protect ThorNode tokens, keys, endpoint URLs, wallets, and network access."
+description: "Place, store, rotate, and report ThorNode credentials without exposing them."
 ---
 
-Treat every ThorNode token, access key, replay key, and credential-bearing endpoint URL as a secret. Possession can be enough to consume your access or submit traffic under your account.
+Treat every ThorNode token, route credential, replay key, and credential-bearing endpoint URL as a secret. A secure configuration keeps the secret on a trusted server, places it only where the product contract requires, and can rotate it without leaving an unknown consumer behind.
 
-## Know what must remain secret
+Wallet private keys and seed phrases are never ThorNode support credentials. Never share them with ThorNode or anyone claiming to troubleshoot your access.
 
-| Product                    | Secret material                            | How the client uses it                                              |
-| -------------------------- | ------------------------------------------ | ------------------------------------------------------------------- |
-| ThorEdge RPC and WebSocket | The location token and complete copied URL | The dashboard-provided URL carries or resolves to the token         |
-| Yellowstone gRPC           | Location token                             | Send as `x-token` request metadata, not in the target URL           |
-| Pulse Decoded Shreds       | Location token                             | Send only after server identity and token enforcement are confirmed |
-| Bifrost Transaction Routes | Access key and complete copied route URL   | Use only after deployment auth enforcement is explicitly confirmed  |
-| Replay                     | Per-access replay key                      | Use only through the supported replay flow                          |
+## Credential scope and placement
 
-Wallet private keys and seed phrases are never ThorNode support credentials. Never share them with ThorNode or any third party claiming to troubleshoot your access.
+| Product                    | Scope                                                                                  | Required placement                                                                                                              |
+| -------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| ThorEdge RPC and WebSocket | Selected access, network, and location                                                 | Use the complete URL copied from that location's dashboard view. The URL carries or resolves to the token.                      |
+| Yellowstone gRPC           | Selected access and location                                                           | Attach the token as `x-token` request metadata; never append it to the dial target.                                             |
+| Pulse Decoded Shreds       | Selected access and location after owner-confirmed deployment                          | Send the token only in the supported, version-pinned control message after server identity and token enforcement are confirmed. |
+| Bifrost Transaction Routes | Defined by the guided contract for the exact access, location, provider, and operation | Use only the credential type and placement supplied for that route. Confirm enforcement before sending traffic.                 |
+| Replay                     | Selected access after the current server confirms job availability                     | Use the dedicated replay key only through the availability-confirmed Replay flow.                                               |
+| Raw Shred Stream           | Dashboard registration                                                                 | UDP packets do not carry a customer credential; the dashboard authorizes the receiver registration.                             |
+
+Do not move a credential into a URL, header, query parameter, or control message unless the product row requires it. Copy location-bound targets and credentials together; see [Locations](/reference/locations#apply-location-scope-correctly) when moving a workload.
 
 ## Store secrets outside code
 
-Inject production secrets through your deployment platform or a secret manager. Use placeholders in committed configuration:
+Inject production values through a secret manager or deployment environment. A committed `.env.example` should contain placeholders only:
 
 ```dotenv
 THORNODE_RPC_URL=<complete-url-copied-from-dashboard>
 THORNODE_YELLOWSTONE_TARGET=<target-copied-from-dashboard>
 THORNODE_YELLOWSTONE_TOKEN=<location-token>
-BIFROST_ROUTE_URL=<complete-route-url-copied-from-dashboard>
+THORNODE_PULSE_TOKEN=<location-token>
+BIFROST_ROUTE_URL=<https-url-from-route-contract>
 SHREDREPLAY_KEY=<replay-key>
 ```
 
-Commit an `.env.example` containing placeholders if developers need a template. Exclude the real `.env` file, secret-manager exports, wallet files, and generated configuration from version control.
+Exclude real `.env` files, secret-manager exports, wallet files, and generated production configuration from version control.
 
 <Warning>
-  Deleting a committed secret in a later commit does not remove it from Git
-  history. Rotate the credential first, then follow your repository provider's
-  history-remediation process.
+  Removing a committed secret in a later commit does not remove it from Git
+  history. Rotate the exposed credential first, then use your repository
+  provider's history-remediation procedure.
 </Warning>
 
-## Keep credential-bearing URLs private
+## Keep complete URLs private
 
-ThorEdge RPC and Bifrost intentionally provide complete URLs that include authentication material. Use those URLs exactly as copied, but handle the **entire URL** as a secret.
+ThorEdge supplies complete URLs containing authentication material. A Bifrost route contract can also supply a credential-bearing URL. Use these values exactly as provided, but redact the **entire URL** anywhere an untrusted party could see it, including:
 
-Do not expose it in:
+- Browser and mobile application bundles
+- Repositories, issues, CI output, and build artifacts
+- Logs, traces, analytics, and crash reports
+- Screenshots, recordings, and support messages
+- Shared shell history, process listings, and command output
+- Browser navigation that could emit a referrer header
 
-- Browser or mobile application bundles
-- Git repositories, issue trackers, or CI output
-- Application logs, traces, analytics, or crash reports
-- Screenshots, screen recordings, or support messages
-- Shell history, process supervisors, or command output visible to other users
-- Referrer headers generated by opening it in a browser
+For diagnostics, keep only the product, location, time, status code, and hostname when the hostname itself contains no credential. Redact credential paths as well as query parameters.
 
-Redact the credential path as well as query parameters. Keeping only the hostname, product, and location is usually sufficient for a support report.
+## Verify transport and network controls
 
-## Use transport and network controls
+- Prefer the `https://` and `wss://` targets supplied by the dashboard.
+- Do not send a Yellowstone token until onboarding supplies a TLS-verified target or an explicitly trusted private path and its trust configuration.
+- Use Pulse only after owner-confirmed deployment and with a supplied client and trust configuration that verifies server identity. Never disable hostname or certificate verification to connect.
+- For Bifrost, use the HTTPS endpoint, credential placement, scope, rotation path, and enforcement status supplied in the exact route contract. A key-shaped URL path is not proof that enforcement is active.
+- Keep public hostnames intact; substituting a resolved IP can break TLS validation and routing.
+- Restrict a ThorEdge location token to a stable public egress IPv4 address when the dashboard offers that control.
+- Restrict inbound Raw Shred Stream and Replay UDP traffic with host firewalls, cloud security groups, and approved source rules.
 
-- Prefer the dashboard-provided `https://` and `wss://` endpoints. A bare gRPC target does not disclose TLS; do not send a token until ThorNode supplies a TLS-verified target or an explicitly trusted private path and its trust configuration.
-- For Pulse Decoded Shreds, use only a client and trust configuration that verifies server identity. Never bypass hostname or certificate verification to make a stream connect.
-- For Bifrost, confirm the selected deployment enforces key authentication before use. A key-shaped URL path is not evidence that authentication is active.
-- Do not replace a public hostname with a raw IP; doing so can break certificate validation and routing.
-- Restrict an RPC token to a stable public egress IP when the dashboard offers that option.
-- Apply host firewall and cloud security-group rules to Raw Shred Stream and Replay receivers.
-- Keep internal services and local proxies off the public internet unless you add explicit authentication and network controls.
+An IP restriction reduces where a token can be used; it does not make a leaked token safe. Continue to store and redact it as a secret.
 
-An IP restriction reduces exposure but does not make a leaked token safe. Continue to store and redact the token as a secret.
+## Rotate or revoke a credential
 
-## Rotate or revoke credentials
+Regenerate a credential when the application still needs access but the current value may be exposed or its owner changes. Revoke it when the consumer no longer needs access. A ThorEdge regeneration or revocation invalidates the old token for that location; other location tokens are unaffected.
 
-Regenerate a location token when it may have been exposed or when the consuming system changes ownership. Regeneration or revocation invalidates future authentication with the old token for that location; other location tokens are unaffected. A streaming connection that authenticated earlier may remain open until it disconnects or the service closes it, so restart long-lived clients during rotation.
+Plan for an immediate cutover. Old and new values may not overlap, and a previously authenticated streaming connection can remain open until it disconnects or the service closes it.
 
 <Steps>
-  <Step title="Prepare the client">
-    Confirm which access, product, network, and location the client uses. Plan
-    for an immediate configuration update because old and new values may not
-    overlap.
+  <Step title="Inventory consumers">
+    Identify the access, product, network, location, services, jobs, and secret
+    stores that use the credential. Include long-lived streaming clients.
+  </Step>
+  <Step title="Prepare the replacement">
+    Stage the configuration update and a minimal verification operation without
+    placing the value in source code, logs, or a command transcript.
   </Step>
   <Step title="Regenerate or revoke">
-    Use the appropriate dashboard action for the affected credential.
+    Use the credential-specific dashboard control. For Bifrost, follow the route
+    contract's rotation path; for Replay, use its dedicated key control. Contact
+    support when the applicable safe control is not available.
   </Step>
   <Step title="Deploy and verify">
-    Update the secret manager, restart or reload consumers safely, and verify a
-    minimal authenticated operation.
+    Update the secret store, restart or reload every consumer, and verify one
+    authenticated operation. Restart long-lived streams so they cannot continue
+    on an earlier authentication state.
   </Step>
   <Step title="Remove residual copies">
-    Purge the old value from local files, CI variables, logs, support tickets,
-    and caches where possible.
+    Purge the old value from local files, CI variables, caches, logs, tickets,
+    and artifacts where possible.
   </Step>
 </Steps>
 
-For Bifrost Transaction Routes and Replay, use the key-specific revoke or regeneration control shown by the dashboard. If no safe control is available, contact support before sharing any diagnostic material.
-
 ## Respond to suspected exposure
 
-1. Revoke or regenerate the affected credential immediately.
-2. Stop public logs, builds, or artifacts from distributing it further.
-3. Review usage and access logs for unexpected traffic.
-4. Replace the secret in every legitimate consumer.
-5. Remove cached copies and remediate repository history if necessary.
-6. Contact [ThorNode support](mailto:support@thornode.io) with the access identifier, product, location, and exposure window—never the secret itself.
+1. Regenerate or revoke the affected credential immediately.
+2. Stop public logs, builds, pages, or artifacts from distributing it.
+3. Review dashboard usage and available access logs for unexpected traffic.
+4. Replace the value in every legitimate consumer and restart long-lived sessions.
+5. Remove cached copies and remediate repository history where necessary.
+6. Contact [ThorNode support](mailto:support@thornode.io) with the access identifier, product, location, and exposure window—never the secret.
 
-See [Troubleshooting](/reference/troubleshooting#contact-support-safely) for a safe diagnostic checklist.
+Use the [safe support checklist](/reference/troubleshooting#contact-support-safely) when reporting an incident.
+
+## Next steps
+
+- [Pair targets and credentials by location](/reference/locations)
+- [Verify the live capacity attached to an access](/reference/plans-and-limits)
+- [Diagnose authentication and transport failures](/reference/troubleshooting)

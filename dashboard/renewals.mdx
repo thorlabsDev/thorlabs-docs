@@ -1,78 +1,93 @@
 ---
-title: "Renewals"
-description: "Extend an eligible owned ThorNode pass with a registered Solana wallet and the live USDC payment flow."
+title: "Renew an owned pass"
+description: "Extend an eligible owned pass by 1, 3, 6, or 12 months and verify the new expiration."
 ---
 
-The renewal flow extends the access period of an eligible pass NFT that you own. It does not renew rentals and does not change the pass tier.
+Use **Renew** to extend one or more eligible owned passes. Renewal is complete when the dashboard shows **Renewal Complete** and a new expiration for each selected pass.
 
-## Eligibility
+Rentals, Gold passes, and Honorary passes are excluded from this flow.
 
-A pass can appear in **Renew** when it is an eligible owned NFT associated with one of your registered Solana wallets.
+## Check eligibility
 
-The following are not renewed through this flow:
+| Access              | Renewal behavior                                             |
+| ------------------- | ------------------------------------------------------------ |
+| Eligible owned pass | Selectable under **Renew → Renew**                           |
+| Rental              | Continues until its displayed expiration; not renewable here |
+| Gold pass           | Not offered in the standard renewal flow                     |
+| Honorary pass       | Not offered in the standard renewal flow                     |
 
-- Direct rental access
-- Honorary passes
-- Gold passes
-- Any pass the live dashboard marks as ineligible or non-renewable
+The current dashboard state determines whether an owned pass is selectable. Review its displayed expiration and status before payment.
 
-Honorary and Gold passes are excluded because they do not use the standard paid renewal lifecycle.
+## Before you renew
 
-<Note>
-  Renewal availability and deadlines are state-dependent. Always follow the
-  eligibility label, expiration time, countdown, and instructions shown for that
-  pass in the dashboard.
-</Note>
+You need:
 
-## Renew an owned pass
+- The intended Discord account
+- The pass's owning address registered under **Wallets**
+- A registered Solana wallet connected for payment
+- Enough of the payment asset shown in the current order summary
+
+## Renew one or more passes
 
 <Steps>
-  <Step title="Connect the owning wallet">
-    Sign in with Discord, open **Wallets**, and confirm that the wallet holding the NFT is registered. Connect that same wallet before payment.
+  <Step title="Open the renewal flow">
+    Choose **Renew** in the sidebar, then keep the **Renew** tab selected. Under **Choose an action**, select **Renew**.
   </Step>
+  <Step title="Select eligible passes">
+    Under **Select passes**, choose the owned passes you want to extend. Gold, Honorary, and rental access cannot be selected for renewal.
+  </Step>
+  <Step title="Choose the renewal term">
+    Under **Renewal term**, select **1 month**, **3 months**, **6 months**, or **12 months**.
+  </Step>
+  <Step title="Calculate the live amount">
+    In **Order summary**, choose **Calculate price**. Review every selected pass,
+    the term, line items, total, and displayed balance.
+  </Step>
+  <Step title="Submit one payment">
+    If needed, choose **Connect Wallet to Pay** and connect a registered wallet.
+    In the wallet extension, verify the full paying address, asset or mint,
+    destination, and amount. Then choose **Pay … USDC** and approve the
+    transaction once.
+  </Step>
+  <Step title="Wait for completion">
+    Keep **Processing Renewal** open while the dashboard submits the
+    transaction, validates the payment, updates metadata, and prepares the
+    results. Not every internal phase appears as a separate visible transition.
 
-<Step title="Select the pass">
-  Open **Renew** and choose an eligible owned pass. Rentals and excluded pass
-  types will not be offered as renewable items.
-</Step>
+    The task is complete only when the result shows **Renewal Complete** and lists the new expiration for each pass.
 
-<Step title="Choose a duration">
-  Select **1**, **3**, **6**, or **12 months** from the renewal options offered
-  for the pass.
-</Step>
-
-<Step title="Review the live terms">
-  Confirm the pass, duration, USDC asset, amount, resulting expiration, and
-  connected registered wallet shown by the dashboard.
-</Step>
-
-<Step title="Approve once and wait">
-  Sign the payment and wait for verification. Do not submit a second payment
-  while the first transaction is pending.
-</Step>
-
-  <Step title="Confirm the new expiration">
-    The renewal is complete only when the dashboard reports success and shows the updated expiration for the pass.
   </Step>
 </Steps>
 
 <Warning>
-  Do not use a remembered deadline or an old policy page to time a renewal. Pass
-  state can change; the on-screen countdown and actions are the source of truth.
+  Do not submit another payment while renewal is processing or after payment
+  succeeded. If a later metadata or reindex step fails, use **Retry Failed
+  Passes**; that retry reuses the completed payment.
 </Warning>
 
-## If the pass is missing
+## Recover a partial result
 
-Check the following before contacting support:
+The results view lists each selected pass separately. If payment completed but a later step failed:
 
-1. You are signed in with the Discord account that has the owning wallet registered.
-2. Your wallet extension is connected to the full address shown in **Wallets**.
-3. The NFT is still held by that address.
-4. The dashboard does not label the pass as rental, Honorary, Gold, or otherwise ineligible.
-5. You are following the current on-screen renewal window and deadline.
+1. Save the transaction signature shown under **Transaction**.
+2. Choose **Retry Failed Passes** when the action is available.
+3. Confirm that the retry states the payment was already completed.
+4. Check each pass for a completed result and new expiration.
 
-## If payment is pending
+If retry cannot complete, contact [ThorNode support](mailto:support@thornode.io) with the public wallet, transaction signature, affected pass identifier, and approximate time. Do not send another payment.
 
-Do not pay again. Save the transaction signature. If the current results screen offers a retry for that signature, use that action instead of starting a second payment. Contact [ThorNode support](mailto:support@thornode.io) if the renewal still does not resolve.
+## If a pass is missing or unavailable
 
-Never send support your seed phrase, private key, or endpoint credentials.
+| Symptom                                         | Verify                                              | Expected result                                                       | Action                                                                            |
+| ----------------------------------------------- | --------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Owned pass is absent                            | Discord account and registered owner address        | The owner appears under **Verified wallets**                          | Register the owning wallet, then reload **Renew**                                 |
+| Pass is visible but disabled                    | Pass type and live state                            | An eligible standard pass is selectable                               | Gold and Honorary passes remain excluded; follow the state shown for other passes |
+| Only rentals are shown elsewhere                | **Your rentals** versus owned passes                | Rentals are not listed as renewable NFTs                              | Continue the rental only through a live offer under **Rent**                      |
+| Wallet cannot pay                               | Connected address, registration, asset, and balance | The connected address is registered and can cover the displayed total | Correct the prerequisite and recalculate before signing                           |
+| Payment completed but expiration did not update | Per-pass result and transaction signature           | The pass reaches a completed result with a new expiration             | Use **Retry Failed Passes** or contact support; do not repay                      |
+
+## Next steps
+
+- [Register the owning or paying wallet](/dashboard/wallets).
+- [Review the renewed access in Overview](/dashboard/overview).
+- [Recover an unresolved payment safely](/reference/troubleshooting#payment-is-signed-but-access-is-not-updated).

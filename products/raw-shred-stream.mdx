@@ -1,68 +1,36 @@
 ---
 title: "Raw Shred Stream"
-description: "Receive live raw Solana shreds from ThorNode at your own UDP target."
+description: "Receive live raw Solana shreds from ThorNode at your public UDP receiver."
 ---
 
-Raw Shred Stream forwards live raw Solana shreds from a selected ThorNode location to a UDP receiver that you operate. The dashboard currently labels this product **ShredStream**.
+Raw Shred Stream sends live raw Solana shreds from one ThorNode location to a UDP receiver that you operate. The dashboard labels this product **ShredStream**. The output is protocol bytes, not decoded transactions.
 
-## Quick reference
+## Choose Raw Shred Stream
 
-| Item                  | Value                                                   |
-| --------------------- | ------------------------------------------------------- |
-| Transport             | Inbound UDP                                             |
-| Target                | Your public IPv4 address and port                       |
-| Port range            | `1024`–`65535`                                          |
-| Packet authentication | None; access is checked when the receiver is registered |
-| Delivery behavior     | Loss, duplication, and reordering are possible          |
+| Use it when                                      | Choose something else when                                                                                                         |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| You need live shreds before application decoding | You need decoded transactions; use [Yellowstone gRPC](/products/yellowstone-grpc) or deployment-confirmed [Pulse](/products/pulse) |
+| You operate a public UDP receiver                | You cannot accept inbound UDP at a stable public IPv4 address                                                                      |
+| Your pipeline handles UDP delivery behavior      | You need recent captured shreds; use [Replay](/products/shredreplay) instead of a live feed                                        |
 
-## Receiver requirements
+## Delivery contract
 
-Before registering a target, prepare:
+| Item              | Value                                                                                  |
+| ----------------- | -------------------------------------------------------------------------------------- |
+| Dashboard path    | **Endpoints → ShredStream**                                                            |
+| Registration      | One enabled location, one numeric IPv4 value accepted by the dashboard, and one port   |
+| Transport         | UDP to your receiver                                                                   |
+| Port              | Integer from `1024` through `65535`, inclusive                                         |
+| Output            | UDP datagrams containing raw Solana shred bytes                                        |
+| Authentication    | Access is checked when you save the registration; packets carry no customer credential |
+| Delivery behavior | Packet loss, duplication, and reordering are possible                                  |
+| Success signal    | Your receiver reports at least one nonzero packet count                                |
 
-- A publicly routable IPv4 address
-- An inbound UDP port from `1024` through `65535`
-- A process listening on that exact port
-- Firewall, security-group, and NAT rules that forward the traffic to the receiver
+## Receive your first packets
 
-<Warning>
-  A host behind carrier-grade NAT (CGNAT) does not have a directly reachable
-  public IPv4 address. Use a server with a public address or arrange explicit
-  UDP forwarding before registering it.
-</Warning>
+You need an active access with ShredStream enabled, Node.js, and a receiver reachable at a numeric, globally routable public IPv4 address. Open the chosen UDP port from `1024` through `65535` in every firewall, security group, network ACL, and NAT rule on the path. The dashboard rejects malformed and common private or local values, but field acceptance does not prove global routability. A hostname, private address, loopback address, or IPv6 address will not produce the supported public-receiver setup.
 
-## Register a receiver
-
-<Steps>
-  <Step title="Open Raw Shred Stream">
-    Go to **Endpoints → ShredStream** and select an active access that the
-    dashboard marks as eligible.
-  </Step>
-  <Step title="Choose a location">
-    Select a location enabled for the access. Each registration receives data
-    from its selected location.
-  </Step>
-  <Step title="Enter the public target">
-    Enter the receiver's public IPv4 address and UDP port. The port must be in
-    the supported range.
-  </Step>
-  <Step title="Save and verify">
-    Save the registration, start the receiver, and verify packets arrive. Remove
-    stale registrations when they are no longer needed.
-  </Step>
-</Steps>
-
-To confirm that packets reach a Linux host before debugging your application:
-
-```bash
-export SHREDSTREAM_PORT='<registered-port>'
-sudo tcpdump -ni any "udp port ${SHREDSTREAM_PORT}"
-```
-
-Stop the capture after you have enough evidence; raw shred traffic can produce substantial output.
-
-## Build a minimal receiver
-
-This Node.js receiver proves that UDP datagrams reach your application. It reports metadata only; it does not parse or validate shred payloads.
+Save this complete receiver as `receiver.mjs`:
 
 ```javascript
 import dgram from "node:dgram";
@@ -75,21 +43,14 @@ if (!Number.isInteger(port) || port < 1024 || port > 65535) {
   );
 }
 
-const socket = dgram.createSocket({ type: "udp4", reuseAddr: true });
-
+const socket = dgram.createSocket("udp4");
 let packets = 0;
 let bytes = 0;
 
-socket.on("message", (message) => {
+socket.on("message", (datagram) => {
   packets += 1;
-  bytes += message.length;
+  bytes += datagram.byteLength;
 });
-
-setInterval(() => {
-  console.log({ packetsPerSecond: packets, bytesPerSecond: bytes });
-  packets = 0;
-  bytes = 0;
-}, 1_000).unref();
 
 socket.on("error", (error) => {
   console.error(error);
@@ -98,32 +59,76 @@ socket.on("error", (error) => {
 });
 
 socket.bind(port, "0.0.0.0", () => {
-  console.log(`Listening for Raw Shred Stream UDP on port ${port}`);
+  console.log(`Listening for ShredStream on UDP ${port}`);
 });
+
+setInterval(() => {
+  console.log(`packets=${packets} bytes=${bytes}`);
+  packets = 0;
+  bytes = 0;
+}, 1_000);
 ```
 
-Save the example as `receiver.mjs`, then run it on the registered host with the registered port:
+<Steps>
+  <Step title="Start the receiver">
+    Choose the same port you will register, then run the file on the host behind
+    the public IPv4 address:
 
-```bash
-SHREDSTREAM_PORT='<registered-port>' node receiver.mjs
+    ```bash
+    SHREDSTREAM_PORT='<udp-port>' node receiver.mjs
+    ```
+
+  </Step>
+  <Step title="Register the public target">
+    Open **Endpoints → ShredStream**, select an eligible access and enabled
+    location, then enter the receiver's real, globally routable numeric IPv4
+    address and the same UDP port. Save the registration; UI acceptance alone
+    does not prove that the receiver is reachable.
+  </Step>
+  <Step title="Verify packet delivery">
+    Watch the receiver until it prints a one-second interval with nonzero
+    `packets` and `bytes` values.
+  </Step>
+</Steps>
+
+Representative output looks like this; packet and byte counts vary with live traffic:
+
+```text
+Listening for ShredStream on UDP 20000
+packets=0 bytes=0
+packets=1842 bytes=2271057
 ```
 
-Keep packet parsing and expensive work off the receive callback; enqueue bounded work for downstream consumers instead.
+The nonzero packet count is the completion signal. The listening message alone proves only that the local socket opened.
 
-## Design for UDP delivery
+If the receiver is behind NAT, forward the registered public port to the listening host. Carrier-grade NAT requires an externally provided forwarding arrangement or a different host with a reachable public IPv4 address.
 
-UDP is connectionless. Your receiver must tolerate packet loss, duplication, and reordering. Keep the receive path small, use bounded queues, and monitor drops at both the operating-system and application layers.
+## Handle UDP in production
 
-Packets do not contain a ThorNode customer-authentication header. Authenticate and authorize the receiver through the dashboard registration, and do not expose any internal management credential in receiver code.
+UDP does not acknowledge or sequence delivery for your application. Design the consumer around these outcomes:
 
-The number of active registrations depends on the access tier and current backend policy. The dashboard is authoritative for the limit and shows whether Raw Shred Stream, labeled **ShredStream** in the current interface, is enabled for an access.
+| Network outcome | Receiver responsibility                                                             |
+| --------------- | ----------------------------------------------------------------------------------- |
+| Packet loss     | Detect gaps when your decoder exposes suitable identifiers; reconcile when required |
+| Duplication     | Make downstream processing idempotent or deduplicate decoded records                |
+| Reordering      | Do not treat receive order as shred or transaction order                            |
+| Traffic bursts  | Keep the socket callback small and hand work to a bounded queue                     |
+
+Monitor socket drops, application queue depth, packet rate, and byte rate. Raw Shred Stream does not decode, validate, persist, or replay packets for your consumer. Registration limits and enabled locations come from the selected access in the dashboard.
 
 ## Troubleshooting
 
-- Confirm the registered address is the host's public IPv4 address, not a private interface address.
-- Confirm the listening process and registration use the same UDP port.
-- Check cloud security groups, host firewalls, router forwarding, and CGNAT.
-- Check whether the access is active, the location is enabled, and the registration limit has been reached.
-- If you restrict traffic by source, obtain the current source ranges from ThorNode support instead of relying on an old allowlist.
+| Symptom                            | Verify                                                 | Expected result                                    | Action                                                                                        |
+| ---------------------------------- | ------------------------------------------------------ | -------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Counters remain at zero            | Capture `udp port <registered-port>` on the receiver   | The host sees inbound UDP datagrams                | Fix the public target, firewall, security group, NAT forwarding, or access/location selection |
+| Capture sees packets; app does not | Check the process bind address and port                | The process listens on `0.0.0.0:<registered-port>` | Restart the receiver with the registered port and stop any conflicting process                |
+| Packets arrive; parsing fails      | Confirm the consumer expects raw shred bytes, not JSON | The decoder accepts the raw protocol payload       | Use a compatible shred decoder and keep transaction logic after decoding                      |
+| Packet drops rise under load       | Inspect socket-drop metrics and bounded-queue depth    | Receive-path work stays below the incoming rate    | Move parsing and storage out of the callback, then tune capacity from measured traffic        |
 
-For broader connection checks, see [Troubleshooting](/reference/troubleshooting).
+If you restrict inbound traffic by source, obtain the current source ranges from [ThorNode support](mailto:support@thornode.io) instead of relying on a copied allowlist.
+
+## Next steps
+
+- [Replay recently captured shreds](/products/shredreplay)
+- [Review live access limits](/reference/plans-and-limits)
+- [Diagnose UDP delivery](/reference/troubleshooting#raw-shred-stream-or-replay-sends-no-udp-data)

@@ -1,87 +1,93 @@
 ---
-title: "Quickstart"
-description: "Sign in, connect your access, create a regional token, and send your first ThorNode RPC request."
+title: "Quickstart: send your first RPC request"
+description: "Sign in, create a location-scoped token, and verify a ThorNode RPC URL with curl."
 ---
 
-ThorNode access starts in the dashboard. You sign in with Discord, connect an owned pass or an active rental, and then create credentials for the locations available to that access.
-
-<Note>
-  Open the dashboard from [thornode.io](https://www.thornode.io). If its
-  dashboard link is unavailable, contact [ThorNode
-  support](mailto:support@thornode.io) instead of guessing an address from an
-  old bookmark.
-</Note>
+In this quickstart, you will create a location-scoped credential and receive a Solana blockhash from ThorEdge RPC.
 
 ## Before you start
 
 You need:
 
 - A Discord account
-- A ThorNode pass or an active rental
-- A Solana wallet if you need to prove pass ownership, rent access, or renew a pass
-- An HTTP client such as `curl` for the test request
+- An active owned pass or rental
+- A Solana wallet if your pass is not yet associated with the account
+- `curl` in your terminal
+
+If you already own a pass, [register its owning wallet](/dashboard/wallets) so the access appears. If you do not have access, [purchase a currently offered rental](/dashboard/rentals) before creating the endpoint.
+
+Open the dashboard from [thornode.io](https://www.thornode.io).
 
 <Steps>
-  <Step title="Login with Discord">
-    Open the dashboard from [thornode.io](https://www.thornode.io), choose **Login with Discord**, and authorize the requested account access.
+  <Step title="Sign in with Discord">
+    Choose **Login with Discord** and authorize the account associated with your ThorNode access.
 
-    Your Discord identity is your dashboard account. Wallets and product access are associated with this account.
-
-  </Step>
-
-  <Step title="Register a Solana wallet">
-    Open **Wallets**, connect the wallet that owns your pass or will pay for a rental, and approve the registration message.
-
-    You can register up to three wallets. The signature proves that you control the address; never share your seed phrase or private key.
+    After sign-in, **Overview** shows the passes and rentals currently associated with that Discord account.
 
   </Step>
+  <Step title="Register the owning wallet if needed">
+    If your owned pass is missing, open **Wallets**, choose **Connect Wallet**, and connect the address that holds it. Choose **Register** and sign the verification message.
 
-<Step title="Choose an access source">
-  Use an eligible pass you own or an active rental. If **Rent** shows a current
-  catalog, you can purchase time-limited access there. A visible product tab is
-  not proof of eligibility; use the enabled controls, locations, and current
-  backend response for the selected access.
-</Step>
-
-  <Step title="Create a token for one location">
-    Open **Endpoints** and select your access, network, and location. Generate or copy the token shown for that location.
-
-    Tokens are independent per location. A token for one location does not authenticate requests to another location.
+    Registration succeeds when the address appears under **Verified wallets**. You can register up to three wallets per dashboard account.
 
   </Step>
+  <Step title="Select an access and location">
+    Open **Endpoints**, keep the **Endpoints** tab selected, and choose the pass or rental your application will use. Under **Node access**, select a **Network** and **Location**.
 
-  <Step title="Optionally restrict the token by IP">
-    Add one public IPv4 address to allow RPC and WebSocket requests only from that address. Leave the field blank and save to remove the restriction.
-
-    Skip this setting while testing from a connection whose public IP changes.
+    Available locations come from the selected access. If the intended product or location is not enabled, review that access before continuing.
 
   </Step>
+  <Step title="Generate the location token">
+    In **Token & Endpoints**, choose **Generate token for _location_**.
 
-  <Step title="Copy an endpoint and test it">
-    Copy the full SSL RPC URL from the dashboard. Do not reconstruct the URL or append the token yourself.
+    The location is ready when the panel shows a masked region-bound token and the **RPC** and **WS** rows. Each location has an independent token.
+
+  </Step>
+  <Step title="Copy the SSL RPC URL">
+    In the **RPC** row, copy the URL under **SSL**. Use the copied URL as-is; it already carries the connection details for the selected location.
+
+    Set the environment variable in the same terminal where you will run the request:
 
     ```bash
-    export THORNODE_RPC_URL='<full SSL RPC URL copied from the dashboard>'
+    export THORNODE_RPC_URL='<full SSL RPC URL copied from Endpoints>'
+    ```
 
+  </Step>
+  <Step title="Request a blockhash">
+    Run:
+
+    ```bash
     curl --fail-with-body --request POST "$THORNODE_RPC_URL" \
       --header 'content-type: application/json' \
       --data '{"jsonrpc":"2.0","id":1,"method":"getLatestBlockhash"}'
     ```
 
-    A JSON-RPC response confirms that the URL, token, and optional IP restriction are working together.
+    Representative output:
+
+    ```text
+    {"jsonrpc":"2.0","result":{"context":{"slot":...},"value":{"blockhash":"...","lastValidBlockHeight":...}},"id":1}
+    ```
+
+    You are connected when the command returns a JSON-RPC `result` containing `value.blockhash`. A top-level `error` object is not a successful result.
 
   </Step>
 </Steps>
 
 <Warning>
-  Treat every endpoint token as a secret. Do not commit it to source control,
-  include it in a client-side application, or paste it into support messages.
+  The complete RPC URL contains a credential. Keep it in a server-side secret
+  store and out of repositories, browser code, logs, screenshots, and support
+  messages.
 </Warning>
 
-## Where to go next
+## Optional: restrict the token
 
-- Learn how accounts, passes, rentals, locations, and tokens relate in [Access model](/getting-started/access-model).
-- Configure RPC and WebSocket credentials in [Endpoints](/dashboard/endpoints).
-- Run account-heavy RPC methods through the [FastGate Account API](/products/fastgate-account-api).
-- Review effective capacity in [Usage and limits](/dashboard/usage-and-limits).
-- Explore the available services in the Products section.
+After the request works from a server with a stable egress address, enter its real, globally routable public IPv4 value in **Restrict to IP — _location_ (optional)** and choose **Save restriction**. The field rejects common private, local, and multicast ranges, but field acceptance alone does not prove routability. The same restriction applies to RPC and WebSocket traffic for that location token.
+
+Leave the field blank when the egress address changes or to remove the restriction.
+
+## Next steps
+
+- [Choose a product](/getting-started/choose-a-product) for streaming, raw shreds, replay, or transaction routes.
+- [Connect an RPC or WebSocket client](/products/thoredge-rpc) and add production retry behavior.
+- [Monitor traffic and live limits](/dashboard/usage-and-limits) before increasing production load.
+- [Store and rotate credentials safely](/reference/security).

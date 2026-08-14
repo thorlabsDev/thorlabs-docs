@@ -1,131 +1,143 @@
 ---
 title: "Troubleshooting"
-description: "Diagnose ThorNode authentication, limits, connectivity, streaming, UDP, and payment issues."
+description: "Diagnose ThorNode authentication, capacity, transport, streaming, UDP, and payment symptoms."
 ---
 
-Start with **Node Status** when that view is available in the ThorNode dashboard, then confirm that the selected pass or rental is active. Refresh the product view and copy its current target and credential before debugging an old configuration.
+Start with the observable symptom, verify one condition at a time, and retry only when the failure is transient. A successful diagnosis identifies whether the application must change configuration, release capacity, wait and retry, or escalate with redacted evidence.
 
-## Quick triage
+## Run the quick triage
 
 <Steps>
-  <Step title="Confirm scope">
-    Record the product, network, location, and access identifier. Do not record
-    the secret.
+  <Step title="Record the scope">
+    Note the product, network, location, access identifier, timestamp, and
+    timezone. Do not record the credential or complete URL.
   </Step>
-  <Step title="Check current access">
-    Confirm the product and location are still enabled and review **Usage** and
-    **Limits**.
+  <Step title="Check current state">
+    Confirm that the pass or rental is active, the product and location are
+    enabled, and **Usage** and **Limits** match the selected access. Open **Node
+    Status** when that dashboard view is available.
   </Step>
-  <Step title="Test one operation">
-    Reduce the client to one low-impact request, connection, or subscription
-    with bounded retries.
+  <Step title="Refresh the configuration">
+    Compare the application's target and credential scope with the values
+    currently shown together in the dashboard. Redact both before logging or
+    sharing the comparison.
   </Step>
-  <Step title="Compare timestamps">
-    Correlate the failure time with application logs and the status page. Redact
-    complete URLs and credentials before sharing evidence.
+  <Step title="Reduce to one operation">
+    Test one low-impact request, connection, or subscription from the production
+    runtime network. Disable unbounded retries while diagnosing it.
   </Step>
 </Steps>
 
 ## HTTP and RPC responses
 
-| Symptom                       | Likely causes                                                                                            | Actions                                                                                                           |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `401` or `403`                | Revoked or stale token, wrong location, inactive access, unavailable product, or IP restriction mismatch | Copy the values for the same access and location; confirm the real public egress IP; regenerate only if necessary |
-| `429`                         | A live throughput, concurrency, subscription, or filter limit was reached                                | Inspect **Usage** and **Limits**, reduce load, reuse connections, and retry with exponential backoff and jitter   |
-| `5xx`                         | Temporary service or upstream failure                                                                    | Check status, retry a small number of times with backoff, and preserve a redacted request identifier if returned  |
-| Method or route not found     | Wrong product URL, stale Bifrost route catalog, or unsupported RPC method                                | Refresh the dashboard and use the complete target or route currently displayed                                    |
-| RPC works but WebSocket fails | Wrong scheme or URL, proxy restrictions, or outbound WebSocket blocking                                  | Copy the `wss://` URL, check proxy policy, and test from the same runtime network                                 |
+Start with [authentication failures](#authentication-fails) for `401`, `403`, or `Unauthenticated`; [contract failures](#method-or-route-is-not-found) for a missing method or route; [live-limit failures](#requests-or-subscriptions-are-rate-limited) for `429` or rejected concurrent work; and [connection failures](#connection-dns-or-tls-fails) for `5xx` or timeouts.
 
-<Note>
-  ThorEdge does not currently enforce a monthly request-count cutoff. A `429`
-  indicates a live rate, concurrency, subscription, or filter constraint—not a
-  monthly compatibility counter. If the dashboard explicitly introduces an
-  enforced monthly limit, follow its current value.
-</Note>
+### Authentication fails
 
-Do not retry authorization errors in a tight loop. They normally require a configuration or access change rather than more requests.
+| Symptom                                                    | Verify                                                                                                                                                                                              | Expected result                                                        | Action                                                                                                     | Retry?                                                                               |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| HTTP `401` or `403`, or gRPC `Unauthenticated`             | Access is active; product and location are enabled; target and credential came from the same location; credential placement matches [Security](/reference/security#credential-scope-and-placement). | One minimal operation authenticates with the current dashboard values. | Correct the access, location, or credential placement. Regenerate only when the value is stale or exposed. | **No**, until configuration or access changes.                                       |
+| A valid ThorEdge token is rejected after an IP restriction | Determine the runtime's public egress IPv4 after NAT, gateway, VPN, or proxy and check for multiple egress paths.                                                                                   | The address observed by ThorNode matches the one saved for the token.  | Route through the intended stable gateway or update the restriction, then test from the same runtime.      | **No**, until the address matches.                                                   |
+| RPC works but WebSocket fails                              | The client uses the complete `wss://` URL for the same location; outbound proxy and firewall policy allow WebSockets.                                                                               | RPC and WebSocket authenticate from the same allowed network.          | Replace the URL with the current dashboard value and correct proxy or firewall policy.                     | **No** for a configuration block; **yes** with backoff after a transient disconnect. |
+| A token works in one location but not another              | Compare the target's location with the token's location.                                                                                                                                            | A location-bound token is used only with its matching target.          | Create or retrieve the destination location credential and change target and credential together.          | **No**, until both values match.                                                     |
 
-## DNS, TLS, and connection failures
+Do not retry authorization errors in a tight loop. Rotation does not fix an inactive access, unavailable product, wrong location, or incorrect IP restriction. Follow the [safe rotation procedure](/reference/security#rotate-or-revoke-a-credential) when rotation is actually required.
 
-- Use the public hostname and target exactly as shown in the dashboard; do not substitute a resolved IP.
-- Confirm the host clock is correct and the operating system trusts current certificate authorities.
-- Check outbound firewall, VPN, DNS, proxy, and service-mesh policies from the actual runtime environment.
-- Ensure an intercepting proxy supports WebSockets or HTTP/2 when the client needs them.
-- Verify that the target and token came from the same access and location.
+### Method or route is not found
 
-You can test name resolution without exposing a credential:
+| Symptom                                | Verify                                                                                    | Expected result                                          | Action                                                                        | Retry?                             |
+| -------------------------------------- | ----------------------------------------------------------------------------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------- |
+| RPC method or Bifrost route is missing | Complete product URL, supported method list, supplied route contract, and server response | The exact method or provider operation remains supported | Refresh the current product or route contract and replace stale configuration | **No**, until the contract matches |
+
+## Requests or subscriptions are rate limited
+
+| Symptom                                             | Verify                                                                                                           | Expected result                                                                            | Action                                                                                                  | Retry?                                   |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| HTTP `429`                                          | Compare recent traffic, concurrency, and retry volume with **Usage** and **Limits** for the exact access.        | Sustained traffic remains below the live per-second or concurrent limit.                   | Reduce concurrency, stop duplicate work, reuse connections, and apply exponential backoff with jitter.  | **Yes**, after delay and load reduction. |
+| A WebSocket or Yellowstone subscription is rejected | Check live connection, stream, account, and filter usage; inspect leaked or duplicate subscriptions.             | The new subscription fits within the displayed capacity and uses supported narrow filters. | Close unused work, narrow filters, or request more capacity before retrying.                            | **Yes**, after capacity is available.    |
+| A Raw Shred Stream registration is rejected         | Check whether the product is enabled and how many registrations are active for the access and location.          | The new receiver fits within the live registration allowance.                              | Remove an unused registration or contact support about capacity.                                        | **Yes**, after capacity is available.    |
+| Quota-style monthly metadata appears                | Compare it with the [canonical limit model](/reference/plans-and-limits#understand-the-monthly-and-live-limits). | The metadata is classified as compatibility information or an explicit enforced limit.     | Diagnose the actual status code and live constraint instead of inferring enforcement from a field name. | Depends on the actual failure.           |
+
+Creating another client, credential, or reconnect loop does not increase capacity. See [Plans and limits](/reference/plans-and-limits#understand-the-monthly-and-live-limits) for the canonical limit model.
+
+## Connection, DNS, or TLS fails
+
+| Symptom                                       | Verify                                                                                                                                                       | Expected result                                                                            | Action                                                                                                                                           | Retry?                                                 |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
+| DNS lookup fails or the host is unreachable   | The public hostname exactly matches the dashboard; the runtime's DNS, VPN, proxy, firewall, and service mesh permit the route.                               | The hostname resolves and the documented port is reachable from the application runtime.   | Refresh the target and correct local network policy. Do not substitute a resolved IP or use an internal address.                                 | **No**, until configuration or network policy changes. |
+| TLS or certificate validation fails           | System clock, trusted certificate authorities, hostname, and product-specific trust configuration are correct.                                               | The client verifies the server identity for the supplied public or trusted private target. | Restore the correct hostname and trust setup; obtain the explicit Yellowstone or Pulse trust contract when required. Never disable verification. | **No**, until trust is correct.                        |
+| HTTP `5xx`, timeout, or unexpected disconnect | **Overview → Network status** or **Node Status** when that view is available, one minimal operation, and failures from another approved runtime or location. | The test distinguishes a service incident from one client's network or load problem.       | Preserve the time and a redacted request identifier if returned; retry a small, bounded number of times with backoff.                            | **Yes**, when transient.                               |
+
+Test DNS without exposing a credential:
 
 ```bash
 dig +short <public-hostname-copied-from-dashboard>
 ```
 
-When testing a socket or TLS connection, use the host and port displayed by the dashboard. Do not paste a tokenized URL into shared terminal output.
+Do not paste a tokenized URL into shared terminal output. When a location itself changed, follow [move a workload to another location](/reference/locations#move-a-workload-to-another-location).
 
-## IP restriction rejects a valid token
+## Yellowstone or Pulse streaming fails
 
-The restriction checks the public egress address seen after NAT, a cloud gateway, VPN, or proxy. It is not necessarily the address assigned to the application host.
+Use the Pulse rows only after a ThorNode owner confirms that the replacement service is deployed for the selected environment.
 
-1. Determine the runtime's public egress address through your approved network tooling.
-2. Check whether traffic can leave through more than one gateway.
-3. Update the restriction to the stable intended address.
-4. Retest from the same runtime, not from a developer laptop on another network.
+| Symptom                                                          | Verify                                                                                                                                            | Expected result                                                                          | Action                                                                                                                               | Retry?                                                                         |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| Yellowstone authentication fails                                 | Target and token belong to the same location; metadata key is exactly `x-token`; token is not in the URL.                                         | A minimal `Subscribe` stream authenticates through the supplied transport setup.         | Correct the metadata and location pairing.                                                                                           | **No**, until corrected.                                                       |
+| Yellowstone cannot connect or rejects a subscription             | Client/protobuf version and TLS or trust settings match the ThorNode-supplied contract; filters fit current limits.                               | A narrow supported filter connects with the pinned client version.                       | Restore the supplied version and trust configuration, reduce filters, and close unused streams.                                      | **No** for contract errors; **yes** with backoff after transient disconnects.  |
+| Pulse handshake or authentication fails                          | The supported client, schema, trust configuration, target, and control-message token match the selected location; token enforcement is confirmed. | Server identity verifies and the supported control message authenticates.                | Stop unsupported clients, hand-built messages, or insecure verification; obtain the current integration contract.                    | **No**, until corrected.                                                       |
+| A streaming consumer falls behind or shows a gap after reconnect | Receive-path work, queue bounds, reconnect frequency, and consumer lag.                                                                           | The client processes through bounded queues and detects discontinuity after a reconnect. | Move expensive work downstream, bound memory and concurrency, back off reconnects, and reconcile state when correctness requires it. | **Yes**, after stabilizing the consumer; never open parallel reconnect storms. |
 
-If egress changes dynamically, route traffic through a stable gateway before relying on an IP restriction.
-
-## Yellowstone streaming
-
-- Send the location token as metadata with the exact key `x-token`; do not append it to the target URL.
-- Confirm the client and protobuf definitions match the exact version supplied for the ThorNode endpoint; the upstream `master` branch is not a ThorNode version pin.
-- Reduce account and other filters if a subscription is rejected.
-- Reuse streams and check the live concurrent-stream and account/filter entitlements.
-- Add bounded queues, reconnect with backoff and jitter, and detect gaps after reconnecting.
-- Obtain the endpoint's explicit transport and trust configuration before connecting; the bare dashboard target does not disclose TLS.
-
-## Pulse Decoded Shreds
-
-- Use only a ThorNode-supplied Pulse client and control-message contract that verifies server identity; unsupported examples may be incompatible or insecure.
-- Confirm the target and token belong to the same location and access.
-- Check outbound UDP/QUIC rules, VPN policy, and middleboxes that can block the handshake.
-- Move expensive work out of the receive path and monitor consumer lag.
-- Back off reconnect attempts instead of opening parallel sessions.
+Use the product contracts for [Yellowstone gRPC](/products/yellowstone-grpc) and [Pulse Decoded Shreds](/products/pulse) before changing transport or authentication behavior.
 
 ## Raw Shred Stream or Replay sends no UDP data
 
-1. Confirm the dashboard contains the intended public receiver and UDP port. Raw Shred Stream and Replay require a numeric public IPv4 address; do not use a DNS hostname for replay.
-2. Verify the process is listening on that exact port.
-3. Check cloud security groups, host firewalls, router forwarding, and network ACLs.
-4. Confirm the host is not behind carrier-grade NAT without explicit forwarding.
-5. Capture briefly on the receiver to distinguish a network problem from an application problem:
+Use the Replay-specific rows only after the current server confirms replay job creation, status, and cancellation are available.
+
+| Symptom                                    | Verify                                                                                                                                                                      | Expected result                                                                   | Action                                                                                                               | Retry?                                         |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| No UDP packets arrive                      | The dashboard target is the intended public numeric IPv4 and UDP port; the process listens on that port; firewall, security-group, ACL, NAT, and forwarding rules allow it. | A short capture on the receiver shows datagrams on the registered port.           | Correct the target or network path. A host behind carrier-grade NAT needs a reachable server or explicit forwarding. | **No**, until the path is reachable.           |
+| Replay slot range is rejected              | Refresh the rolling minimum and maximum slots displayed by the dashboard.                                                                                                   | Both requested slots remain inside the current window.                            | Choose a current range.                                                                                              | **Yes**, with corrected values.                |
+| Replay reports another job is active       | Check the selected access for a queued or running replay.                                                                                                                   | Only one replay job is queued or running per access.                              | Wait for completion or cancel the existing job before starting another.                                              | **Yes**, after the job clears.                 |
+| Packets arrive but the receiver drops data | Socket-drop metrics, receive-path work, queue bounds, and Replay pacing.                                                                                                    | The receiver drains UDP promptly and tolerates loss, duplication, and reordering. | Reduce receive-path work; use bounded downstream queues; for Replay, switch from maximum speed to original pacing.   | Retrying alone does not fix receiver overload. |
+
+Run a brief capture on the receiver to separate a network failure from an application failure:
 
 ```bash
 export UDP_PORT='<registered-port>'
 sudo tcpdump -ni any "udp port ${UDP_PORT}"
 ```
 
-For Replay, also confirm that the slot range remains inside the rolling availability window and that another job is not queued or running.
+Stop the capture after collecting enough evidence. Continue with the [Raw Shred Stream receiver checks](/products/raw-shred-stream#troubleshooting) or [Replay troubleshooting](/products/shredreplay#troubleshooting) for product-specific behavior.
 
 ## Payment is signed but access is not updated
 
 <Warning>
-  Do not pay a second time while a signed payment is pending or unresolved.
+  Do not submit a second payment while a signed payment is pending or
+  unresolved.
 </Warning>
 
-- Keep the transaction signature and, if displayed, the dashboard support or recovery reference.
-- Check whether the wallet shows the transaction as submitted and whether it reached the intended network.
-- Leave the dashboard flow open when possible. If the current flow offers a recovery, verification, or signature-retry action, use it instead of starting another payment.
-- Confirm the connected wallet is the registered wallet used for the operation.
-- If the state does not resolve, contact support with the transaction signature and approximate time. Never share a seed phrase, private key, token, or full credential-bearing URL.
+| Verify                                                                                                                                                                                       | Expected result                                                                                                     | Action                                                                                                                                                                                           | Retry?                                                                    |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| The wallet shows the transaction as submitted; it used the intended network; the connected wallet is the registered wallet; the dashboard recovery or verification state is still available. | The current flow either recognizes the transaction or provides a recovery, verification, or signature-retry action. | Keep the transaction signature and any dashboard recovery reference. Use the existing flow's recovery action; if it remains unresolved, contact support with the signature and approximate time. | Retry the **verification action** when offered; do not retry the payment. |
+
+Payment recovery reconciles an existing transaction with dashboard access. It is not a refund approval and does not establish refund eligibility. See the [refund policy publication status](/legal/refunds) before making a separate refund request.
 
 ## Contact support safely
 
-Use [email](mailto:support@thornode.io) or the official [Thor Labs Discord](https://discord.gg/thorlabs). Include:
+Contact [ThorNode support](mailto:support@thornode.io) or use the official [Thor Labs Discord](https://discord.gg/thorlabs). Include:
 
 - Product, network, and location
-- Access identifier and tier, without wallet private material
+- Access identifier and tier, without private wallet material
 - Approximate timestamp and timezone
 - HTTP or gRPC status and a redacted error message
 - Client name and version
-- A short description of what changed before the failure
-- A transaction signature for payment recovery, when relevant
+- What changed immediately before the symptom
+- Transaction signature and dashboard recovery reference for payment recovery, when relevant
 
-Never include endpoint tokens, Bifrost keys, replay keys, complete Bifrost route URLs, wallet private keys, or seed phrases.
+Never include endpoint tokens, Bifrost credentials, replay keys, complete credential-bearing URLs, wallet private keys, or seed phrases. For a suspected credential exposure, rotate first and then report the product, location, and exposure window.
+
+## Next steps
+
+- [Verify dynamic access and capacity](/reference/plans-and-limits)
+- [Correct target and credential location scope](/reference/locations)
+- [Rotate or revoke an exposed credential](/reference/security#rotate-or-revoke-a-credential)

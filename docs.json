@@ -1,8 +1,8 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "ThorNode Documentation",
-  "description": "Build with ThorNode RPC, the FastGate Account API, low-latency streams, raw shreds, replay, and Bifrost transaction routes.",
+  "name": "ThorNode Developer Docs",
+  "description": "Query Solana, stream transactions, receive raw shreds, and integrate transaction routes with ThorNode.",
   "colors": {
     "primary": "#92400E",
     "light": "#FBB03B",
@@ -21,25 +21,31 @@
         "pages": [
           "index",
           "getting-started/quickstart",
+          "getting-started/choose-a-product",
           "getting-started/access-model"
         ]
       },
       {
-        "group": "Products",
-        "icon": "server",
-        "pages": [
-          "products/thoredge-rpc",
-          "products/fastgate-account-api",
-          "products/yellowstone-grpc",
-          "products/pulse",
-          {
-            "group": "Raw Shred Stream",
-            "root": "products/raw-shred-stream",
-            "expanded": true,
-            "pages": ["products/shredreplay"]
-          },
-          "products/bifrost-transaction-routes"
-        ]
+        "group": "RPC & account data",
+        "icon": "code",
+        "pages": ["products/thoredge-rpc", "products/fastgate-account-api"]
+      },
+      {
+        "group": "Data streams",
+        "icon": "wave-pulse",
+        "pages": ["products/yellowstone-grpc", "products/pulse"]
+      },
+      {
+        "group": "Raw Shred Stream",
+        "icon": "layer-group",
+        "root": "products/raw-shred-stream",
+        "expanded": true,
+        "pages": ["products/shredreplay"]
+      },
+      {
+        "group": "Transaction routes",
+        "icon": "route",
+        "pages": ["products/bifrost-transaction-routes"]
       },
       {
         "group": "Dashboard",
@@ -54,23 +60,13 @@
         ]
       },
       {
-        "group": "Reference",
+        "group": "Operate",
         "icon": "book-open",
         "pages": [
           "reference/plans-and-limits",
           "reference/locations",
           "reference/security",
           "reference/troubleshooting"
-        ]
-      },
-      {
-        "group": "Legal",
-        "icon": "scale-balanced",
-        "pages": [
-          "legal/policies",
-          "legal/terms",
-          "legal/privacy",
-          "legal/refunds"
         ]
       }
     ],
@@ -98,7 +94,7 @@
     ],
     "primary": {
       "type": "button",
-      "label": "ThorNode website",
+      "label": "Start building",
       "href": "https://www.thornode.io"
     }
   },

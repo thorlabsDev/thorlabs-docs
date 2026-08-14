@@ -1,31 +1,38 @@
 ---
 title: "ThorEdge RPC"
-description: "Connect to ThorNode's Solana JSON-RPC and WebSocket endpoints."
+description: "Connect to Solana JSON-RPC and WebSocket endpoints from one location URL."
 ---
 
-ThorEdge provides Solana JSON-RPC over HTTP and subscriptions over WebSocket. The dashboard creates the complete URLs for each access, network, and location.
+ThorEdge gives you Solana JSON-RPC over HTTPS and subscriptions over WSS. Copy the complete URLs for one location from the dashboard; a successful first request returns a JSON-RPC result with a recent blockhash.
 
-## Quick reference
+## Use ThorEdge when
 
-| Item                   | Value                                               |
-| ---------------------- | --------------------------------------------------- |
-| Request transport      | HTTPS JSON-RPC 2.0                                  |
-| Subscription transport | WSS                                                 |
-| Endpoint               | Complete location URL copied from the dashboard     |
-| Authentication         | Location credential carried by the copied URL       |
-| Optional restriction   | One stable public IPv4 egress address               |
-| Limits                 | Current values shown under **Usage** and **Limits** |
+Use ThorEdge for standard Solana RPC calls or WebSocket subscriptions. Supported account-query methods use the same URL and are routed through [FastGate](/products/fastgate-account-api).
 
-## Before you connect
+Choose [Yellowstone gRPC](/products/yellowstone-grpc), or [Pulse Decoded Shreds](/products/pulse) after deployment confirmation, when you need a persistent data stream instead of request-response RPC.
 
-You need an active pass or rental with access to the location you want to use. You also need a token for that location.
+## Connection contract
 
-<Note>
-  Tokens are location-bound. A token created for one location cannot
-  authenticate a URL in another location.
-</Note>
+| Item                 | Value                                           |
+| -------------------- | ----------------------------------------------- |
+| Requests             | HTTPS, JSON-RPC 2.0                             |
+| Subscriptions        | WSS                                             |
+| Endpoint             | Complete location URL copied from the dashboard |
+| Authentication       | Credential carried by the copied URL            |
+| Credential scope     | Selected access, network, and location          |
+| Optional restriction | One stable public IPv4 address                  |
+| Live limits          | **Usage** and **Limits** in the dashboard       |
 
-## Get your endpoints
+## Before you start
+
+You need:
+
+- An active pass or rental with an enabled network and location
+- A token for that location
+- `curl` and `jq` for the first request
+- One stable public egress IPv4 if you want to restrict the token
+
+## Copy your endpoints
 
 <Steps>
   <Step title="Select your access">
@@ -33,94 +40,75 @@ You need an active pass or rental with access to the location you want to use. Y
     use.
   </Step>
   <Step title="Choose a network and location">
-    Select the network and an enabled location. Availability is determined by
-    your access.
+    Select the network and an offered location for the access.
   </Step>
   <Step title="Create or select a token">
-    Create a token for the location if one does not exist. Apply an IP
-    restriction when your client has a stable public egress IP.
+    Use a token for the selected location. You can optionally restrict it to one
+    stable public IPv4 address.
   </Step>
-  <Step title="Copy both URLs">
-    Copy the complete HTTP RPC URL and WebSocket URL from the dashboard. Do not
-    assemble either URL manually.
+  <Step title="Copy both secure URLs">
+    Copy the complete `https://` RPC URL and `wss://` WebSocket URL. Do not
+    assemble either URL yourself.
   </Step>
 </Steps>
 
-Use the secure `https://` and `wss://` URLs unless you have a specific, controlled reason to use a non-TLS endpoint shown by the dashboard.
+<Warning>
+  The complete HTTPS and WSS URLs contain or resolve to authentication material.
+  Store them as secrets and keep them out of browser bundles, logs, screenshots,
+  and source control.
+</Warning>
 
-## Send an RPC request
+## Send your first request
 
-Store the copied URL in your secret manager or runtime environment:
+Store the copied HTTPS URL in your environment, then request a recent blockhash:
 
 ```bash
 export THORNODE_RPC_URL='<copied-https-url>'
+set -o pipefail
 
 curl --fail-with-body "$THORNODE_RPC_URL" \
   --header 'content-type: application/json' \
-  --data '{"jsonrpc":"2.0","id":1,"method":"getLatestBlockhash"}'
+  --data '{"jsonrpc":"2.0","id":1,"method":"getLatestBlockhash"}' \
+  | jq '{
+      jsonrpc,
+      id,
+      hasBlockhash: (.result.value.blockhash | type == "string"),
+      error: (.error // null)
+    }'
 ```
 
-For subscriptions, configure your Solana WebSocket client with the complete `wss://` URL copied from the same location panel.
+Expected output:
 
-Use the same endpoint from Node.js 20 or newer without installing a ThorNode-specific SDK:
-
-```javascript
-const endpoint = process.env.THORNODE_RPC_URL;
-
-if (!endpoint) {
-  throw new Error("THORNODE_RPC_URL is required");
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "hasBlockhash": true,
+  "error": null
 }
-
-const response = await fetch(endpoint, {
-  method: "POST",
-  headers: { "content-type": "application/json" },
-  body: JSON.stringify({
-    jsonrpc: "2.0",
-    id: 1,
-    method: "getLatestBlockhash",
-  }),
-});
-
-const responseBody = await response.text();
-
-let payload;
-
-try {
-  payload = JSON.parse(responseBody);
-} catch {
-  throw new Error(
-    `ThorEdge returned a non-JSON response (HTTP ${response.status})`,
-  );
-}
-
-if (!response.ok) {
-  throw new Error(`ThorEdge HTTP ${response.status}`);
-}
-
-if (payload.error) {
-  throw new Error(`Solana RPC ${payload.error.code}: ${payload.error.message}`);
-}
-
-console.log(payload.result.value.blockhash);
 ```
 
-For account-heavy calls such as `getProgramAccounts`, continue with the [FastGate Account API](/products/fastgate-account-api). FastGate uses this same ThorEdge endpoint; it does not require a second credential.
+`hasBlockhash: true` and `error: null` are the success signal. Configure your Solana WebSocket client with the complete `wss://` URL from the same location panel when you need subscriptions.
 
-## Operate safely
+## Run in production
 
-- Treat the full endpoint URL as a secret because it contains or resolves to your credential.
-- Keep tokens in server-side configuration. Do not ship them in browser bundles, mobile apps, screenshots, or logs.
-- Restrict a token to a public egress IP when possible.
-- Regenerating or revoking a token invalidates the old token for that location. Other location tokens are unaffected.
-- Use narrow retry backoff for transient failures and avoid retry loops that amplify load.
-
-See [Security](/reference/security) for credential handling guidance.
+- Treat non-2xx HTTP responses and JSON-RPC `error` objects as failures.
+- Retry only transient failures with bounded backoff and jitter.
+- Recreate WebSocket subscriptions after reconnecting and reconcile state when gaps matter.
+- Recopy a URL after its token is regenerated or revoked; other location tokens are unaffected.
+- Read current throughput and concurrency values from **Usage** and **Limits**.
 
 ## Troubleshooting
 
-- **Unauthorized or forbidden:** confirm the token, selected access, network, location, and optional IP restriction.
-- **Rate limited:** compare current traffic with the live values shown under **Usage** and **Limits** in the dashboard.
-- **RPC works but WebSocket fails:** verify that you copied the WebSocket URL and that your network permits outbound WebSocket traffic.
-- **A previously working token stopped:** check whether it was regenerated, revoked, or its access expired.
+| Symptom                   | Verify                                                                     | Expected result                                                | Action                                                       |
+| ------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------ |
+| Unauthorized or forbidden | Access, network, location, token, and optional IPv4 restriction            | One minimal RPC call returns a JSON-RPC result                 | Recopy the complete URL from the selected location           |
+| Rate limited              | Current traffic against **Usage** and **Limits**                           | Traffic remains below the applicable live limit                | Reduce concurrency and retry transient failures with backoff |
+| RPC works but WSS fails   | The copied URL starts with `wss://`; outbound WebSocket traffic is allowed | The secure connection opens and accepts a subscription request | Recopy the WSS URL and update network policy                 |
+| A working URL stopped     | The token was regenerated, revoked, or its access expired                  | A current active token succeeds; the replaced value does not   | Create or select a current token and replace the URL         |
 
-Limits and availability can change by plan and access. Use the [plans and limits reference](/reference/plans-and-limits) and the live dashboard together.
+## Next steps
+
+- [Query accounts through FastGate](/products/fastgate-account-api)
+- [Read current plans and limits](/reference/plans-and-limits)
+- [Store and rotate credentials safely](/reference/security)

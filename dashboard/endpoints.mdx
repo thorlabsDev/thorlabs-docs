@@ -1,106 +1,113 @@
 ---
-title: "Endpoints"
-description: "Create location-scoped ThorNode credentials, copy RPC and WebSocket URLs, restrict access by IPv4, and rotate secrets safely."
+title: "Create and manage endpoints"
+description: "Generate a location-scoped token, copy SSL RPC and WebSocket URLs, add one IPv4 restriction, and rotate or revoke the token."
 ---
 
-Use **Endpoints** to turn an owned pass or active rental into application credentials. Product tabs can remain visible for an ineligible access. Treat enabled controls, offered locations, and the current backend response—not tab visibility—as the availability signal.
+Use **Endpoints → Endpoints** to create RPC and WebSocket credentials for one access, network, and location. You are finished when **Token & Endpoints** shows the selected location's token and connection details.
 
-## Get an RPC or WebSocket endpoint
+## Before you start
+
+You need an owned pass or active rental under the Discord account. Decide which deployment location the credential will serve.
+
+If you plan to restrict the token, identify the server's stable public egress IPv4 address. You can add the restriction after the endpoint works.
+
+## Generate a location token
 
 <Steps>
-  <Step title="Select the access source">
-    Open **Endpoints** and choose the owned pass or rental your application should use.
+  <Step title="Open the endpoint panel">
+    Open **Endpoints** in the sidebar and select the **Endpoints** tab.
   </Step>
+  <Step title="Select the access">
+    Choose the pass or rental your application should consume. Product and location options are scoped to this access.
+  </Step>
+  <Step title="Select the network and location">
+    Under **Node access**, select a **Network** and **Location**. A dot beside a location indicates that it already has an active token.
+  </Step>
+  <Step title="Generate the token">
+    Under **Token & Endpoints — _location_**, choose **Generate token for _location_**.
 
-<Step title="Select a network and location">
-  Choose from the live options shown by the dashboard. Availability can differ
-  between access sources.
-</Step>
-
-  <Step title="Create or copy the location token">
-    Generate the token if the location does not have one, then copy the full RPC or WebSocket URL provided by the dashboard.
-
-    Use the copied URL as-is. It already contains the connection details required for that location.
+    Generation succeeds when the panel shows a masked region-bound token plus the **RPC** and **WS** rows. If streaming targets are configured for that location, they appear in the **Streaming** section.
 
   </Step>
-
-  <Step title="Configure the application">
-    Store the full URL or token in a server-side secret manager. Use the SSL RPC URL for HTTPS clients and the SSL WebSocket URL for secure WebSocket clients.
+  <Step title="Copy the secure URL">
+    Copy the **RPC** or **WS** value from the **SSL** column. Store the complete URL as a secret and use it without rebuilding the hostname or token path.
   </Step>
 </Steps>
 
-<Warning>
-  The token embedded in or associated with an endpoint URL is a secret. Do not
-  commit the URL to a repository, expose it in frontend code, or include it in
-  logs.
-</Warning>
+Each location has an independent token. A token copied for one location does not authenticate another location, and rotating one does not alter the others.
 
-## Location isolation
+## Verify an RPC endpoint
 
-Each location has an independent token. That isolation has two important effects:
-
-- Regenerating or revoking one location's token does not change another location's token.
-- A failure in one location does not mean the credential for a different location is invalid.
-
-Use separate environment variables for each deployment instead of copying one region's token across locations.
-
-## Restrict a token by IP
-
-An IP restriction applies to both RPC and WebSocket traffic authenticated by that location token.
-
-<Steps>
-  <Step title="Find the deployment's egress address">
-    Identify the single public IPv4 address from which your server reaches ThorNode. A private address such as `10.x.x.x` or `192.168.x.x` is not valid.
-  </Step>
-
-<Step title="Save the restriction">
-  Enter exactly one public IPv4 address in the token's restriction field and
-  save it.
-</Step>
-
-  <Step title="Verify both protocols">
-    Test RPC and WebSocket connections from the allowed server. Requests from any other public IP should no longer authenticate with that token.
-  </Step>
-</Steps>
-
-Do not enter a hostname, URL, port, CIDR range, IPv6 address, or comma-separated list. To clear the restriction, leave the field blank and save.
-
-<Note>
-  Dynamic residential, mobile, serverless, and some cloud egress addresses can
-  change. Leave the restriction blank until you have a stable public IPv4
-  address, then enable it.
-</Note>
-
-## Regenerate or revoke a token
-
-**Regenerate** when an application still needs the location but the current secret may be exposed. The old token stops working for that location, so update every dependent service immediately.
-
-**Revoke** when the location credential is no longer required. Revoking it does not delete the underlying pass or rental and does not revoke tokens for other locations.
-
-<Steps>
-  <Step title="Identify dependants">
-    Find every service, job, and secret store that uses the location token.
-  </Step>
-
-<Step title="Regenerate or revoke">
-  Confirm the action for the intended access, network, and location.
-</Step>
-
-  <Step title="Update and test">
-    Replace the secret where required, restart or reload clients, and send a health request.
-  </Step>
-</Steps>
-
-## Test an RPC URL
-
-Copy the full SSL RPC URL before running this request:
+Set the complete SSL RPC URL in your terminal:
 
 ```bash
-export THORNODE_RPC_URL='<full SSL RPC URL copied from the dashboard>'
+export THORNODE_RPC_URL='<full SSL RPC URL copied from Endpoints>'
+```
 
+Send one request:
+
+```bash
 curl --fail-with-body --request POST "$THORNODE_RPC_URL" \
   --header 'content-type: application/json' \
   --data '{"jsonrpc":"2.0","id":1,"method":"getLatestBlockhash"}'
 ```
 
-If authentication fails, check that you copied the URL for the intended location, that the access source is active, and that the request originates from the allowed IPv4 address. See [Usage and limits](/dashboard/usage-and-limits) for throttling and capacity checks.
+Representative output:
+
+```text
+{"jsonrpc":"2.0","result":{"context":{"slot":...},"value":{"blockhash":"...","lastValidBlockHeight":...}},"id":1}
+```
+
+The endpoint works when the response contains `result.value.blockhash`. A JSON-RPC `error` object or non-2xx HTTP response is a failure even if a body is returned.
+
+## Restrict the token to one IPv4 address
+
+The restriction applies to RPC and WebSocket traffic authenticated by the selected location token.
+
+<Steps>
+  <Step title="Confirm the public egress address">
+    Determine the single public IPv4 address ThorNode sees after your server's NAT, gateway, VPN, or proxy. Do not use a private interface address.
+  </Step>
+  <Step title="Save the restriction">
+    Enter the address under **Restrict to IP — _location_ (optional)** and choose **Save restriction**.
+
+    The field accepts one IPv4 value and rejects common private, local, and
+    multicast ranges. Enter the deployment's real, globally routable public
+    egress address; syntactic acceptance alone does not prove that the value is
+    routable. The field does not accept a hostname, URL, port, CIDR range, IPv6
+    address, or address list.
+
+  </Step>
+  <Step title="Test from the deployment">
+    Repeat the RPC test from the allowed server. The request should succeed there and fail authentication from another public address.
+  </Step>
+</Steps>
+
+Leave the field blank and choose **Save restriction** to remove the restriction. Keep it blank for deployments with changing public egress addresses.
+
+## Regenerate or revoke a token
+
+Choose **Regenerate** when the deployment still needs the location but the secret may be exposed. Choose **Revoke** when the deployment no longer needs the location credential.
+
+<Warning>
+  Regeneration invalidates the current location token immediately. Revoke leaves
+  that location with no working token. Identify every dependent service before
+  confirming either action; other locations are unaffected.
+</Warning>
+
+After regeneration, replace the secret in every dependent service and repeat the verification request. After revocation, the selected location returns to **No token yet for _location_**. Neither action deletes the pass or rental.
+
+## Diagnose a failed endpoint
+
+| Symptom                          | Verify                                                               | Expected result                                           | Action                                                                                       |
+| -------------------------------- | -------------------------------------------------------------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `401` or `403`                   | Access, network, location, copied URL, and optional IPv4 restriction | All values refer to the same selected location            | Recopy the URL or correct the restriction; regenerate only if the secret is stale or exposed |
+| `429`                            | **Usage** and **Limits** for the selected access                     | Traffic remains within the live rate or concurrency limit | Reduce concurrency and retry transient requests with bounded backoff                         |
+| RPC works but WebSocket does not | The copied row and column                                            | The client uses the **WS** value under **SSL**            | Recopy the WSS URL and check proxy or firewall WebSocket support                             |
+| Another location works           | The failing location's own token and status                          | Each location has its own valid token                     | Debug the failing location without rotating the healthy token                                |
+
+## Next steps
+
+- [Connect a production RPC or WebSocket client](/products/thoredge-rpc).
+- [Monitor the token's usage and limits](/dashboard/usage-and-limits).
+- [Store and rotate secrets safely](/reference/security).

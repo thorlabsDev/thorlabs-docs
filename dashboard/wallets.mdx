@@ -1,71 +1,88 @@
 ---
-title: "Wallets"
-description: "Register up to three Solana wallets for pass discovery, rentals, and renewals."
+title: "Register and remove wallets"
+description: "Associate up to three signed Solana addresses with your Discord account for pass discovery, rentals, and renewals."
 ---
 
-Registering a wallet proves that you control a Solana address and associates it with your Discord-authenticated dashboard account. ThorNode uses registered wallets to find eligible owned passes and authorize supported payments.
+Register a Solana wallet when ThorNode needs to discover a pass held by that address or verify the wallet used for a rental or renewal payment. Registration succeeds when the address appears under **Verified wallets**.
 
-<Note>You can register up to three wallets per dashboard account.</Note>
+You can register up to three wallets per dashboard account.
 
 ## Register a wallet
 
+Before starting, sign in with the intended Discord account and unlock the Solana wallet that holds the pass or will make the payment.
+
 <Steps>
-  <Step title="Sign in">
-    Open the dashboard from [thornode.io](https://www.thornode.io) and sign in with Discord.
+  <Step title="Open Wallets">
+    Choose **Wallets** in the sidebar. The counter beside **Verified wallets**
+    shows used and available slots.
   </Step>
-
-<Step title="Connect the intended wallet">
-  Open **Wallets**, start the registration flow, and select the Solana address
-  that owns your pass or will be used for a payment.
-</Step>
-
-<Step title="Review the message">
-  Confirm that the address and dashboard account are correct. Registration uses
-  a signed message to prove control of the address.
-</Step>
-
-  <Step title="Sign and confirm">
-    Approve the message in your wallet. Wait until the address appears in the registered wallet list before continuing.
+  <Step title="Connect the address">
+    Choose **Connect Wallet** and select the address you intend to register.
+    Check the complete public address in the wallet before continuing.
+  </Step>
+  <Step title="Register the address">
+    Choose **Register** and review the wallet's message-signing request. Approve
+    the verification message.
+  </Step>
+  <Step title="Confirm registration">
+    Wait for the address to appear under **Verified wallets** with a
+    **Verified** badge. The counter increases, for example from `0/3` to `1/3`.
   </Step>
 </Steps>
 
+The signature proves control of the address. It does not transfer SOL, tokens, NFTs, or authority over the wallet.
+
 <Warning>
-  ThorNode never needs your seed phrase or private key. A wallet-registration
-  prompt should not ask you to transfer assets. Reject any unexpected request
-  and reopen the flow from the official dashboard.
+  A wallet-registration request never needs your seed phrase or private key and
+  should not ask you to transfer an asset. Reject an unexpected request and
+  reopen **Wallets** from the authenticated dashboard.
 </Warning>
 
-## Use a wallet for payment
+## Use a registered wallet for payment
 
-The wallet connected at payment time must be registered to your dashboard account. Before starting a rental or renewal:
+The wallet connected during checkout must match an address under **Verified wallets**. The dashboard shortens addresses in the list; use the row's copy action when you need the complete value.
 
-1. Check that the connected address matches the address shown in **Wallets**.
-2. Confirm that the wallet can use the USDC asset and network displayed by the dashboard.
-3. Review the live amount and payment details before signing.
+Before choosing **Pay with USDC** for a rental or the renewal payment button:
 
-Switching accounts in a wallet extension can silently change the connected address. Recheck it on every payment confirmation.
+1. Compare the full address in the wallet extension with the complete registered address you copied from **Verified wallets**.
+2. Review the asset or mint, amount, and destination in the wallet's transaction approval. The dashboard does not display every transaction field.
+3. Confirm that the connected wallet has the required asset and enough balance.
+
+Wallet extensions can switch accounts without changing the dashboard login. Recheck the connected address for every payment.
 
 ## Remove a wallet
 
-Open **Wallets**, choose the address, and follow the signed removal flow. Removing a wallet disconnects the address from your dashboard account; it does not move or destroy assets held by that address.
+Removing a wallet deletes its association with the Discord account. It does not move or destroy assets held by the address.
 
-Before removal, make sure you will not lose dashboard access to a pass that is held only by that wallet. You can register the address again later if you still control it and have not reached the wallet limit.
+<Steps>
+  <Step title="Connect the wallet being removed">
+    Under **Wallets**, connect the exact address you want to remove. The delete
+    action remains unavailable for an address that is not currently connected.
+  </Step>
+  <Step title="Choose the delete action">
+    Use the trash action on that address and sign the removal verification
+    message.
+  </Step>
+  <Step title="Confirm removal">
+    The operation is complete when the address disappears from **Verified
+    wallets** and the wallet counter decreases.
+  </Step>
+</Steps>
 
-## Troubleshooting
+Before removal, check whether this is the only registered address holding an access you still need. Without that association, the pass may no longer appear under the Discord account.
 
-### The pass does not appear
+## Troubleshoot wallet registration
 
-- Confirm that its owner address is registered under the Discord account you are currently using.
-- Confirm that your wallet extension is connected to the expected Solana address.
-- Refresh after registration has completed.
-- Check the dashboard for the pass's current eligibility and state.
+| Symptom                                            | Verify                                    | Expected result                                                | Action                                                                              |
+| -------------------------------------------------- | ----------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Pass is missing                                    | Discord account and owning public address | The owning address appears under **Verified wallets**          | Register the owner, then refresh **Overview**                                       |
+| **Register** is unavailable                        | Wallet count and connected address        | Fewer than three wallets are registered and the address is new | Remove an unused wallet or connect a different address                              |
+| Payment says the wallet is not registered          | Full connected and registered addresses   | Both addresses match exactly                                   | Switch the wallet extension to the registered account                               |
+| Delete action is unavailable                       | Currently connected address               | The connected address is the one being removed                 | Connect that wallet, then retry the signed removal                                  |
+| Signature was approved but the list did not update | **Verified wallets** after a refresh      | The address appears once                                       | Retry the read before signing another message; contact support if it remains absent |
 
-### The payment screen rejects the wallet
+## Next steps
 
-The connected address may not match a registered address. Return to **Wallets**, compare the full address, then reconnect the correct account before retrying.
-
-### The registration limit is reached
-
-Remove a wallet you no longer use, then register the new address. Do not remove the only wallet associated with an access source you still need.
-
-If a signature completed but the dashboard does not update, do not share the signature message or any secret material publicly. Contact [ThorNode support](mailto:support@thornode.io) with your Discord account and public wallet address.
+- [Create a location token](/dashboard/endpoints) for a discovered pass.
+- [Purchase time-limited access](/dashboard/rentals) with a registered wallet.
+- [Renew an eligible owned pass](/dashboard/renewals).

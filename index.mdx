@@ -1,92 +1,75 @@
 ---
 title: "ThorNode documentation"
-description: "Build low-latency Solana applications with ThorNode RPC, account APIs, decoded and raw shred streams, replay, and Bifrost routes."
+description: "Choose a ThorNode product, create access in the dashboard, and connect a Solana application."
 ---
 
-ThorNode provides location-aware Solana infrastructure through one dashboard. Create access for RPC and the FastGate Account API, prepare supported Yellowstone or Pulse Decoded Shreds integrations, receive live raw shreds, replay recently captured shreds, and onboard to provider-specific Bifrost transaction routes.
+ThorNode gives you one dashboard for Solana RPC, account queries, data streams, raw shreds, replay, and provider-specific transaction routes.
 
-<CardGroup cols={3}>
-  <Card title="Connect to RPC" icon="bolt" href="/products/thoredge-rpc">
-    Create a location token and connect your Solana HTTP and WebSocket clients.
-  </Card>
-  <Card
-    title="Query accounts with FastGate"
-    icon="magnifying-glass-chart"
-    href="/products/fastgate-account-api"
-  >
-    Run account-heavy JSON-RPC methods through the same ThorEdge endpoint.
-  </Card>
-  <Card
-    title="Stream Solana data"
-    icon="wave-pulse"
-    href="/products/yellowstone-grpc"
-  >
-    Prepare a supported Yellowstone or Pulse Decoded Shreds integration with the
-    required onboarding contract.
-  </Card>
-  <Card
-    title="Work with raw shreds"
-    icon="layer-group"
-    href="/products/raw-shred-stream"
-  >
-    Register a live UDP receiver or replay a recent slot range.
-  </Card>
-</CardGroup>
+## Make your first RPC call
 
-## Start in the dashboard
+You need a Discord account and an active owned pass or rental. A Solana wallet is required when you need to prove pass ownership, purchase a rental, or renew a pass.
 
 <Steps>
-  <Step title="Login with Discord">
-    Open the dashboard from [thornode.io](https://www.thornode.io) and
-    authenticate with the Discord account associated with your ThorNode access.
-    If the website's dashboard link is unavailable, contact support instead of
-    guessing a hostname from an old bookmark.
+  <Step title="Sign in">
+    Open the dashboard from [thornode.io](https://www.thornode.io) and choose **Login with Discord**.
   </Step>
-  <Step title="Choose an access">
-    Use an active owned pass or rental. Product tabs can remain visible even
-    when an access is not eligible; enabled controls, locations, and current
-    backend responses establish availability.
+  <Step title="Create a location token">
+    Open **Endpoints**, select an access, network, and location, then generate a token for that location.
   </Step>
-  <Step title="Create credentials">
-    Generate the token or product key you need, then copy its connection details
-    directly from the dashboard.
-  </Step>
-  <Step title="Integrate and monitor">
-    Keep credentials server-side, test the connection, and monitor current usage
-    and limits in the dashboard.
+  <Step title="Copy and test the RPC URL">
+    Copy the **RPC** URL in the **SSL** column and send `getLatestBlockhash`.
+
+    A response containing `result.value.blockhash` confirms that the access, location token, and URL work together.
+
   </Step>
 </Steps>
 
-<Note>
-  Locations, prices, limits, routes, and product availability can change. The
-  authenticated dashboard and its live backend responses are authoritative.
-</Note>
+Follow the [five-minute RPC quickstart](/getting-started/quickstart) for the complete command and expected response.
 
-## Choose a product
+## Choose by outcome
 
-| Need                                 | Product                                                            | Transport               |
-| ------------------------------------ | ------------------------------------------------------------------ | ----------------------- |
-| Solana requests and subscriptions    | [ThorEdge RPC](/products/thoredge-rpc)                             | HTTPS and WSS           |
-| Account-heavy Solana queries         | [FastGate Account API](/products/fastgate-account-api)             | HTTPS JSON-RPC          |
-| Geyser Subscribe-compatible streams  | [Yellowstone gRPC](/products/yellowstone-grpc)                     | gRPC                    |
-| Decoded-shred transaction stream     | [Pulse Decoded Shreds](/products/pulse)                            | QUIC                    |
-| Live raw shreds                      | [Raw Shred Stream](/products/raw-shred-stream)                     | UDP                     |
-| Replay rolling-window shreds         | [Replay](/products/shredreplay)                                    | UDP                     |
-| Provider-specific transaction routes | [Bifrost Transaction Routes](/products/bifrost-transaction-routes) | HTTPS required publicly |
+| What you want to build                               | Start with                                                         | What your application receives                          |
+| ---------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------- |
+| Solana JSON-RPC requests or subscriptions            | [ThorEdge RPC](/products/thoredge-rpc)                             | JSON-RPC responses over HTTPS or events over WSS        |
+| Account-heavy queries through supported methods      | [FastGate Account API](/products/fastgate-account-api)             | Solana account data through the same ThorEdge HTTPS URL |
+| Filtered, Geyser Subscribe-compatible data           | [Yellowstone gRPC](/products/yellowstone-grpc)                     | A persistent gRPC stream                                |
+| A planned stream of transactions decoded from shreds | [Pulse Decoded Shreds](/products/pulse)                            | A persistent QUIC stream after deployment confirmation  |
+| Raw live Solana shreds at your receiver              | [Raw Shred Stream](/products/raw-shred-stream)                     | UDP datagrams at your public IPv4 and port              |
+| Recently captured raw shreds for recovery or testing | [Replay](/products/shredreplay)                                    | An availability-confirmed slot-range job over UDP       |
+| A provider-specific transaction operation            | [Bifrost Transaction Routes](/products/bifrost-transaction-routes) | The response defined by that route's contract           |
+
+If more than one row fits, use [Choose a product](/getting-started/choose-a-product) to compare delivery model, authentication, and integration readiness.
+
+## Understand dashboard access
+
+Your Discord login identifies the dashboard account. An owned pass or active rental supplies an access source; each product's controls and server response determine whether that access type is supported. Credentials are then created for the selected access and, where applicable, for a specific network and location.
+
+The dashboard displays product controls, locations, credential state, usage, and a published tier-limit row. Runtime responses remain authoritative for actual availability and enforcement.
 
 <CardGroup cols={2}>
   <Card
-    title="Five-minute quickstart"
-    icon="play"
-    href="/getting-started/quickstart"
+    title="Understand access"
+    icon="key"
+    href="/getting-started/access-model"
   >
-    Sign in, select access, create a token, and send your first RPC request.
+    See how Discord accounts, wallets, passes, rentals, locations, and
+    credentials relate.
+  </Card>
+  <Card title="Use the dashboard" icon="gauge-high" href="/dashboard/overview">
+    Find access, create credentials, monitor usage, rent, and renew.
   </Card>
   <Card
-    title="Troubleshooting"
+    title="Protect credentials"
+    icon="shield-halved"
+    href="/reference/security"
+  >
+    Store, restrict, rotate, and revoke tokens and credential-bearing URLs.
+  </Card>
+  <Card
+    title="Troubleshoot a connection"
     icon="life-ring"
     href="/reference/troubleshooting"
   >
-    Diagnose authentication, limits, streaming, UDP, and payment issues.
+    Diagnose authentication, limits, streaming, UDP, and payment symptoms.
   </Card>
 </CardGroup>

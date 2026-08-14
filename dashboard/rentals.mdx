@@ -1,82 +1,90 @@
 ---
-title: "Direct rentals"
-description: "Purchase time-limited ThorNode access when the dashboard direct-rental catalog is enabled, and recover a pending USDC payment safely."
+title: "Rent time-limited access"
+description: "Purchase a live ThorNode rental offer with a registered Solana wallet and recover a submitted payment without paying twice."
 ---
 
-When the direct-rental rollout is enabled for your account and environment, it provides time-limited ThorNode access without requiring you to own a pass NFT. The dashboard catalog determines which tiers, durations, and USDC amounts are currently available.
-
-<Note>
-  Open the dashboard from [thornode.io](https://www.thornode.io). Do not rely on
-  an old price table or bookmarked checkout address. If **Rent** does not show a
-  catalog, direct rental is not currently available to you.
-</Note>
+Use **Rent** to purchase time-limited access without owning a pass NFT. The rental is ready when it appears under **Your rentals** and in normal access selectors.
 
 ## Before you rent
 
-- Sign in with Discord.
-- Register the Solana wallet that will make the payment.
-- Connect that same registered wallet in the rental flow.
-- Review the live tier, duration, USDC asset, amount, and expiration information.
+You need:
 
-The connected wallet must match one of the wallet addresses registered to your dashboard account.
+- A Discord-authenticated dashboard account
+- A Solana wallet registered under **Wallets**
+- That same registered wallet connected in **Rent**
+- Enough USDC for the displayed amount and network fees
+- A current browser that supports the Web Locks API
+
+The live catalog determines which tiers, durations, and displayed amounts are available. The current UI labels rental payments as USDC but does not display the mint address; verify the asset or mint in the wallet approval before signing. An unavailable tier or missing duration cannot be purchased through the current flow.
 
 ## Purchase a rental
 
 <Steps>
   <Step title="Open Rent">
-    If **Rent** is available, open it and wait for the current catalog to load.
+    Choose **Rent** in the sidebar. Existing active rentals appear under **Your
+    rentals**.
   </Step>
-
-<Step title="Choose a live offer">
-  Select a tier and duration from the options currently displayed. If an option
-  is absent, it is not available through the direct rental flow at that time.
-</Step>
-
-<Step title="Review the payment">
-  Verify the registered wallet, USDC asset, exact amount, rental duration, and
-  resulting access before signing.
-</Step>
-
-<Step title="Approve once">
-  Approve the payment in your wallet, then keep the dashboard open while it
-  submits and verifies the transaction.
-</Step>
-
-  <Step title="Wait for activation">
-    Continue only after the dashboard marks the rental active. It will then appear as an access source in the dashboard and eligible endpoint product views.
+  <Step title="Choose an available tier">
+    Under **Choose a tier**, select a tier whose card offers active rental
+    durations.
+  </Step>
+  <Step title="Choose a duration">
+    Under **Choose a duration**, select one of the live options. The card shows
+    the exact USDC amount for that offer.
+  </Step>
+  <Step title="Review the checkout state">
+    Confirm the tier, duration, and displayed amount. In the wallet extension,
+    verify the full paying address, asset or mint, destination, and amount
+    before signing. The paying address must be registered to the Discord
+    account.
+  </Step>
+  <Step title="Submit one payment">
+    Choose **Pay with USDC**, approve the transaction in the wallet, and keep
+    the flow open while ThorNode verifies it.
+  </Step>
+  <Step title="Confirm activation">
+    Wait for **Rental fulfilled**. The rental is active when its card appears
+    under **Your rentals** and it becomes selectable in **Endpoints**.
   </Step>
 </Steps>
 
 <Warning>
-  After you approve or submit a payment, do not pay again because the screen is
-  slow, refreshed, or still verifying. A second payment can create a duplicate
-  charge.
+  After approving a payment, do not choose **Pay with USDC** again or submit
+  another transaction while verification is unresolved. Refreshing or seeing a
+  slow screen does not prove that the first payment failed.
 </Warning>
 
-## Recover a pending payment
+## Recover a submitted payment
 
-The dashboard preserves payment progress so a submitted transaction can be reconciled without paying twice.
+The rental flow saves a signed payment attempt so it can continue verification after an interruption. Return to **Rent** in the same browser profile and use the saved-payment state instead of starting a new checkout.
 
-<Steps>
-  <Step title="Check the current state">
-    Return to the same rental flow and allow it to resume verification. Do not start a new purchase.
-  </Step>
+| State shown                  | What it means                                         | What to do                                                           |
+| ---------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
+| **Payment sent — verifying** | The signature is saved and verification is continuing | Wait or choose **Check now**; do not pay again                       |
+| **Expired payment attempt**  | The saved attempt needs another verification check    | Choose **Check now**; do not start a second payment                  |
+| **Rental fulfilled**         | Payment was accepted and access was assigned          | Open **Your rentals** and continue to **Endpoints**                  |
+| **Payment cancelled**        | No payment was submitted                              | You can start a new checkout                                         |
+| **Payment needs support**    | Automatic reconciliation cannot finish                | Keep the support code and contact official support; do not pay again |
 
-<Step title="Keep the recovery details">
-  Copy the transaction signature and any recovery or support code shown by the
-  dashboard. These identifiers are not wallet private keys, but you should still
-  share them only with official support.
-</Step>
-
-  <Step title="Escalate without repaying">
-    If the state remains pending, contact [ThorNode support](mailto:support@thornode.io) with the public paying wallet, transaction signature, recovery or support code, and approximate payment time.
-  </Step>
-</Steps>
-
-Support can use those details to find the submitted payment. Never send your seed phrase, private key, or endpoint token.
+If support is required, include the public paying wallet, transaction signature when available, any support code currently displayed, approximate payment time, and timezone. Never send a seed phrase, private key, endpoint token, or complete credential-bearing URL.
 
 ## After activation
 
-Open **Endpoints**, select the rental, and create credentials for its available products and locations. The dashboard shows the exact expiration time and current entitlement.
+Open **Endpoints**, select the rental, and create its RPC location token. Use another product's controls only when its response confirms that the rental is supported and enabled for the selected location. The rental's expiration is shown in the dashboard.
 
-Direct rentals do not appear in the owned-pass renewal flow. To continue after expiration, use only the rental options currently offered by the dashboard.
+Rentals do not appear as renewable passes under **Renew**. To continue after expiration, use only an offer currently available under **Rent**.
+
+## Troubleshoot a rental
+
+| Symptom                                        | Verify                                                                      | Expected result                                                                        | Action                                                                                                   |
+| ---------------------------------------------- | --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| **Pay with USDC** is unavailable               | Browser Web Locks support, tier, duration, wallet registration, and balance | The browser supports Web Locks, a live offer is selected, and the wallet is registered | Use a current supported browser or correct the failed prerequisite shown in the flow                     |
+| Wallet is rejected                             | Full connected address under **Wallets**                                    | The addresses match exactly                                                            | Connect a registered wallet and retry before signing                                                     |
+| Payment is still verifying                     | Saved-payment banner and transaction signature                              | The flow resumes the existing attempt                                                  | Choose **Check now** or wait; do not start another checkout                                              |
+| Rental is fulfilled but missing from selectors | **Your rentals** and **Overview** after refresh                             | The rental card is active                                                              | Refresh access once, then contact support with the transaction signature and rental or access identifier |
+
+## Next steps
+
+- [Create credentials for the rental](/dashboard/endpoints).
+- [Monitor the rental's traffic and limits](/dashboard/usage-and-limits).
+- [Check the refund-policy publication status](/legal/refunds) before requesting payment support.

@@ -1,99 +1,105 @@
 ---
 title: "Bifrost Transaction Routes"
-description: "Integrate with provider-specific Solana transaction routes through ThorNode's Bifrost catalog."
+description: "Integrate with a selected provider-specific transaction route through ThorNode."
 ---
 
-Bifrost Transaction Routes expose provider-specific operations through a dashboard-generated key path. You choose the route; Bifrost does not promise automatic best-route selection. Treat the dashboard as authoritative for route availability and complete URLs. It does not expose the full provider request schema or prove that the selected deployment enforces key authentication, so obtain both confirmations before integrating.
+**Guided integration.** Bifrost exposes provider-specific transaction operations. The dashboard labels this product **Private TX**. You select the provider and route explicitly; Bifrost does not perform smart routing or guarantee transaction privacy, MEV protection, provider acceptance, or on-chain landing.
 
-## Quick reference
+## Choose Bifrost
 
-| Item                  | Value                                                            |
-| --------------------- | ---------------------------------------------------------------- |
-| Transport             | Dashboard-supplied HTTP(S); HTTPS required for public traffic    |
-| Endpoint              | Complete provider route URL copied from the dashboard            |
-| Authentication        | Deployment mode must be confirmed; a key path alone is not proof |
-| Method, headers, body | Provider-specific contract supplied separately                   |
-| Route catalog         | Current dashboard options for the selected access                |
-| Integration readiness | Auth enforcement, safe transport, and route contract required    |
-| Success semantics     | A 2xx is transport success only                                  |
+| Use it when                                                             | Choose something else when                                                       |
+| ----------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| You need one provider-specific operation exposed through **Private TX** | You need automatic provider selection or fallback                                |
+| ThorNode has supplied its exact route contract                          | You need a self-service API whose complete public contract is already documented |
 
-## Copy a route
+## Integration contract
+
+| Item             | Value                                                                                                        |
+| ---------------- | ------------------------------------------------------------------------------------------------------------ |
+| Dashboard path   | **Endpoints → Private TX**                                                                                   |
+| Integration mode | Guided integration                                                                                           |
+| Route selection  | Your application chooses a specific provider route                                                           |
+| Catalog          | Dashboard-displayed provider operations; availability is confirmed by the route contract and server response |
+| HTTP success     | A `2xx` response reports transport success only                                                              |
+| Chain success    | Track a returned signature according to your application's confirmation policy                               |
+
+## Understand the route catalog
+
+The dashboard catalog may include `submit`, `batch`, `bundle`, `status`, and `nonce` operations. A shared label does not make request or response schemas interchangeable.
+
+| Possible operation | The supplied route contract must define                                     |
+| ------------------ | --------------------------------------------------------------------------- |
+| `submit`           | Transaction encoding, required fields, and returned identifier or signature |
+| `batch`            | Item limits, ordering, per-item results, and partial-failure behavior       |
+| `bundle`           | Transaction ordering, provider acceptance semantics, and failure behavior   |
+| `status`           | Lookup identifier, state values, terminal states, and polling guidance      |
+| `nonce`            | Nonce scope, lifetime, reuse rules, and its placement in later requests     |
+
+Choose the operation that matches your provider workflow. A `submit` payload is not a valid `batch` or `bundle` contract merely because the same provider offers both.
+
+## Get the route contract
+
+ThorNode onboarding or support must supply every item below for the exact provider, operation, access, and location before the integration is runnable:
+
+| Required artifact | Exact information needed                                                       |
+| ----------------- | ------------------------------------------------------------------------------ |
+| Endpoint          | Complete `https://` URL                                                        |
+| Authentication    | Credential type, exact placement, scope, rotation path, and enforcement status |
+| HTTP request      | Method, required headers, content type, and body schema                        |
+| Route behavior    | Encodings, limits, idempotency, retry, timeout, and pacing rules               |
+| Response contract | Success body, provider errors, HTTP errors, identifiers, and status lifecycle  |
+
+<Warning>
+  Do not send a credential or transaction until the exact route contract
+  provides an HTTPS endpoint and confirms authentication placement and
+  enforcement. Treat the credential and any credential-bearing URL as secrets.
+</Warning>
+
+There is no universal Bifrost request example because methods and bodies vary by route. Store the supplied URL in server-side configuration and redact it from logs, traces, analytics, screenshots, and support messages.
+
+## Complete the guided integration
 
 <Steps>
-  <Step title="Open Bifrost Transaction Routes">
-    Go to **Endpoints → Private TX** and select an eligible access shown by the
-    dashboard.
+  <Step title="Select the exact route">
+    Open **Endpoints → Private TX**, select the intended access and location,
+    then choose one displayed provider operation. Treat it as a candidate until
+    the guided contract confirms the exact access and location.
   </Step>
-  <Step title="Choose from the available options">
-    If the dashboard asks for a location or provider, select only an option it
-    currently enables for your access. Do not infer availability from an old
-    integration.
+  <Step title="Implement the supplied contract">
+    Use its HTTPS URL, authentication placement, HTTP method, headers, content
+    type, and body schema without translating them from another route.
   </Step>
-  <Step title="Copy the complete URL">
-    Copy the full URL for the route you intend to call. The URL includes the
-    intended credential path, so treat it as a secret even before enforcement is
-    confirmed.
+  <Step title="Validate the response">
+    Test a non-critical request and handle the documented provider errors before
+    enabling production traffic.
   </Step>
-  <Step title="Confirm authentication and transport">
-    ThorNode onboarding or support must confirm that the selected deployment
-    enforces key authentication and provide either HTTPS or an explicitly
-    trusted private-network path. Do not infer either property from the URL.
-  </Step>
-  <Step title="Obtain the route contract">
-    Get the current method, required headers, content type, and body schema from
-    ThorNode onboarding or support for that exact route. Do not infer them from
-    the route label.
+  <Step title="Track chain status">
+    If the route returns a transaction signature, check it through Solana RPC
+    and apply your own expiry and confirmation policy.
   </Step>
 </Steps>
 
-## Build the request
+## Interpret outcomes
 
-There is no universal Bifrost request. The dashboard supplies the credential-bearing URL but does not fully define the remaining request parts:
+| Observable outcome                   | What it means                                                | What it does not mean                          |
+| ------------------------------------ | ------------------------------------------------------------ | ---------------------------------------------- |
+| HTTP `2xx`                           | The Bifrost HTTP transport completed successfully            | Provider acceptance or on-chain landing        |
+| Route-specific acceptance identifier | The provider returned the identifier defined by its contract | The transaction landed or reached confirmation |
+| Transaction signature                | You can check the transaction through Solana RPC             | The transaction is already landed or confirmed |
 
-| Request part | Source                                                    |
-| ------------ | --------------------------------------------------------- |
-| URL          | Copy the complete route URL from the dashboard            |
-| HTTP method  | Use the current contract supplied for that exact route    |
-| Headers      | Use only the headers required by that provider route      |
-| Body         | Preserve the provider-compatible payload and content type |
-
-A runnable universal snippet would be misleading. Do not assume every route uses `POST` or JSON, and do not convert an arbitrary provider payload. Validate the supplied contract in a non-critical workflow before sending production traffic.
-
-<Warning>
-  A dashboard-generated key path does not prove that the selected Bifrost
-  deployment enforces authentication. Do not send production traffic until
-  ThorNode confirms authenticated mode for that exact route and location.
-</Warning>
-
-<Warning>
-  Because the URL contains an access key, do not send it over plain HTTP on the
-  public internet. If the dashboard supplies an `http://` URL, obtain an HTTPS
-  endpoint or an explicitly trusted private-network path from ThorNode before
-  using it.
-</Warning>
-
-<Warning>
-  Do not build Bifrost URLs from old documentation or hard-code a provider list.
-  Always use the current route catalog and exact URL shown by the dashboard.
-</Warning>
-
-## Understand route behavior
-
-Capabilities and delivery semantics belong to the current contract supplied for the exact route, not to a provider name or dashboard label. Do not infer MEV protection, revert protection, bundle behavior, fallback behavior, or landing guarantees unless that contract states them.
-
-A 2xx response means the Bifrost transport completed successfully. It does **not** prove that the provider accepted a transaction: parse the route-specific response body and handle provider or JSON-RPC errors. For a submission route that returns a valid transaction signature, track that signature through Solana status APIs and apply your application's own expiry and confirmation policy.
-
-## Credential handling
-
-The dashboard intends the Bifrost key to be scoped to the selected access and usable across the Bifrost locations enabled for that access. Authentication enforcement must still be confirmed for the selected deployment. The copied base and route URLs remain location-specific, so do not reuse one location's URL for another location or access source. Keep the entire URL in a server-side secret store and redact it from logs, traces, analytics, and error reports.
+Always parse the response body even after `2xx`. Use the supplied `status` route only when its contract says it applies to the returned identifier; use Solana RPC for on-chain signature status.
 
 ## Troubleshooting
 
-- **Unauthorized or forbidden:** confirm the key is active and the selected option belongs to the current access.
-- **A request succeeds without the key path:** stop using the route and report it to ThorNode; authenticated mode may not be enforced.
-- **Route not found:** refresh the dashboard catalog and replace stale route URLs.
-- **Provider error:** validate the request body against the contract for the selected provider and route.
-- **2xx but no usable result:** parse the route-specific response for provider or JSON-RPC errors. For submission routes, track a returned transaction signature on-chain.
-- **Rate limited or unavailable:** respect retry guidance, use bounded exponential backoff, and recheck the live route status before retrying.
+| Symptom                     | Verify                                                          | Expected result                                             | Action                                                                                           |
+| --------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `401` or `403`              | Authentication scheme, placement, key scope, and active access  | The selected route authenticates the request                | Replace stale configuration; do not retry unchanged credentials                                  |
+| Route not found             | Exact supplied contract and current server response             | The provider operation remains supported                    | Obtain or refresh the matching contract before changing configuration                            |
+| `2xx` with no usable result | Route-specific response and provider-error fields               | The body matches the supplied response contract             | Handle the provider result; do not treat HTTP status as transaction success                      |
+| Signature does not land     | Signature status, transaction expiry, and route-specific status | Your tracking distinguishes accepted, landed, and confirmed | Apply the application's expiry policy or rebuild and resubmit through an explicitly chosen route |
 
-See [Security](/reference/security) for guidance on storing and rotating access credentials.
+## Next steps
+
+- [Track signatures with ThorEdge RPC](/products/thoredge-rpc)
+- [Store Bifrost credentials safely](/reference/security)
+- [Troubleshoot HTTP and route responses](/reference/troubleshooting#http-and-rpc-responses)

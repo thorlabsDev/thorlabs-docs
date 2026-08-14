@@ -1,77 +1,67 @@
 ---
-title: "Usage and limits"
-description: "Monitor request activity and read the live throughput, WebSocket, and streaming limits applied to your access."
+title: "Monitor usage and limits"
+description: "Verify request activity, inspect per-method behavior, read live throughput, and compare traffic with published tier limits."
 ---
 
-Use **Usage** to understand traffic and **Limits** to see the capacity currently enforced for an owned pass or rental. These views answer different questions:
+Use **Usage** to verify what your application sent and **Limits** to read the published tier row resolved for the selected access. Live throughput and concurrency limits still apply; use the [canonical limit model](/reference/plans-and-limits#understand-the-monthly-and-live-limits) for monthly semantics.
 
-- **Usage** shows what your applications have sent.
-- **Limits** shows how much concurrent or per-second capacity the selected access currently has.
-
-<Note>
-  ThorNode endpoint access does not have a monthly request cap. Live throughput
-  and concurrency limits still apply.
-</Note>
-
-## Read the Usage view
-
-Depending on the selected product and time range, the dashboard can show summary activity, request trends, methods, recent requests, and token-level breakdowns.
+## Verify traffic in Usage
 
 <Steps>
-  <Step title="Select the access and time range">
-    Make sure the owned pass or rental and the requested time window match the application you are investigating.
+  <Step title="Select the access and location">
+    Open **Usage**, select the pass or rental, then choose the **Network** and
+    **Location** used by your deployment.
   </Step>
+  <Step title="Select a time range">
+    Choose the range that contains the request you are investigating. **Usage overview** refreshes for that scope.
+  </Step>
+  <Step title="Confirm the request was recorded">
+    Read **Total requests**, **Error rate**, **Requests over time**, and **Per-method analytics**. **View token summary** shows the access aggregate and representative key details; it is not a per-token activity table.
 
-<Step title="Narrow by token or location">
-  Compare the labels shown in the dashboard with the credential used by your
-  deployment. Location tokens are independent, so aggregate traffic can hide a
-  hot region.
-</Step>
+    After a test request, success is observable when the request count or method activity increases for the matching access, location, and range. Usage telemetry can arrive after the response, so use the application's status code for immediate debugging.
 
-  <Step title="Inspect methods and recent activity">
-    Look for unexpected method volume, retry loops, duplicate polling, or traffic from a service that should have been stopped.
   </Step>
 </Steps>
 
-Usage data can arrive after the request itself. Use application logs and response codes for immediate debugging, then use the dashboard to confirm the broader pattern.
+Use **Avg latency**, **p95 latency**, and **Latency over time** to compare behavior before and after a release. Scope both periods to the same access, location, and range before drawing a conclusion.
 
-## Read the Limits view
+## Read published capacity in Limits
 
-The Limits view is the authoritative place for the selected access's effective capacity. It can include categories such as:
+Open **Limits** and select the same access used by the application.
 
-- RPC requests or transactions per second
-- WebSocket connections or subscriptions
-- Yellowstone concurrent streams or subscribed accounts
-- Other product-specific concurrency or registration allowances
+| Section             | What it tells you                                                            | Success signal                                                                   |
+| ------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| **Live throughput** | Current request and transaction rate for locations with tokens               | The intended location reports a live connection and current activity             |
+| **Plan limits**     | Published RPC, WebSocket, and supported streaming caps for the resolved tier | The selected access resolves to a tier row; legacy access can use a fallback row |
+| **Consumption**     | Calls observed in the current reporting period                               | The count reflects recorded usage; it is not a monthly cutoff                    |
+| **Calls by token**  | How observed calls are distributed across tokens                             | The deployment's token appears with the expected share of activity               |
 
-Values can vary by access, product, and current entitlement. Read them from the dashboard instead of encoding a plan table into deployment logic.
-
-<Warning>
-  No monthly request cap does not mean unlimited instantaneous traffic. Clients
-  can still be throttled when they exceed an effective per-second, connection,
-  subscription, account, or product-specific limit.
-</Warning>
+Limits can differ by access and product. Read the displayed values instead of encoding a tier table into your application. RPC caps apply per active location token where the table says so; **Calls by token** is the token-level usage view.
 
 ## Investigate throttling
 
-When a client receives a rate-limit response or cannot create more concurrent work:
+When the application receives a rate-limit response or cannot open more concurrent work:
 
-1. Confirm the request is using the expected access, network, location, and token.
-2. Compare recent traffic with the corresponding live limit.
-3. Check for aggressive retries, unbounded parallelism, duplicate subscriptions, or leaked connections.
-4. Add bounded concurrency and exponential backoff with jitter.
-5. Check **Node Status**, when available, for an incident before rotating a healthy token.
+1. Confirm the access, network, location, and token used by the failing client.
+2. Open **Usage** for the failure window and look for bursts, duplicate polling, retry loops, or unexpected methods.
+3. Open **Limits** for the same access and compare traffic with the relevant published tier limit. For RPC, check the active location token under **Calls by token**.
+4. Reduce concurrency, reuse connections, and close idle subscriptions.
+5. Retry only transient failures with bounded exponential backoff and jitter.
 
-Rotating a token does not increase capacity. Multiple tokens or locations should not be used to bypass an access source's effective entitlement.
+Rotating a token does not increase capacity. Do not create extra tokens, locations, or reconnect loops to bypass the entitlement attached to an access.
 
-## Capacity planning
+## Diagnose dashboard signals
 
-Design clients to remain below the displayed limits and to degrade gracefully:
+| Symptom                                | Verify                                                                    | Expected result                                                   | Action                                                                           |
+| -------------------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| A request succeeded but Usage is empty | Access, location, time range, and ingestion delay                         | The request appears in the matching scope after telemetry arrives | Widen the range and compare with application logs                                |
+| Usage is higher than expected          | **Per-method analytics**, access summary, and **Limits → Calls by token** | Methods and token rows match deployed services                    | Stop duplicate pollers or retry loops and rotate only if traffic is unauthorized |
+| Live throughput says **No token**      | Selected access and location token                                        | The location has an active token under **Endpoints**              | Create the token or select the location that already has one                     |
+| Client receives `429`                  | Relevant **Plan limits** row and **Calls by token**                       | Concurrency and rate remain below the published limit             | Bound work and back off transient retries                                        |
+| Several products fail at once          | **Overview → Network status** or **Node Status**, when available          | No published incident explains the time window                    | If healthy, isolate the failing access and contact support with redacted details |
 
-- Reuse WebSocket or streaming connections where the protocol permits.
-- Unsubscribe and close idle streams.
-- Cache responses that do not need slot-by-slot freshness.
-- Apply timeouts and bounded retries.
-- Alert on sustained traffic near a live limit, not only on failures.
+## Next steps
 
-For a service-wide issue, open **Node Status** when that view is available in the dashboard. For an account-specific mismatch, contact [ThorNode support](mailto:support@thornode.io) with the access identifier, location, time window, and response code—but never the token itself.
+- [Configure, restrict, or rotate the location token](/dashboard/endpoints).
+- [Design an RPC client for production limits](/products/thoredge-rpc).
+- [Troubleshoot response and connectivity symptoms](/reference/troubleshooting).
