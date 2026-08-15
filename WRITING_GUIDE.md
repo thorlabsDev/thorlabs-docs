@@ -120,7 +120,7 @@ Organize around the error or symptom a developer sees. Give the shortest useful 
 - Put the expected output directly after the code.
 - Start minimal; move retry, reconnect, and observability to the production section.
 
-If a runnable example needs a specific client or schema, publish the exact version and required files. Do not replace missing integration details with internal coordination or release language.
+If an integration depends on an upstream client or schema, link to its maintained source. Do not freeze fast-moving upstream package versions in narrative documentation. Do not replace missing integration details with internal coordination or release language.
 
 ## Product semantics
 

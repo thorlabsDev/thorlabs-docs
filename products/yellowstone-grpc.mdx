@@ -15,26 +15,15 @@ Use [ThorEdge RPC](/products/thoredge-rpc) for request-response calls and WebSoc
 
 ## Quick reference
 
-| Item               | Value                                                                                                  |
-| ------------------ | ------------------------------------------------------------------------------------------------------ |
-| Dashboard path     | **Endpoints** sidebar → **Endpoints** tab → **Token & Endpoints** → **Streaming** → **Yellowstone DM** |
-| Interface          | `geyser.Geyser/Subscribe`                                                                              |
-| Compatible release | `rpcpool/yellowstone-grpc` `v13.3.0+solana.4.0.2`                                                      |
-| Transport          | Plaintext gRPC over HTTP/2 (`h2c`)                                                                     |
-| Target             | Bare `host:port` copied from the dashboard                                                             |
-| Authentication     | Location token sent as `x-token` request metadata                                                      |
-| Account commitment | `PROCESSED`                                                                                            |
-| Stored-slot replay | Not provided                                                                                           |
-| Live limits        | **Limits → gRPC Yellowstone → Concurrent streams** and **Accounts across filters**                     |
-
-## Subscribe request limits
-
-- Each of the `slots`, `accounts`, and `transactions` maps accepts at most one named entry.
-- Account and owner arrays accept up to 10 public keys each.
-- Transaction include, exclude, and required arrays accept up to 10 public keys each.
-- `accountsDataSlice` accepts up to two entries.
-
-**Accounts across filters** counts account and owner public keys across all live streams for the location token.
+| Item             | Value                                                                                                  |
+| ---------------- | ------------------------------------------------------------------------------------------------------ |
+| Dashboard path   | **Endpoints** sidebar → **Endpoints** tab → **Token & Endpoints** → **Streaming** → **Yellowstone DM** |
+| Interface        | `geyser.Geyser/Subscribe`                                                                              |
+| Client and proto | Maintained by [`rpcpool/yellowstone-grpc`](https://github.com/rpcpool/yellowstone-grpc)                |
+| Transport        | Plaintext gRPC over HTTP/2 (`h2c`)                                                                     |
+| Target           | Bare `host:port` copied from the dashboard                                                             |
+| Authentication   | Location token sent as `x-token` request metadata                                                      |
+| Live limits      | **Limits → gRPC Yellowstone → Concurrent streams** and **Accounts across filters**                     |
 
 ## Open a subscription
 
@@ -46,7 +35,8 @@ Use [ThorEdge RPC](/products/thoredge-rpc) for request-response calls and WebSoc
     Endpoints**.
   </Step>
   <Step title="Configure the client">
-    Use the client and protobuf definitions from `v13.3.0+solana.4.0.2`.
+    Use an actively maintained Yellowstone client or generate one from the
+    upstream `geyser.proto`.
   </Step>
   <Step title="Open the gRPC channel">
     Configure the copied target as a plaintext gRPC (`h2c`) channel.
@@ -73,11 +63,10 @@ The subscription is running when it returns `SubscribeUpdate` messages whose `fi
 
 ## Test a slot subscription
 
-Install [`grpcurl`](https://github.com/fullstorydev/grpcurl), then download the matching protobuf files:
+Install [`grpcurl`](https://github.com/fullstorydev/grpcurl), then clone the upstream protobuf definitions:
 
 ```bash
 git clone --depth 1 \
-  --branch 'v13.3.0+solana.4.0.2' \
   https://github.com/rpcpool/yellowstone-grpc.git
 
 cd yellowstone-grpc/yellowstone-grpc-proto/proto
@@ -106,7 +95,7 @@ The command keeps streaming until you stop it. Each matching update includes `sl
 
 ## Dragon's Mouth reference
 
-ThorNode uses the open-source [`rpcpool/yellowstone-grpc`](https://github.com/rpcpool/yellowstone-grpc) Dragon's Mouth interface. Use the matching `v13.3.0+solana.4.0.2` [Geyser proto](https://github.com/rpcpool/yellowstone-grpc/blob/v13.3.0%2Bsolana.4.0.2/yellowstone-grpc-proto/proto/geyser.proto), [Node.js client](https://github.com/rpcpool/yellowstone-grpc/tree/v13.3.0%2Bsolana.4.0.2/yellowstone-grpc-client-nodejs), and [examples](https://github.com/rpcpool/yellowstone-grpc/tree/v13.3.0%2Bsolana.4.0.2/examples).
+ThorNode implements the open-source [`rpcpool/yellowstone-grpc`](https://github.com/rpcpool/yellowstone-grpc) Dragon's Mouth interface. The repository contains the current Geyser proto, Node.js client, and examples.
 
 ## Run in production
 

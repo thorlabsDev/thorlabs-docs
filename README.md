@@ -8,7 +8,7 @@ Read [WRITING_GUIDE.md](./WRITING_GUIDE.md) before changing navigation or conten
 
 ## Local preview
 
-Use Node.js 20.17 or newer, then run:
+Use a currently supported Node.js LTS release, then run:
 
 ```bash
 npx mint dev
