@@ -7,7 +7,7 @@ FastGate is ThorNode's account-query route behind ThorEdge RPC. Send a standard 
 
 ## Account queries
 
-Use FastGate for the 14 routed account methods listed below. You do not need a FastGate hostname or a second credential.
+FastGate routes the account methods below through your existing ThorEdge URL. It does not require a separate hostname or credential.
 
 Choose [Yellowstone gRPC](/products/yellowstone-grpc) when your application needs a persistent filtered stream instead of point-in-time account queries.
 
@@ -64,7 +64,7 @@ Expected output:
 
 ## Routed methods
 
-FastGate currently recognizes these 14 method names.
+FastGate recognizes these method names.
 
 Standard Solana methods:
 
@@ -80,7 +80,7 @@ Standard Solana methods:
 - `getTokenAccountsByOwner`
 - `getTokenAccountsByDelegate`
 
-Use the [Solana JSON-RPC reference](https://solana.com/docs/rpc) as the request and result baseline for these methods. Validate every optional field, encoding, filter, and commitment behavior your application depends on against the current ThorNode response.
+Standard methods follow the request and response shapes in the [Solana JSON-RPC reference](https://solana.com/docs/rpc). ThorNode-specific V2 fields are documented below.
 
 V2 methods:
 

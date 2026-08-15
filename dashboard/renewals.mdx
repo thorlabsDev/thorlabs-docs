@@ -26,6 +26,7 @@ You need:
 - The pass's owning address registered under **Wallets**
 - A registered Solana wallet connected for payment
 - Enough of the payment asset shown in the current order summary
+- A small SOL balance for Solana transaction and account-creation fees
 
 ## Renew one or more passes
 
@@ -60,17 +61,17 @@ You need:
 
 <Warning>
   Do not submit another payment while renewal is processing or after payment
-  succeeded. If a later metadata or reindex step fails, use **Retry Failed
-  Passes**; that retry reuses the completed payment.
+  succeeded. If a pass update fails after payment, use **Retry Failed Passes**;
+  the retry reuses the completed payment.
 </Warning>
 
 ## Recover a partial result
 
-The results view lists each selected pass separately. If payment completed but a later step failed:
+The results view lists each selected pass separately. If payment completed but a pass update failed:
 
 1. Save the transaction signature shown under **Transaction**.
 2. Choose **Retry Failed Passes** when the action is available.
-3. Confirm that the retry states the payment was already completed.
+3. Confirm that the retry does not open a new wallet approval.
 4. Check each pass for a completed result and new expiration.
 
 If retry cannot complete, contact [ThorNode support](mailto:support@thornode.io) with the public wallet, transaction signature, affected pass identifier, and approximate time. Do not send another payment.
@@ -81,7 +82,7 @@ If retry cannot complete, contact [ThorNode support](mailto:support@thornode.io)
 | ----------------------------------------------- | --------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | Owned pass is absent                            | Discord account and registered owner address        | The owner appears under **Verified wallets**                          | Register the owning wallet, then reload **Renew**                                 |
 | Pass is visible but disabled                    | Pass type and live state                            | An eligible standard pass is selectable                               | Gold and Honorary passes remain excluded; follow the state shown for other passes |
-| Only rentals are shown elsewhere                | **Your rentals** versus owned passes                | Rentals are not listed as renewable NFTs                              | Continue the rental only through a live offer under **Rent**                      |
+| Only rentals are shown elsewhere                | **Your rentals** versus owned passes                | Rentals are not listed as renewable NFTs                              | Use the continuation option shown for that rental; rentals do not use **Renew**   |
 | Wallet cannot pay                               | Connected address, registration, asset, and balance | The connected address is registered and can cover the displayed total | Correct the prerequisite and recalculate before signing                           |
 | Payment completed but expiration did not update | Per-pass result and transaction signature           | The pass reaches a completed result with a new expiration             | Use **Retry Failed Passes** or contact support; do not repay                      |
 

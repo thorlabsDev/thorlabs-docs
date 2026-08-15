@@ -11,7 +11,7 @@ Use the access model to identify which dashboard object grants a product and whi
 | Registered wallet           | Proves control of a Solana address with a signed message | **Wallets**                                             |
 | Access source               | Grants products for an owned pass or an active rental    | **Your passes**, **Your rentals**, and access selectors |
 | Location token              | Authenticates an access on one network and location      | **Endpoints** sidebar, **Endpoints** tab                |
-| Product key or registration | Authorizes a product-specific workflow when offered      | The corresponding **Endpoints** product tab             |
+| Product key or registration | Authorizes a product-specific workflow                   | The product's area under **Endpoints**                  |
 
 The application credential is the final layer. A wallet address or wallet signature is never an API token.
 
@@ -25,13 +25,13 @@ If an expected access is missing, first confirm that you used the intended Disco
 
 Registering a wallet requires a signed verification message. The signature proves control of the public address; it does not transfer assets or reveal the private key.
 
-You can register up to three wallets per dashboard account. Registered wallets are used to:
+You can register up to three wallets per dashboard account. The dashboard uses registered wallets to:
 
 - Discover eligible passes held by those addresses
 - Confirm that a connected payment wallet belongs to the dashboard account
-- Pay for a rental or an eligible pass renewal
+- Pay through **Rent** or renew an eligible owned pass
 
-Register the wallet in [Wallets](/dashboard/wallets) before starting a payment.
+Register the wallet in [Wallets](/dashboard/wallets) before paying through **Rent** or **Renew**.
 
 ## Passes and rentals grant access
 
@@ -39,10 +39,10 @@ An **owned pass** is an eligible NFT held by a registered wallet. An **active re
 
 Passes and rentals can both provide RPC location tokens. Select an access to see its products and locations. Their lifecycle differs:
 
-| Access source | Starts from                                             | Ends or extends through                                                       |
-| ------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| Owned pass    | Eligible ownership detected through a registered wallet | **Renew** when the pass is eligible                                           |
-| Rental        | A completed offer under **Rent**                        | The expiration shown for that rental; rentals are not renewed under **Renew** |
+| Access source | Starts from                                             | Ends or extends through                                                  |
+| ------------- | ------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Owned pass    | Eligible ownership detected through a registered wallet | **Renew** when the pass is eligible                                      |
+| Rental        | A completed rental checkout                             | The displayed expiration or continuation option; never through **Renew** |
 
 Select a pass or rental to see the products and locations enabled for it.
 

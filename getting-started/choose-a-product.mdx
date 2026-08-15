@@ -13,38 +13,34 @@ Choose the product by the data your application needs and how it can receive tha
 | Subscribe through Solana WebSocket methods           | [ThorEdge RPC](/products/thoredge-rpc)                             | JSON-RPC subscription                                   | Events over WSS                                  |
 | Run supported account-heavy queries                  | [FastGate Account API](/products/fastgate-account-api)             | Supported account method sent to ThorEdge               | Solana account data over HTTPS JSON-RPC          |
 | Receive filtered Geyser-compatible data              | [Yellowstone gRPC](/products/yellowstone-grpc)                     | Subscribe request and filters                           | Persistent gRPC stream                           |
-| Receive signatures or decoded transactions over QUIC | [Pulse Decoded Shreds](/products/pulse)                            | Location target, token, tier, filters, and Pulse client | Sig-first datagrams or a reliable full-tx stream |
+| Receive signatures or decoded transactions over QUIC | [Pulse Decoded Shreds](/products/pulse)                            | Location target, token, feed, filters, and Pulse client | Sig-first datagrams or a reliable full-tx stream |
 | Decode and process live shreds yourself              | [Raw Shred Stream](/products/raw-shred-stream)                     | Registered public IPv4 and UDP port                     | Live raw shred datagrams over UDP                |
 | Re-run recently captured raw shreds                  | [Replay](/products/shredreplay)                                    | Slot range, pacing, and UDP receiver                    | Raw shred datagrams over UDP                     |
 | Call a provider-specific transaction route           | [Bifrost Transaction Routes](/products/bifrost-transaction-routes) | Route-specific request                                  | Route-specific HTTP response                     |
 
 ## RPC or FastGate
 
-Choose **ThorEdge RPC** for ordinary Solana JSON-RPC calls and WebSocket subscriptions.
-
-Choose **FastGate Account API** when your workload uses its supported account-query methods. FastGate is not a separate public endpoint: send those methods to the same ThorEdge HTTPS URL. ThorEdge selects the query path from the method.
+**ThorEdge RPC** handles ordinary Solana JSON-RPC calls and WebSocket subscriptions. **FastGate Account API** routes supported account queries through that same HTTPS URL; it does not require a separate endpoint or credential.
 
 Use the [RPC quickstart](/getting-started/quickstart) for either path, then verify your required method against the [FastGate method list](/products/fastgate-account-api#routed-methods).
 
 ## Yellowstone or Pulse
 
-Choose **Yellowstone gRPC** when you need a Geyser Subscribe-compatible stream with server-side filters.
-
-Choose **Pulse Decoded Shreds** for a low-overhead signature feed or a reliable stream of decoded transactions over QUIC. Pulse does not send raw shred objects.
+**Yellowstone gRPC** provides a Geyser Subscribe-compatible stream with server-side filters. **Pulse Decoded Shreds** provides either a low-overhead signature feed or a reliable stream of decoded transactions over QUIC; it does not send raw shred objects.
 
 Yellowstone sends its location token as `x-token` gRPC metadata. Pulse sends its location token in the first client control message. Copy each target and token from the same dashboard location.
 
 ## Raw Shred Stream or Replay
 
-Choose **Raw Shred Stream** for continuous live raw shreds. You operate a UDP receiver and handle loss, duplication, reordering, decoding, and downstream backpressure.
+**Raw Shred Stream** continuously sends live raw shreds to your UDP receiver. Your application handles loss, duplication, reordering, decoding, and downstream backpressure.
 
-Choose **Replay** to resend a slot range from the current rolling window. Replay is for recent captured data, not an archive and not a replacement for the live stream.
+**Replay** resends a slot range from the current rolling window. It covers recently captured data, not an archive or a replacement for the live stream.
 
 Both deliver UDP datagrams to a receiver you operate. Confirm that the host has a reachable public IPv4 address and that its firewall and NAT rules permit the configured UDP port.
 
 ## Bifrost for provider-specific routes
 
-Choose **Bifrost Transaction Routes** when you want to call a specific provider operation without opening a separate provider account or managing its API key. Bifrost aggregation is included when **Private TX** is enabled for your ThorNode access. Select the access, location, provider, and operation in the dashboard, generate a Private TX key, and copy the complete route URL.
+**Bifrost Transaction Routes** lets you call a specific provider operation without opening a separate provider account or managing its API key. Bifrost aggregation is included when **Private TX** is enabled for your ThorNode access. Select the access, location, provider, and operation in the dashboard, generate a Private TX key, and copy the complete route URL.
 
 Bifrost manages the upstream provider credentials, but your application still chooses the route and sends that route's request format. It does not imply automatic route selection, transaction landing, or confirmation. Track any returned signature according to your Solana confirmation policy.
 

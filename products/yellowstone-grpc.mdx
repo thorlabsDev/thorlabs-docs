@@ -9,7 +9,7 @@ Copy the target and token from the same location. Send the token as `x-token` re
 
 ## Filtered Geyser streams
 
-Use Yellowstone for long-lived, server-filtered streams of Solana updates.
+Yellowstone delivers long-lived, server-filtered Solana updates over gRPC.
 
 Use [ThorEdge RPC](/products/thoredge-rpc) for request-response calls and WebSocket subscriptions. Use [Pulse Decoded Shreds](/products/pulse) for a sig-first or full-transaction feed over QUIC.
 
@@ -19,7 +19,7 @@ Use [ThorEdge RPC](/products/thoredge-rpc) for request-response calls and WebSoc
 | ---------------- | ------------------------------------------------------------------------------------------------------ |
 | Dashboard path   | **Endpoints** sidebar → **Endpoints** tab → **Token & Endpoints** → **Streaming** → **Yellowstone DM** |
 | Interface        | `geyser.Geyser/Subscribe`                                                                              |
-| Client and proto | Maintained by [`rpcpool/yellowstone-grpc`](https://github.com/rpcpool/yellowstone-grpc)                |
+| Client and proto | [`rpcpool/yellowstone-grpc`](https://github.com/rpcpool/yellowstone-grpc)                              |
 | Transport        | Plaintext gRPC over HTTP/2 (`h2c`)                                                                     |
 | Target           | Bare `host:port` copied from the dashboard                                                             |
 | Authentication   | Location token sent as `x-token` request metadata                                                      |
@@ -35,8 +35,8 @@ Use [ThorEdge RPC](/products/thoredge-rpc) for request-response calls and WebSoc
     Endpoints**.
   </Step>
   <Step title="Configure the client">
-    Use an actively maintained Yellowstone client or generate one from the
-    upstream `geyser.proto`.
+    Use a Yellowstone client built from the `geyser.proto` in the upstream
+    repository.
   </Step>
   <Step title="Open the gRPC channel">
     Configure the copied target as a plaintext gRPC (`h2c`) channel.
@@ -92,10 +92,6 @@ printf '%s\n' '{"slots":{"slot_updates":{}}}' \
 ```
 
 The command keeps streaming until you stop it. Each matching update includes `slot_updates` in its `filters` field.
-
-## Dragon's Mouth reference
-
-ThorNode implements the open-source [`rpcpool/yellowstone-grpc`](https://github.com/rpcpool/yellowstone-grpc) Dragon's Mouth interface. The repository contains the current Geyser proto, Node.js client, and examples.
 
 ## Run in production
 

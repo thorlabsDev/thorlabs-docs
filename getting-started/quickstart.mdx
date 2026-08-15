@@ -14,7 +14,7 @@ You need:
 - A Solana wallet if your pass is not yet associated with the account
 - `curl` in your terminal
 
-If you already own a pass, [register its owning wallet](/dashboard/wallets) so the access appears. If you do not have access, [purchase a currently offered rental](/dashboard/rentals) before creating the endpoint.
+If you own a pass, [register its owning wallet](/dashboard/wallets). Otherwise, [purchase a rental from **Rent**](/dashboard/rentals) before creating the endpoint.
 
 Open the dashboard from [thornode.io](https://www.thornode.io).
 
@@ -34,13 +34,14 @@ Open the dashboard from [thornode.io](https://www.thornode.io).
   <Step title="Select an access and location">
     Open **Endpoints**, keep the **Endpoints** tab selected, and choose the pass or rental your application will use. Under **Node access**, select a **Network** and **Location**.
 
-    Available locations come from the selected access. If the intended product or location is not enabled, review that access before continuing.
+    Choose a product and location listed for the selected access.
 
   </Step>
   <Step title="Generate the location token">
     In **Token & Endpoints**, choose **Generate token for _location_**.
 
-    The location is ready when the panel shows a masked region-bound token and the **RPC** and **WS** rows. Each location has an independent token.
+    The panel shows a masked location token and the **RPC** and **WS** URLs. Each
+    location has an independent token.
 
   </Step>
   <Step title="Copy the SSL RPC URL">

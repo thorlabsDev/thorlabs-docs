@@ -1,9 +1,9 @@
 ---
 title: "Rent time-limited access"
-description: "Purchase a live ThorNode rental offer with a registered Solana wallet and recover a submitted payment without paying twice."
+description: "Purchase a rental from the Rent page and recover a submitted payment without paying twice."
 ---
 
-Use **Rent** to purchase time-limited access without owning a pass NFT. The rental is ready when it appears under **Your rentals** and in normal access selectors.
+This guide covers rentals purchased from the dashboard's **Rent** page. The rental is ready when it appears under **Your rentals** and in the access selectors.
 
 ## Before you rent
 
@@ -12,10 +12,11 @@ You need:
 - A Discord-authenticated dashboard account
 - A Solana wallet registered under **Wallets**
 - That same registered wallet connected in **Rent**
-- Enough USDC for the displayed amount and network fees
-- A current browser that supports the Web Locks API
+- Enough of the payment asset for the displayed amount
+- A small SOL balance for Solana transaction and account-creation fees
+- A current, supported browser
 
-The live catalog determines which tiers, durations, and displayed amounts are available. The current UI labels rental payments as USDC but does not display the mint address; verify the asset or mint in the wallet approval before signing. An unavailable tier or missing duration cannot be purchased through the current flow.
+Choose from the tiers and durations shown in **Rent**. Before signing, confirm the asset or mint, amount, and destination in the wallet approval. Cancel the approval if any value is unexpected.
 
 ## Purchase a rental
 
@@ -30,7 +31,7 @@ The live catalog determines which tiers, durations, and displayed amounts are av
   </Step>
   <Step title="Choose a duration">
     Under **Choose a duration**, select one of the live options. The card shows
-    the exact USDC amount for that offer.
+    the payment amount for that offer.
   </Step>
   <Step title="Review the checkout state">
     Confirm the tier, duration, and displayed amount. In the wallet extension,
@@ -56,7 +57,7 @@ The live catalog determines which tiers, durations, and displayed amounts are av
 
 ## Recover a submitted payment
 
-The rental flow saves a signed payment attempt so it can continue verification after an interruption. Return to **Rent** in the same browser profile and use the saved-payment state instead of starting a new checkout.
+Payments started from **Rent** are saved in the browser so verification can continue after an interruption. Return to **Rent** in the same browser profile and resume the saved payment instead of starting another checkout.
 
 | State shown                  | What it means                                         | What to do                                                           |
 | ---------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
@@ -70,18 +71,18 @@ If support is required, include the public paying wallet, transaction signature 
 
 ## After activation
 
-Open **Endpoints**, select the rental, and create its RPC location token. Use another product's controls only when its response confirms that the rental is supported and enabled for the selected location. The rental's expiration is shown in the dashboard.
+Open **Endpoints**, select the rental, and use the products and locations shown for it. Create the credential required by your product. The rental's expiration remains visible in the dashboard.
 
-Rentals do not appear as renewable passes under **Renew**. To continue after expiration, use only an offer currently available under **Rent**.
+Rentals purchased from **Rent** do not appear as renewable passes under **Renew**. To continue after expiration, purchase another available rental from **Rent**.
 
 ## Troubleshoot a rental
 
-| Symptom                                        | Verify                                                                      | Expected result                                                                        | Action                                                                                                   |
-| ---------------------------------------------- | --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| **Pay with USDC** is unavailable               | Browser Web Locks support, tier, duration, wallet registration, and balance | The browser supports Web Locks, a live offer is selected, and the wallet is registered | Use a current supported browser or correct the failed prerequisite shown in the flow                     |
-| Wallet is rejected                             | Full connected address under **Wallets**                                    | The addresses match exactly                                                            | Connect a registered wallet and retry before signing                                                     |
-| Payment is still verifying                     | Saved-payment banner and transaction signature                              | The flow resumes the existing attempt                                                  | Choose **Check now** or wait; do not start another checkout                                              |
-| Rental is fulfilled but missing from selectors | **Your rentals** and **Overview** after refresh                             | The rental card is active                                                              | Refresh access once, then contact support with the transaction signature and rental or access identifier |
+| Symptom                                        | Verify                                                             | Expected result                                                                        | Action                                                                                                   |
+| ---------------------------------------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| **Pay with USDC** is unavailable               | Browser support, tier, duration, wallet registration, and balances | A live offer is selected, the wallet is registered, and **Pay with USDC** is available | Use a current browser or correct the prerequisite shown in the flow                                      |
+| Wallet is rejected                             | Full connected address under **Wallets**                           | The addresses match exactly                                                            | Connect a registered wallet and retry before signing                                                     |
+| Payment is still verifying                     | Saved-payment banner and transaction signature                     | The flow resumes the existing attempt                                                  | Choose **Check now** or wait; do not start another checkout                                              |
+| Rental is fulfilled but missing from selectors | **Your rentals** and **Overview** after refresh                    | The rental card is active                                                              | Refresh access once, then contact support with the transaction signature and rental or access identifier |
 
 ## Next steps
 

@@ -13,9 +13,8 @@ Start with the symptom, check one condition at a time, and retry only transient 
     timezone. Do not record the credential or complete URL.
   </Step>
   <Step title="Check current state">
-    Confirm that the pass or rental is active, the product and location are
-    enabled, and **Usage** and **Limits** match the selected access. Open **Node
-    Status** when that dashboard view is available.
+    Confirm that the pass or rental is active, then review **Overview → Network
+    status**, **Usage**, and **Limits** for the selected access.
   </Step>
   <Step title="Refresh the configuration">
     Compare the application's target and credential scope with the values
@@ -45,9 +44,7 @@ Do not retry authorization errors in a tight loop. Rotation does not fix an inac
 
 ### Method or route is not found
 
-| Symptom                                | Verify                                                                                                              | Expected result                                          | Action                                                                   | Retry?                                    |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------ | ----------------------------------------- |
-| RPC method or Bifrost route is missing | Complete copied URL, supported RPC method list, and the **Private TX** catalog for the selected access and location | The exact method or provider operation remains available | Refresh the dashboard data and replace a stale or manually assembled URL | **No**, until the method or route appears |
+Refresh the supported-method list or **Private TX** catalog for the selected access and location, then copy the complete URL again. Retry only after the method or route appears.
 
 ## Requests or subscriptions are rate limited
 
@@ -57,17 +54,16 @@ Do not retry authorization errors in a tight loop. Rotation does not fix an inac
 | A WebSocket subscription is rejected        | Check **Limits → RPC endpoint → WebSocket subscriptions** and inspect duplicate subscriptions.                       | The new subscription fits within the displayed capacity.                                   | Reuse connections, close unused subscriptions, or request more capacity before retrying.               | **Yes**, after capacity is available.    |
 | A Yellowstone subscription is rejected      | Check **Limits → gRPC Yellowstone → Concurrent streams** and **Accounts across filters**; inspect duplicate streams. | The new subscription fits within the displayed capacity and uses supported narrow filters. | Close unused streams, narrow filters, or request more capacity before retrying.                        | **Yes**, after capacity is available.    |
 | A Raw Shred Stream registration is rejected | Check whether the product is enabled and how many registrations are active for the access and location.              | The new receiver fits within the live registration allowance.                              | Remove an unused registration or contact support about capacity.                                       | **Yes**, after capacity is available.    |
-| Quota-style monthly metadata appears        | Read the [monthly and live limit behavior](/reference/plans-and-limits#understand-the-monthly-and-live-limits).      | ThorEdge RPC continues to use live throughput and concurrency limits.                      | Troubleshoot the actual status code or live limit instead of the metadata field name.                  | Depends on the actual failure.           |
 
 Creating another client, credential, or reconnect loop does not increase capacity. See [Plans and limits](/reference/plans-and-limits#understand-the-monthly-and-live-limits) for monthly and live limit behavior.
 
 ## Connection, DNS, or TLS fails
 
-| Symptom                                       | Verify                                                                                                                                                         | Expected result                                                                          | Action                                                                                                                | Retry?                                                 |
-| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| DNS lookup fails or the host is unreachable   | The public hostname exactly matches the dashboard; the runtime's DNS, VPN, proxy, firewall, and service mesh permit the route.                                 | The hostname resolves and the documented port is reachable from the application runtime. | Refresh the target and correct local network policy. Do not substitute a resolved IP or use an internal address.      | **No**, until configuration or network policy changes. |
-| TLS or certificate validation fails           | System clock, trusted certificate authorities, hostname, and the client's trust configuration.                                                                 | A certificate-validating client accepts the copied target.                               | Restore the correct hostname and trust configuration. See the Pulse page for its current SDK behavior.                | **No**, until trust is correct.                        |
-| HTTP `5xx`, timeout, or unexpected disconnect | **Overview → Network status** or **Node Status** when that view is available, one minimal operation, and failures from another known-good runtime or location. | The test distinguishes a service incident from one client's network or load problem.     | Preserve the time and a redacted request identifier if returned; retry a small, bounded number of times with backoff. | **Yes**, when transient.                               |
+| Symptom                                       | Verify                                                                                                                         | Expected result                                                                          | Action                                                                                                                | Retry?                                                 |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| DNS lookup fails or the host is unreachable   | The public hostname exactly matches the dashboard; the runtime's DNS, VPN, proxy, firewall, and service mesh permit the route. | The hostname resolves and the documented port is reachable from the application runtime. | Refresh the target and correct local network policy. Do not substitute a resolved IP or use an internal address.      | **No**, until configuration or network policy changes. |
+| TLS or certificate validation fails           | System clock, trusted certificate authorities, hostname, and the client's trust configuration.                                 | A certificate-validating client accepts the copied target.                               | Restore the correct hostname and trust configuration. See the Pulse page for its current SDK behavior.                | **No**, until trust is correct.                        |
+| HTTP `5xx`, timeout, or unexpected disconnect | **Overview → Network status**, one minimal operation, and a comparison from another runtime or location.                       | The test distinguishes a service incident from one client's network or load problem.     | Preserve the time and a redacted request identifier if returned; retry a small, bounded number of times with backoff. | **Yes**, when transient.                               |
 
 Test DNS without exposing a credential:
 
@@ -108,14 +104,7 @@ Stop the capture after collecting enough evidence. Continue with the [Raw Shred 
 
 ## Payment is signed but access is not updated
 
-<Warning>
-  Do not submit a second payment while a signed payment is pending or
-  unresolved.
-</Warning>
-
-| Verify                                                                                                                                                                                       | Expected result                                                                                                     | Action                                                                                                                                                                                           | Retry?                                                                    |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
-| The wallet shows the transaction as submitted; it used the intended network; the connected wallet is the registered wallet; the dashboard recovery or verification state is still available. | The current flow either recognizes the transaction or provides a recovery, verification, or signature-retry action. | Keep the transaction signature and any dashboard recovery reference. Use the existing flow's recovery action; if it remains unresolved, contact support with the signature and approximate time. | Retry the **verification action** when offered; do not retry the payment. |
+Do not pay again. Keep the transaction signature and return to the same payment page. Use **Check now**, **Retry Failed Passes**, or another verification action shown there. If no action is available or the payment remains unresolved, contact support with the signature and approximate time.
 
 Payment recovery reconciles an existing transaction with dashboard access. It is not a refund request. [Contact support about a refund](/legal/refunds) separately.
 

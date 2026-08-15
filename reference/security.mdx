@@ -9,14 +9,14 @@ Wallet private keys and seed phrases are never ThorNode support credentials. Nev
 
 ## Credential scope and placement
 
-| Product                    | Scope                                                                                | Required placement                                                                                                        |
-| -------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| ThorEdge RPC and WebSocket | Selected access, network, and location                                               | Use the complete URL copied from that location's dashboard view. The URL carries or resolves to the token.                |
-| Yellowstone gRPC           | Selected access and location                                                         | Attach the token as `x-token` request metadata; never append it to the dial target.                                       |
-| Pulse Decoded Shreds       | Selected access and location                                                         | Send the token in the first Pulse client control message; never append it to the target.                                  |
-| Bifrost Transaction Routes | The dashboard issues one Private TX key per access for its enabled Bifrost locations | Use the complete route URL copied for the selected location and operation only after HTTPS and key rejection checks pass. |
-| Replay                     | Selected access                                                                      | Use the dedicated replay key for ShredReplay jobs only.                                                                   |
-| Raw Shred Stream           | Dashboard registration                                                               | UDP packets do not carry a customer credential; the dashboard authorizes the receiver registration.                       |
+| Product                    | Scope                                                                                | Required placement                                                                                         |
+| -------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| ThorEdge RPC and WebSocket | Selected access, network, and location                                               | Use the complete URL copied from that location's dashboard view. The URL carries or resolves to the token. |
+| Yellowstone gRPC           | Selected access and location                                                         | Attach the token as `x-token` request metadata; never append it to the dial target.                        |
+| Pulse Decoded Shreds       | Selected access and location                                                         | Send the token in the first Pulse client control message; never append it to the target.                   |
+| Bifrost Transaction Routes | The dashboard issues one Private TX key per access for its enabled Bifrost locations | Use the complete HTTPS route URL copied for the selected location and operation.                           |
+| Replay                     | Selected access                                                                      | Use the dedicated replay key for ShredReplay jobs only.                                                    |
+| Raw Shred Stream           | Dashboard registration                                                               | UDP packets do not carry a customer credential; the dashboard authorizes the receiver registration.        |
 
 Do not move a credential into a URL, header, query parameter, or control message unless the product row requires it. Copy location-bound targets and credentials together; see [Locations](/reference/locations#apply-location-scope-correctly) when moving a workload.
 

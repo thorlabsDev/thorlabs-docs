@@ -61,11 +61,9 @@ You do not need a separate upstream-provider account, subscription, API key, or 
   </Step>
 </Steps>
 
-Before sending a signed transaction, verify the copied URL begins with `https://` and that the route rejects a request with the Private TX key removed or replaced. If either check fails, stop and report the access and location to [ThorNode support](mailto:support@thornode.io) without including the key or complete URL.
-
 ## Understand the route catalog
 
-The available catalog depends on the selected access and location. It can contain `submit`, `batch`, `bundle`, `status`, `nonce`, and provider-specific delivery operations.
+The dashboard lists the providers and operations available for the selected access and location. Routes can include `submit`, `batch`, `bundle`, `status`, `nonce`, and provider-specific delivery operations.
 
 | Operation family | Typical input                           | Typical result                                |
 | ---------------- | --------------------------------------- | --------------------------------------------- |
@@ -107,13 +105,14 @@ A successful route can return a Solana signature:
 }
 ```
 
-Use the request format for the selected route when calling bloXroute, Astralane, BlockRazor, Hofund, batch, bundle, status, or nonce operations. Do not reuse the LunarLander body unchanged.
+Use the request format for the selected route. Do not reuse the LunarLander body for another provider or operation.
 
 <Warning>
   A copied Bifrost route URL contains your Private TX key. Keep the complete URL
   in server-side secret storage and redact it from repositories, logs, traces,
   screenshots, and support messages. Never send a signed transaction over an
-  `http://` route or a route that accepts a missing or invalid key.
+  `http://` route. Stop and contact support if a route accepts a missing or
+  invalid key.
 </Warning>
 
 ## Interpret outcomes

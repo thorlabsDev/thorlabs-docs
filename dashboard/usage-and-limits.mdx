@@ -32,12 +32,12 @@ Use **Avg latency**, **p95 latency**, and **Latency over time** to compare behav
 
 Open **Limits** and select the same access used by the application.
 
-| Section             | What it tells you                                                            | What you should see                                                  |
-| ------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| **Live throughput** | Current request and transaction rate for locations with tokens               | The intended location reports a live connection and current activity |
-| **Plan limits**     | Published RPC, WebSocket, and supported streaming caps for the resolved tier | The selected access shows its current plan limits                    |
-| **Consumption**     | Calls observed in the current reporting period                               | The count reflects recorded usage; it is not a monthly cutoff        |
-| **Calls by token**  | How observed calls are distributed across tokens                             | The deployment's token appears with the expected share of activity   |
+| Section             | Use it for                                                   |
+| ------------------- | ------------------------------------------------------------ |
+| **Live throughput** | Current request and transaction activity by location         |
+| **Plan limits**     | RPC, WebSocket, and streaming limits for the selected access |
+| **Consumption**     | Calls recorded during the selected reporting period          |
+| **Calls by token**  | Comparing how traffic is distributed across location tokens  |
 
 Limits can differ by access and product. Read the displayed values instead of encoding a tier table into your application. RPC caps apply per active location token where the table says so; **Calls by token** is the token-level usage view.
 
@@ -61,7 +61,7 @@ Rotating a token does not increase capacity. Do not create extra tokens, locatio
 | Usage is higher than expected          | **Per-method analytics**, access summary, and **Limits → Calls by token** | Methods and token rows match deployed services                    | Stop duplicate pollers or retry loops and rotate only if traffic is unauthorized |
 | Live throughput says **No token**      | Selected access and location token                                        | The location has an active token under **Endpoints**              | Create the token or select the location that already has one                     |
 | Client receives `429`                  | Relevant **Plan limits** row and **Calls by token**                       | Concurrency and rate remain below the published limit             | Bound work and back off transient retries                                        |
-| Several products fail at once          | **Overview → Network status** or **Node Status**, when available          | No published incident explains the time window                    | If healthy, isolate the failing access and contact support with redacted details |
+| Several products fail at once          | **Overview → Network status**                                             | No published incident explains the time window                    | If healthy, isolate the failing access and contact support with redacted details |
 
 ## Next steps
 

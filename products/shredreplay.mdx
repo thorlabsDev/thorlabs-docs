@@ -25,7 +25,7 @@ Replay uses a rolling window, not a historical archive. Slots leave the window a
 | Source range       | Start and end slots inside the rolling window shown by the dashboard        |
 | Receiver           | Globally routable numeric IPv4 and UDP port from `1024` through `65535`     |
 | Pacing             | Maximum speed or original pacing                                            |
-| Active-job limit   | One queued or running job per access                                        |
+| Job status         | ShredReplay shows whether a job is queued, running, or finished             |
 | Delivery behavior  | Packet loss, duplication, and reordering are possible                       |
 | Completion meaning | The replay sender finished the range; receiver delivery is not acknowledged |
 
@@ -82,18 +82,18 @@ Revoking or regenerating the key affects future replay jobs for that access.
 | Maximum speed   | Sends without recreating the original capture timing | The network path, socket, and queues must absorb a potentially higher burst rate |
 | Original pacing | Replays according to the captured timing             | The receiver sees traffic closer to the original packet cadence                  |
 
-Leave **Speed multiplier** at `1`. The replay service uses captured timing in **Original pacing** mode; other multiplier values are not applied.
+Keep **Speed multiplier** at `1` when you use **Original pacing**.
 
 Measure packet rate and socket drops at the receiver before replaying a large range.
 
 ## Interpret job outcomes
 
-| Status                            | Interpretation                                       | Limitation                                                            |
-| --------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------------- |
-| Job is queued or running          | This access has its one active replay job            | No second job can be queued or run for the same access                |
-| Receiver reports nonzero packets  | UDP traffic reached the application                  | It does not show that every requested packet arrived or was processed |
-| Job is completed                  | ThorNode's replay sender finished the selected range | It does not mean the receiver acknowledged every datagram             |
-| Range is rejected after a refresh | A requested slot left the rolling window             | It does not mean ThorNode retains the slot as a long-term archive     |
+| Status                            | Interpretation                                       | Limitation                                                      |
+| --------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------- |
+| Job is queued or running          | The current job is still active                      | Finish or cancel it before starting another job                 |
+| Receiver reports nonzero packets  | UDP traffic reached the application                  | Not every requested packet necessarily arrived or was processed |
+| Job is completed                  | ThorNode's replay sender finished the selected range | Receiver delivery is not acknowledged                           |
+| Range is rejected after a refresh | A requested slot left the rolling window             | Slots outside the rolling window are unavailable                |
 
 The receiver must tolerate packet loss, duplication, and reordering. Job completion and receiver packet counts are separate signals.
 

@@ -3,7 +3,7 @@ title: "Plans and limits"
 description: "Read the throughput, concurrency, and streaming limits for a ThorNode access."
 ---
 
-Use this page to size a workload against the limits shown for a pass or rental. The standard tiers are **Flash**, **Classic**, **Elite**, and **Prime**; ThorNode can also grant non-standard special access.
+Use this page to size a workload against the limits shown for the pass or rental your application uses. The standard tiers are **Flash**, **Classic**, **Elite**, and **Prime**; limits can also be customized for a specific access.
 
 <Note>
   Prices, locations, and limits can change. Read them from the dashboard for the
@@ -53,13 +53,9 @@ The dashboard can show additional product-specific constraints. [Read **Usage** 
 
 Creating extra clients, credentials, reconnect loops, or location targets does not increase the entitlement attached to an access.
 
-## Distinguish tier, access, and availability
+## Check the selected access
 
-- A **tier** is the named standard class: Flash, Classic, Elite, or Prime.
-- An **access** is the specific active pass, rental, or special grant selected in the dashboard.
-- An **entitlement** is a product, location, or capacity currently granted to that access.
-
-Product availability is access-specific. Access to ThorEdge RPC does not imply access to Yellowstone gRPC, Pulse Decoded Shreds, Raw Shred Stream, Replay, or Bifrost Transaction Routes. Non-standard access can also differ from the standard tier that appears closest to it.
+Products, locations, and capacity vary by pass or rental. Use the options and limits shown for the selected access; RPC access does not automatically include every streaming or transaction-routing product.
 
 ## Operate below the live limits
 
