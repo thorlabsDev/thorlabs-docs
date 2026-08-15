@@ -44,9 +44,9 @@ Both deliver UDP datagrams to a receiver you operate. Confirm that the host has 
 
 ## Bifrost for provider-specific routes
 
-Choose **Bifrost Transaction Routes** only when you have a contract for the exact provider route you intend to call. The dashboard presents a provider catalog, but a displayed route is not proof of access or location availability. The guided route contract and server response confirm availability and supply the HTTPS endpoint, authentication placement, HTTP method, headers, request body, response, and transaction semantics.
+Choose **Bifrost Transaction Routes** when you want to call a specific provider operation without opening a separate provider account or managing its API key. Bifrost aggregation is included when **Private TX** is enabled for your ThorNode access. Select the access, location, provider, and operation in the dashboard, generate a Private TX key, and copy the complete route URL.
 
-Bifrost does not imply automatic route selection, transaction landing, or confirmation. Track any returned transaction signature according to the selected route contract and your Solana confirmation policy.
+Bifrost manages the upstream provider credentials, but your application still chooses the route and sends that route's request format. It does not imply automatic route selection, transaction landing, or confirmation. Track any returned signature according to your Solana confirmation policy.
 
 ## Confirm access before implementation
 

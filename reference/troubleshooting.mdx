@@ -45,9 +45,9 @@ Do not retry authorization errors in a tight loop. Rotation does not fix an inac
 
 ### Method or route is not found
 
-| Symptom                                | Verify                                                                                    | Expected result                                          | Action                                                                        | Retry?                             |
-| -------------------------------------- | ----------------------------------------------------------------------------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------- |
-| RPC method or Bifrost route is missing | Complete product URL, supported method list, supplied route contract, and server response | The exact method or provider operation remains supported | Refresh the current product or route contract and replace stale configuration | **No**, until the contract matches |
+| Symptom                                | Verify                                                                                                              | Expected result                                          | Action                                                                   | Retry?                                    |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------ | ----------------------------------------- |
+| RPC method or Bifrost route is missing | Complete copied URL, supported RPC method list, and the **Private TX** catalog for the selected access and location | The exact method or provider operation remains available | Refresh the dashboard data and replace a stale or manually assembled URL | **No**, until the method or route appears |
 
 ## Requests or subscriptions are rate limited
 

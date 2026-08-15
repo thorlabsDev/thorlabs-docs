@@ -41,14 +41,14 @@ Use the public hostname exactly as displayed. Do not replace it with a resolved 
 
 ## Apply location scope correctly
 
-| Configuration              | Location behavior                                                                                                                                                                                                                                                      |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ThorEdge RPC and WebSocket | The target and token are location-bound and must be copied together.                                                                                                                                                                                                   |
-| Yellowstone gRPC           | The dial target and `x-token` credential must belong to the same location.                                                                                                                                                                                             |
-| Pulse Decoded Shreds       | After deployment confirmation, the target and control-message token must belong to the same location and the owner-supplied contract.                                                                                                                                  |
-| Bifrost Transaction Routes | The guided integration contract is specific to the selected access, location, provider, and operation. Its contract and server response—not the visible catalog alone—establish availability. Use the endpoint and authentication scope supplied for that exact route. |
-| Raw Shred Stream           | The registration selects the ThorNode location that sends UDP to your receiver.                                                                                                                                                                                        |
-| Replay                     | After the server confirms job availability, use the target and replay flow for the selected access; Replay has its own per-access key.                                                                                                                                 |
+| Configuration              | Location behavior                                                                                                                                                                                                      |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ThorEdge RPC and WebSocket | The target and token are location-bound and must be copied together.                                                                                                                                                   |
+| Yellowstone gRPC           | The dial target and `x-token` credential must belong to the same location.                                                                                                                                             |
+| Pulse Decoded Shreds       | After deployment confirmation, the target and control-message token must belong to the same location and the owner-supplied contract.                                                                                  |
+| Bifrost Transaction Routes | The dashboard reuses one Private TX key for the selected access across its enabled Bifrost location URLs. Copy each provider route URL from the intended location; ThorNode manages the upstream provider credentials. |
+| Raw Shred Stream           | The registration selects the ThorNode location that sends UDP to your receiver.                                                                                                                                        |
+| Replay                     | After the server confirms job availability, use the target and replay flow for the selected access; Replay has its own per-access key.                                                                                 |
 
 See [Security](/reference/security#credential-scope-and-placement) for where each credential belongs and how to store it.
 
@@ -63,7 +63,7 @@ Raw Shred Stream and Replay send UDP in the other direction, from ThorNode to a 
 1. Confirm the destination is enabled for the same access, product, and network.
 2. Prepare the destination according to its scope:
    - For ThorEdge or Yellowstone, obtain the destination target and location token together. Do the same for Pulse only after its deployment contract is confirmed.
-   - For Bifrost, obtain the guided route contract for the exact destination, provider, and operation.
+   - For Bifrost, select the destination in **Private TX** and copy the provider route URL shown there. The access key remains the same, but the location URL changes.
    - For Raw Shred Stream, create the receiver registration for the destination location; packets do not use a customer credential.
    - Availability-confirmed Replay uses its per-access key and job contract rather than a location-token pair.
 3. Add the destination as separate configuration or registration. Do not edit only a hostname in an existing target.
