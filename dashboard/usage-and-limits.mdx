@@ -3,7 +3,7 @@ title: "Monitor usage and limits"
 description: "Verify request activity, inspect per-method behavior, read live throughput, and compare traffic with published tier limits."
 ---
 
-Use **Usage** to verify what your application sent and **Limits** to read the published tier row resolved for the selected access. Live throughput and concurrency limits still apply; use the [canonical limit model](/reference/plans-and-limits#understand-the-monthly-and-live-limits) for monthly semantics.
+Use **Usage** to review application traffic and **Limits** to see the throughput and concurrency values for the selected access. [Plans and limits](/reference/plans-and-limits#understand-the-monthly-and-live-limits) explains monthly and live limit behavior.
 
 ## Verify traffic in Usage
 
@@ -18,7 +18,10 @@ Use **Usage** to verify what your application sent and **Limits** to read the pu
   <Step title="Confirm the request was recorded">
     Read **Total requests**, **Error rate**, **Requests over time**, and **Per-method analytics**. **View token summary** shows the access aggregate and representative key details; it is not a per-token activity table.
 
-    After a test request, success is observable when the request count or method activity increases for the matching access, location, and range. Usage telemetry can arrive after the response, so use the application's status code for immediate debugging.
+    After a test request, the request count or method activity should increase
+    for the matching access, location, and range. Usage telemetry can arrive
+    after the response, so use the application's status code for immediate
+    debugging.
 
   </Step>
 </Steps>
@@ -29,12 +32,12 @@ Use **Avg latency**, **p95 latency**, and **Latency over time** to compare behav
 
 Open **Limits** and select the same access used by the application.
 
-| Section             | What it tells you                                                            | Success signal                                                                   |
-| ------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| **Live throughput** | Current request and transaction rate for locations with tokens               | The intended location reports a live connection and current activity             |
-| **Plan limits**     | Published RPC, WebSocket, and supported streaming caps for the resolved tier | The selected access resolves to a tier row; legacy access can use a fallback row |
-| **Consumption**     | Calls observed in the current reporting period                               | The count reflects recorded usage; it is not a monthly cutoff                    |
-| **Calls by token**  | How observed calls are distributed across tokens                             | The deployment's token appears with the expected share of activity               |
+| Section             | What it tells you                                                            | What you should see                                                  |
+| ------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| **Live throughput** | Current request and transaction rate for locations with tokens               | The intended location reports a live connection and current activity |
+| **Plan limits**     | Published RPC, WebSocket, and supported streaming caps for the resolved tier | The selected access shows its current plan limits                    |
+| **Consumption**     | Calls observed in the current reporting period                               | The count reflects recorded usage; it is not a monthly cutoff        |
+| **Calls by token**  | How observed calls are distributed across tokens                             | The deployment's token appears with the expected share of activity   |
 
 Limits can differ by access and product. Read the displayed values instead of encoding a tier table into your application. RPC caps apply per active location token where the table says so; **Calls by token** is the token-level usage view.
 

@@ -1,8 +1,8 @@
-# ThorNode documentation rules
+# ThorNode writing guide
 
-This guide is the editorial and structural contract for ThorNode developer documentation.
+This guide keeps ThorNode developer documentation clear, consistent, and useful.
 
-It adapts the strongest patterns from the Helius, Corvus Labs, and OrbitFlare documentation systems while keeping ThorNode's product contracts and naming authoritative.
+It adapts useful patterns from Helius, Corvus Labs, and OrbitFlare without copying their voice or forcing every product into the same template.
 
 ## What good looks like
 
@@ -40,7 +40,7 @@ Navigation follows developer jobs, not the internal org chart:
 - Dashboard
 - Operate
 
-Shared concepts such as credentials, locations, limits, and security have one canonical page. Product pages link to that page instead of repeating the full explanation.
+Shared concepts such as credentials, locations, limits, and security have one main page. Product pages link to it instead of repeating the full explanation.
 
 ## Page types
 
@@ -48,7 +48,7 @@ Shared concepts such as credentials, locations, limits, and security have one ca
 
 The landing page answers “What are you building?” It routes by outcome before introducing product names.
 
-Required order:
+Typical structure:
 
 1. One-sentence platform promise.
 2. Short first-call path.
@@ -59,7 +59,7 @@ Required order:
 
 A quickstart produces one observable result in about five minutes.
 
-Required order:
+Typical structure:
 
 1. Outcome sentence.
 2. Prerequisites and where to get them.
@@ -67,26 +67,26 @@ Required order:
 4. Numbered happy path.
 5. Complete runnable command or file.
 6. Representative output.
-7. A sentence that identifies the success signal.
+7. A clear description of the working result.
 8. Two to four next steps.
 
 Keep one golden path. Put alternatives in tabs only when they are equally supported.
 
 ### Product overview
 
-Required order:
+Cover the details a developer needs, in the order that best fits the product:
 
 1. What it is.
-2. “Use it when” and “Choose something else when.”
-3. Input, output, transport, authentication, and success semantics.
-4. Quickstart or integration path.
+2. The workloads it fits and the closest alternatives.
+3. Input, output, transport, authentication, and result semantics.
+4. A working first request, connection, or receiver.
 5. Production behavior: limits, retry, reconnect, loss, ordering, or confirmation as applicable.
 6. Product-specific troubleshooting.
 7. Contextual next steps.
 
 ### API or protocol reference
 
-Reference pages describe verified contracts, not inferred behavior.
+Reference pages describe the working interface, not inferred behavior.
 
 Include:
 
@@ -106,15 +106,11 @@ Describe the shortest UI path, then the resulting state. Use exact current UI la
 
 ### Troubleshooting
 
-Organize around observable symptoms:
-
-`Symptom → verify → expected result → action`
-
-Say whether a failure is retryable. Authentication and configuration failures are not fixed by blind retries.
+Organize around the error or symptom a developer sees. Give the shortest useful fix and say whether retrying can help. Keep the full diagnostic matrix on the central troubleshooting page; small product pages usually need only `Problem | Fix`.
 
 ## Code examples
 
-- Examples must run against a documented public contract.
+- Examples must run against the documented public interface.
 - Never invent a hostname, SDK, schema version, route body, or response.
 - Use secrets through environment variables.
 - Shell variables: `$THORNODE_RPC_URL`, `$THORNODE_TOKEN`.
@@ -124,7 +120,7 @@ Say whether a failure is retryable. Authentication and configuration failures ar
 - Put the expected output directly after the code.
 - Start minimal; move retry, reconnect, and observability to the production section.
 
-If ThorNode has not published enough contract information for a runnable integration, label the product **Guided integration** and list the exact artifacts onboarding must supply. Do not disguise missing contracts as a quickstart.
+If a runnable example needs a specific client or schema, publish the exact version and required files. Do not replace missing integration details with internal coordination or release language.
 
 ## Product semantics
 
@@ -145,9 +141,9 @@ Never use accepted, landed, and confirmed as synonyms.
 - State its scope and exact placement: URL, metadata, control message, or dashboard registration.
 - Link to Security for storage and rotation.
 - Treat a complete credential-bearing URL as a secret.
-- Do not publish live prices, locations, entitlements, or numeric limits unless they are generated from a maintained source of truth.
+- Do not publish live prices, locations, entitlements, or numeric limits unless they come from a maintained data source.
 - For dynamic values, tell the developer exactly where the dashboard displays them.
-- A visible product tab alone does not establish access; mention this only at the decision point where it matters.
+- Tell the developer to select their pass or rental before copying product details.
 
 ## Callouts
 
@@ -164,11 +160,11 @@ Never use accepted, landed, and confirmed as synonyms.
 - End each page with two to four contextual next steps.
 - Keep old public slugs as direct redirects to the current canonical page.
 
-## Publication gate
+## Pre-publish checks
 
 Before publishing:
 
-1. Verify product claims against deployed code or an owner-approved contract.
+1. Compare product claims with the tested service, dashboard behavior, and maintained protocol specifications.
 2. Parse and format every MDX file.
 3. Run Mintlify validation, broken-link, anchor, redirect, and accessibility checks.
 4. Run code syntax checks for runnable examples.

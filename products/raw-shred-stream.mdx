@@ -5,15 +5,15 @@ description: "Receive live raw Solana shreds from ThorNode at your public UDP re
 
 Raw Shred Stream sends live raw Solana shreds from one ThorNode location to a UDP receiver that you operate. The dashboard labels this product **ShredStream**. The output is protocol bytes, not decoded transactions.
 
-## Choose Raw Shred Stream
+## Live raw shreds
 
-| Use it when                                      | Choose something else when                                                                                                         |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| You need live shreds before application decoding | You need decoded transactions; use [Yellowstone gRPC](/products/yellowstone-grpc) or deployment-confirmed [Pulse](/products/pulse) |
-| You operate a public UDP receiver                | You cannot accept inbound UDP at a stable public IPv4 address                                                                      |
-| Your pipeline handles UDP delivery behavior      | You need recent captured shreds; use [Replay](/products/shredreplay) instead of a live feed                                        |
+| Good fit                                         | Choose another product                                                                                        |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| You need live shreds before application decoding | You need decoded transactions; use [Yellowstone gRPC](/products/yellowstone-grpc) or [Pulse](/products/pulse) |
+| You operate a public UDP receiver                | You cannot accept inbound UDP at a stable public IPv4 address                                                 |
+| Your pipeline handles UDP delivery behavior      | You need recent captured shreds; use [Replay](/products/shredreplay) instead of a live feed                   |
 
-## Delivery contract
+## Quick reference
 
 | Item              | Value                                                                                  |
 | ----------------- | -------------------------------------------------------------------------------------- |
@@ -24,11 +24,11 @@ Raw Shred Stream sends live raw Solana shreds from one ThorNode location to a UD
 | Output            | UDP datagrams containing raw Solana shred bytes                                        |
 | Authentication    | Access is checked when you save the registration; packets carry no customer credential |
 | Delivery behavior | Packet loss, duplication, and reordering are possible                                  |
-| Success signal    | Your receiver reports at least one nonzero packet count                                |
+| Working result    | Your receiver reports at least one nonzero packet count                                |
 
 ## Receive your first packets
 
-You need an active access with ShredStream enabled, Node.js, and a receiver reachable at a numeric, globally routable public IPv4 address. Open the chosen UDP port from `1024` through `65535` in every firewall, security group, network ACL, and NAT rule on the path. The dashboard rejects malformed and common private or local values, but field acceptance does not prove global routability. A hostname, private address, loopback address, or IPv6 address will not produce the supported public-receiver setup.
+You need an active access with ShredStream enabled, Node.js, and a receiver reachable at a numeric, globally routable public IPv4 address. Open the chosen UDP port from `1024` through `65535` in every firewall, security group, network ACL, and NAT rule on the path. Do not use a hostname, private address, loopback address, or IPv6 address.
 
 Save this complete receiver as `receiver.mjs`:
 
@@ -82,8 +82,8 @@ setInterval(() => {
   <Step title="Register the public target">
     Open **Endpoints → ShredStream**, select an eligible access and enabled
     location, then enter the receiver's real, globally routable numeric IPv4
-    address and the same UDP port. Save the registration; UI acceptance alone
-    does not prove that the receiver is reachable.
+    address and the same UDP port. Save the registration and watch the receiver
+    for packets.
   </Step>
   <Step title="Verify packet delivery">
     Watch the receiver until it prints a one-second interval with nonzero
@@ -99,7 +99,7 @@ packets=0 bytes=0
 packets=1842 bytes=2271057
 ```
 
-The nonzero packet count is the completion signal. The listening message alone proves only that the local socket opened.
+Traffic is reaching the application when the packet count is nonzero. The listening message only means the local socket opened.
 
 If the receiver is behind NAT, forward the registered public port to the listening host. Carrier-grade NAT requires an externally provided forwarding arrangement or a different host with a reachable public IPv4 address.
 
@@ -118,12 +118,12 @@ Monitor socket drops, application queue depth, packet rate, and byte rate. Raw S
 
 ## Troubleshooting
 
-| Symptom                            | Verify                                                 | Expected result                                    | Action                                                                                        |
-| ---------------------------------- | ------------------------------------------------------ | -------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Counters remain at zero            | Capture `udp port <registered-port>` on the receiver   | The host sees inbound UDP datagrams                | Fix the public target, firewall, security group, NAT forwarding, or access/location selection |
-| Capture sees packets; app does not | Check the process bind address and port                | The process listens on `0.0.0.0:<registered-port>` | Restart the receiver with the registered port and stop any conflicting process                |
-| Packets arrive; parsing fails      | Confirm the consumer expects raw shred bytes, not JSON | The decoder accepts the raw protocol payload       | Use a compatible shred decoder and keep transaction logic after decoding                      |
-| Packet drops rise under load       | Inspect socket-drop metrics and bounded-queue depth    | Receive-path work stays below the incoming rate    | Move parsing and storage out of the callback, then tune capacity from measured traffic        |
+| Problem                            | Fix                                                                                         |
+| ---------------------------------- | ------------------------------------------------------------------------------------------- |
+| Counters remain at zero            | Check the public target, firewall, security group, NAT forwarding, access, and location.    |
+| Capture sees packets; app does not | Bind the process to `0.0.0.0:<registered-port>` and stop any process using the same port.   |
+| Packets arrive; parsing fails      | Use a decoder for raw Solana shred bytes, not JSON or decoded transactions.                 |
+| Packet drops rise under load       | Move parsing and storage out of the socket callback, then tune bounded queues from metrics. |
 
 If you restrict inbound traffic by source, obtain the current source ranges from [ThorNode support](mailto:support@thornode.io) instead of relying on a copied allowlist.
 

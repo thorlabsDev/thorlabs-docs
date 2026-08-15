@@ -3,9 +3,9 @@ title: "Dashboard overview"
 description: "Find access, create credentials, inspect traffic and limits, register wallets, rent access, and renew passes."
 ---
 
-Use the ThorNode dashboard to turn an owned pass or active rental into an RPC credential or another explicitly supported product flow, then verify that the access remains operational.
+Use the ThorNode dashboard to turn an owned pass or active rental into RPC credentials or another product connection, then monitor its activity and limits.
 
-Open it from [thornode.io](https://www.thornode.io) and choose **Login with Discord**. The authenticated dashboard is the source of truth for your current access and dynamic product values.
+Open it from [thornode.io](https://www.thornode.io) and choose **Login with Discord**. The dashboard shows your current access, products, locations, usage, and limits.
 
 ## Start with your access
 
@@ -26,17 +26,17 @@ Open it from [thornode.io](https://www.thornode.io) and choose **Login with Disc
 
 ## Find a task
 
-| Task                                  | Shortest UI path                                        | Result                                                                                    |
-| ------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Review access                         | **Overview → Your passes** or **Your rentals**          | The access card shows its current state and expiration                                    |
-| Create an RPC or WebSocket credential | **Endpoints → Endpoints → access → Network → Location** | **Token & Endpoints** shows a masked token and connection details                         |
-| Inspect request traffic               | **Usage → access → time range → Network → Location**    | **Usage overview** and **Per-method analytics** show recorded activity                    |
-| Check published capacity              | **Limits → access**                                     | **Live throughput** shows activity and **Plan limits** shows the resolved tier row        |
-| Purchase time-limited access          | **Rent → Choose a tier → Choose a duration**            | A fulfilled purchase appears under **Your rentals**                                       |
-| Extend an eligible owned pass         | **Renew → Renew → Select passes → Renewal term**        | **Renewal Complete** shows the updated expiration                                         |
-| Associate a Solana address            | **Wallets → Connect Wallet → Register**                 | The address appears under **Verified wallets**                                            |
-| Compare current tier capabilities     | **Overview → Compare tiers**                            | The current comparison displays published tier data                                       |
-| Check service health                  | **Overview → Network status**                           | The overview shows current network state; use **Node Status** when that view is available |
+| Task                                  | Shortest UI path                                                        | Result                                                                                    |
+| ------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Review access                         | **Overview → Your passes** or **Your rentals**                          | The access card shows its current state and expiration                                    |
+| Create an RPC or WebSocket credential | **Endpoints** sidebar → **Endpoints** tab → access → Network → Location | **Token & Endpoints** shows a masked token and connection details                         |
+| Inspect request traffic               | **Usage → access → time range → Network → Location**                    | **Usage overview** and **Per-method analytics** show recorded activity                    |
+| Check published capacity              | **Limits → access**                                                     | **Live throughput** shows activity and **Plan limits** shows the resolved tier row        |
+| Purchase time-limited access          | **Rent → Choose a tier → Choose a duration**                            | A fulfilled purchase appears under **Your rentals**                                       |
+| Extend an eligible owned pass         | **Renew → Renew → Select passes → Renewal term**                        | **Renewal Complete** shows the updated expiration                                         |
+| Associate a Solana address            | **Wallets → Connect Wallet → Register**                                 | The address appears under **Verified wallets**                                            |
+| Compare current tier capabilities     | **Overview → Compare tiers**                                            | The current comparison displays published tier data                                       |
+| Check service health                  | **Overview → Network status**                                           | The overview shows current network state; use **Node Status** when that view is available |
 
 ## Read live values from the dashboard
 
@@ -48,8 +48,6 @@ Use the dashboard rather than a saved screenshot or copied plan table for values
 - Renewal eligibility, calculated amount, and resulting expiration
 - Published tier limits and live request, transaction, and token activity
 - Usage telemetry and service incidents
-
-Static documentation defines the workflow and credential semantics. It does not override the values returned for your authenticated account.
 
 <Warning>
   Do not share endpoint tokens, replay keys, Bifrost route URLs, wallet private

@@ -1,91 +1,130 @@
 ---
 title: "Yellowstone gRPC"
-description: "Prepare a supported Yellowstone Dragon's Mouth Subscribe integration."
+description: "Stream filtered Solana updates through Yellowstone Dragon's Mouth."
 ---
 
-**Guided integration.** ThorNode exposes a location-specific, Yellowstone Dragon's Mouth `geyser.Geyser/Subscribe`-compatible service. The dashboard may label it **Yellowstone DM**. Authentication uses `x-token` request metadata, but the dashboard's bare dial target is not enough to build a safe client.
+ThorNode provides location-specific Yellowstone Dragon's Mouth endpoints compatible with `geyser.Geyser/Subscribe`. The dashboard labels this product **Yellowstone DM**.
 
-## Use Yellowstone when
+Copy the target and token from the same location. Send the token as `x-token` request metadata when you open a subscription.
 
-Use Yellowstone when your application needs a long-lived, server-filtered Solana stream and can pin an onboarding-supplied protocol contract.
+## Filtered Geyser streams
 
-Choose [ThorEdge RPC](/products/thoredge-rpc) for request-response calls. Consider [Pulse Decoded Shreds](/products/pulse) for the planned QUIC transaction stream only after ThorNode confirms that replacement service is deployed.
+Use Yellowstone for long-lived, server-filtered streams of Solana updates.
 
-## Connection contract
+Use [ThorEdge RPC](/products/thoredge-rpc) for request-response calls and WebSocket subscriptions. Use [Pulse Decoded Shreds](/products/pulse) for a sig-first or full-transaction feed over QUIC.
 
-| Item                     | Value                                                    |
-| ------------------------ | -------------------------------------------------------- |
-| Interface                | `geyser.Geyser/Subscribe`                                |
-| Target                   | Bare location dial target copied from the dashboard      |
-| Authentication           | Selected access and location token in `x-token` metadata |
-| Transport and trust      | Supplied during onboarding                               |
-| Proto and client version | Compatible release supplied during onboarding            |
-| Supported request maps   | Confirmed for the selected endpoint during onboarding    |
-| Live limits              | Concurrent streams and filters shown by the dashboard    |
+## Quick reference
 
-## Get the integration package
+| Item               | Value                                                                                                  |
+| ------------------ | ------------------------------------------------------------------------------------------------------ |
+| Dashboard path     | **Endpoints** sidebar → **Endpoints** tab → **Token & Endpoints** → **Streaming** → **Yellowstone DM** |
+| Interface          | `geyser.Geyser/Subscribe`                                                                              |
+| Compatible release | `rpcpool/yellowstone-grpc` `v13.3.0+solana.4.0.2`                                                      |
+| Transport          | Plaintext gRPC over HTTP/2 (`h2c`)                                                                     |
+| Target             | Bare `host:port` copied from the dashboard                                                             |
+| Authentication     | Location token sent as `x-token` request metadata                                                      |
+| Account commitment | `PROCESSED`                                                                                            |
+| Stored-slot replay | Not provided                                                                                           |
+| Live limits        | **Limits → gRPC Yellowstone → Concurrent streams** and **Accounts across filters**                     |
 
-Copy the target and token for one location from the dashboard. Then obtain all of the following from ThorNode onboarding or [support](mailto:support@thornode.io):
+## Subscribe request limits
 
-- Exact transport mode for that target
-- TLS server name and trust roots, or the exact trusted private-network setup
-- Pinned compatible `geyser.proto` and client release
-- Exact `SubscribeRequest` maps enabled on that endpoint
-- Allowed fields for each map, including whether each named filter entry must be empty or populated
-- Supported commitment, keepalive, error, and limit behavior
+- Each of the `slots`, `accounts`, and `transactions` maps accepts at most one named entry.
+- Account and owner arrays accept up to 10 public keys each.
+- Transaction include, exclude, and required arrays accept up to 10 public keys each.
+- `accountsDataSlice` accepts up to two entries.
 
-The compatible proto defines possible request maps; it does not prove that every map or filter is enabled on a ThorNode endpoint.
+**Accounts across filters** counts account and owner public keys across all live streams for the location token.
 
-## Prepare the subscription
+## Open a subscription
 
 <Steps>
-  <Step title="Choose one location">
-    Select an active access and enabled location. Copy the bare gRPC target and
-    its location token together.
+  <Step title="Choose a location">
+    Open **Endpoints**, keep the **Endpoints** tab selected, choose the access,
+    network, and location. Copy the token from the location token row and the
+    target from **Yellowstone DM** in the **Streaming** section of **Token &
+    Endpoints**.
   </Step>
-  <Step title="Pin the supplied contract">
-    Install the compatible proto or client release and apply the exact transport
-    and trust configuration supplied for that target.
+  <Step title="Configure the client">
+    Use the client and protobuf definitions from `v13.3.0+solana.4.0.2`.
   </Step>
-  <Step title="Attach authentication metadata">
-    Send the location token on authenticated requests with the exact metadata
-    key `x-token`.
+  <Step title="Open the gRPC channel">
+    Configure the copied target as a plaintext gRPC (`h2c`) channel.
   </Step>
-  <Step title="Start with one verified filter">
-    Open one Subscribe stream using a map and filter shape confirmed for the
-    selected endpoint. Add filters only after you receive the expected update.
+  <Step title="Attach the token">
+    Add the location token to the gRPC request metadata with the exact key
+    `x-token`.
+  </Step>
+  <Step title="Subscribe">
+    Start with a slot filter, or an account or transaction filter containing an
+    explicit public key. Add more keys only after the first stream returns
+    updates.
   </Step>
 </Steps>
 
 <Warning>
-  Never append the token to the target or a query string, and never disable
-  certificate or server-identity verification to make a connection succeed.
+  The current Yellowstone target uses plaintext gRPC, so `x-token` metadata is
+  not encrypted in transit. Connect through a trusted private network, VPN, or
+  encrypted tunnel. Keep the token out of the target, query string, source code,
+  and logs.
 </Warning>
 
-An integration is working when the authenticated Subscribe stream returns an update that matches the agreed map and filter. A TCP or HTTP/2 connection alone is not the success signal.
+The subscription is running when it returns `SubscribeUpdate` messages whose `filters` field contains your filter name.
 
-## Dragon's Mouth compatibility
+## Test a slot subscription
 
-The upstream [`rpcpool/yellowstone-grpc`](https://github.com/rpcpool/yellowstone-grpc) project defines the Dragon's Mouth service and publishes its [proto](https://github.com/rpcpool/yellowstone-grpc/blob/master/yellowstone-grpc-proto/proto/geyser.proto), [Node.js client](https://github.com/rpcpool/yellowstone-grpc/tree/master/yellowstone-grpc-client-nodejs), and [examples](https://github.com/rpcpool/yellowstone-grpc/tree/master/examples).
+Install [`grpcurl`](https://github.com/fullstorydev/grpcurl), then download the matching protobuf files:
 
-These upstream branches can change independently. Use them as protocol references only after ThorNode supplies the compatible version and endpoint-specific contract.
+```bash
+git clone --depth 1 \
+  --branch 'v13.3.0+solana.4.0.2' \
+  https://github.com/rpcpool/yellowstone-grpc.git
+
+cd yellowstone-grpc/yellowstone-grpc-proto/proto
+```
+
+Copy the Yellowstone target and location token for the same dashboard location:
+
+```bash
+export THORNODE_YELLOWSTONE_TARGET='<host:port>'
+read -r -s -p 'Yellowstone token: ' THORNODE_YELLOWSTONE_TOKEN
+export THORNODE_YELLOWSTONE_TOKEN
+printf '\n'
+
+printf '%s\n' '{"slots":{"slot_updates":{}}}' \
+  | grpcurl -plaintext \
+      -expand-headers \
+      -import-path . \
+      -proto geyser.proto \
+      -H 'x-token: ${THORNODE_YELLOWSTONE_TOKEN}' \
+      -d @ \
+      "${THORNODE_YELLOWSTONE_TARGET}" \
+      geyser.Geyser/Subscribe
+```
+
+The command keeps streaming until you stop it. Each matching update includes `slot_updates` in its `filters` field.
+
+## Dragon's Mouth reference
+
+ThorNode uses the open-source [`rpcpool/yellowstone-grpc`](https://github.com/rpcpool/yellowstone-grpc) Dragon's Mouth interface. Use the matching `v13.3.0+solana.4.0.2` [Geyser proto](https://github.com/rpcpool/yellowstone-grpc/blob/v13.3.0%2Bsolana.4.0.2/yellowstone-grpc-proto/proto/geyser.proto), [Node.js client](https://github.com/rpcpool/yellowstone-grpc/tree/v13.3.0%2Bsolana.4.0.2/yellowstone-grpc-client-nodejs), and [examples](https://github.com/rpcpool/yellowstone-grpc/tree/v13.3.0%2Bsolana.4.0.2/examples).
 
 ## Run in production
 
-- Use bounded processing queues so a slow consumer cannot exhaust memory.
-- Reconnect with bounded exponential backoff and jitter, then recreate the subscription.
-- Detect stream gaps and reconcile through RPC when correctness requires it.
-- Monitor current stream and filter usage in the dashboard.
-- Do not assume ordering, replay, or loss behavior beyond the supplied onboarding contract.
+- Keep receive-path work small and move expensive processing to bounded worker queues.
+- Monitor stream count, filter usage, queue depth, and consumer lag.
+- Reconnect with bounded exponential backoff and jitter.
+- Recreate subscriptions after reconnecting.
+- Detect gaps and reconcile through RPC when application correctness requires it.
+- Close unused streams instead of leaving idle subscriptions open.
 
 ## Troubleshooting
 
-| Symptom                   | Verify                                                                      | Expected result                                                   | Action                                                           |
-| ------------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------- |
-| Unauthenticated           | Metadata key is exactly `x-token`; token and target share a location        | One narrow Subscribe request authenticates                        | Recopy both values and replace the metadata                      |
-| Connection or TLS failure | Supplied transport mode, server name, trust roots, and outbound gRPC policy | The client verifies the server and opens the gRPC transport       | Restore the onboarding configuration; do not bypass verification |
-| Subscription rejected     | Map, filter shape, commitment, and live limits                              | One onboarding-confirmed filter is accepted and returns an update | Reduce to one verified filter and correct non-retryable input    |
-| Repeated disconnects      | Client backpressure, keepalive contract, and retry loop                     | A bounded reconnect recreates one subscription without backlog    | Bound queues and reconnect according to the supplied contract    |
+| Problem               | Fix                                                                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `Unauthenticated`     | Recopy the token and Yellowstone target for the same location and send the token as `x-token` metadata.                               |
+| Cannot connect        | Use the copied `host:port` with plaintext HTTP/2: `-plaintext` in `grpcurl` or an `http://` URI in clients that require a scheme.     |
+| Subscription rejected | Reduce the request to one supported named filter, then check **Concurrent streams** and **Accounts across filters** under **Limits**. |
+| Repeated disconnects  | Drain updates promptly, bound downstream queues, and reconnect with exponential backoff and jitter.                                   |
 
 ## Next steps
 

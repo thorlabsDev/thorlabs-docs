@@ -5,13 +5,13 @@ description: "Connect to Solana JSON-RPC and WebSocket endpoints from one locati
 
 ThorEdge gives you Solana JSON-RPC over HTTPS and subscriptions over WSS. Copy the complete URLs for one location from the dashboard; a successful first request returns a JSON-RPC result with a recent blockhash.
 
-## Use ThorEdge when
+## RPC and WebSocket workloads
 
 Use ThorEdge for standard Solana RPC calls or WebSocket subscriptions. Supported account-query methods use the same URL and are routed through [FastGate](/products/fastgate-account-api).
 
-Choose [Yellowstone gRPC](/products/yellowstone-grpc), or [Pulse Decoded Shreds](/products/pulse) after deployment confirmation, when you need a persistent data stream instead of request-response RPC.
+Choose [Yellowstone gRPC](/products/yellowstone-grpc) or [Pulse Decoded Shreds](/products/pulse) when you need a persistent data stream instead of request-response RPC.
 
-## Connection contract
+## Quick reference
 
 | Item                 | Value                                           |
 | -------------------- | ----------------------------------------------- |
@@ -36,8 +36,8 @@ You need:
 
 <Steps>
   <Step title="Select your access">
-    Open **Endpoints → Endpoints**, then select the pass or rental you want to
-    use.
+    Open **Endpoints**, keep the **Endpoints** tab selected, then choose the
+    pass or rental you want to use.
   </Step>
   <Step title="Choose a network and location">
     Select the network and an offered location for the access.
@@ -88,7 +88,7 @@ Expected output:
 }
 ```
 
-`hasBlockhash: true` and `error: null` are the success signal. Configure your Solana WebSocket client with the complete `wss://` URL from the same location panel when you need subscriptions.
+The request succeeded when `hasBlockhash` is `true` and `error` is `null`. Configure your Solana WebSocket client with the complete `wss://` URL from the same location panel when you need subscriptions.
 
 ## Run in production
 
@@ -100,12 +100,12 @@ Expected output:
 
 ## Troubleshooting
 
-| Symptom                   | Verify                                                                     | Expected result                                                | Action                                                       |
-| ------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------ |
-| Unauthorized or forbidden | Access, network, location, token, and optional IPv4 restriction            | One minimal RPC call returns a JSON-RPC result                 | Recopy the complete URL from the selected location           |
-| Rate limited              | Current traffic against **Usage** and **Limits**                           | Traffic remains below the applicable live limit                | Reduce concurrency and retry transient failures with backoff |
-| RPC works but WSS fails   | The copied URL starts with `wss://`; outbound WebSocket traffic is allowed | The secure connection opens and accepts a subscription request | Recopy the WSS URL and update network policy                 |
-| A working URL stopped     | The token was regenerated, revoked, or its access expired                  | A current active token succeeds; the replaced value does not   | Create or select a current token and replace the URL         |
+| Problem                   | Fix                                                                                      |
+| ------------------------- | ---------------------------------------------------------------------------------------- |
+| Unauthorized or forbidden | Recopy the complete URL and check the access, location, and optional IPv4 restriction.   |
+| Rate limited              | Compare traffic with **Usage** and **Limits**, reduce concurrency, and back off retries. |
+| RPC works but WSS fails   | Recopy the `wss://` URL and permit outbound WebSocket traffic.                           |
+| A working URL stopped     | Check whether the token was regenerated, revoked, or its access expired; replace it.     |
 
 ## Next steps
 

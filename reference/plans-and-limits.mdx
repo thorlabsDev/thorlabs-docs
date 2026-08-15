@@ -1,55 +1,53 @@
 ---
 title: "Plans and limits"
-description: "Verify product and location support, then compare activity with published ThorNode tier limits."
+description: "Read the throughput, concurrency, and streaming limits for a ThorNode access."
 ---
 
-Use this page to decide whether an access can support a workload. The standard tiers are **Flash**, **Classic**, **Elite**, and **Prime**; ThorNode can also grant non-standard special access. The tier name is a planning input. Product controls and server responses determine availability, while **Limits** shows the published tier row resolved for the selected access.
+Use this page to size a workload against the limits shown for a pass or rental. The standard tiers are **Flash**, **Classic**, **Elite**, and **Prime**; ThorNode can also grant non-standard special access.
 
 <Note>
-  Prices, locations, product responses, usage, and published limits can change.
-  Read them from the authenticated flow for the exact access you will use; do
-  not copy values from a screenshot, another access, or an old integration.
+  Prices, locations, and limits can change. Read them from the dashboard for the
+  access you will use; do not copy values from a screenshot or another access.
 </Note>
 
-## Verify an access before integration
+## Check capacity for a workload
 
 <Steps>
   <Step title="Select the pass or rental">
     Choose the exact active access your application will use. Do not assume two
     accesses with the same tier label have identical current configuration.
   </Step>
-  <Step title="Confirm product and location access">
-    Open the relevant endpoint view and check its enabled controls and offered
-    locations, then confirm support through the product's server response.
+  <Step title="Choose a product and location">
+    Open **Endpoints** for the selected access and choose from the products and
+    locations shown there.
   </Step>
   <Step title="Read activity and published capacity">
-    Open **Usage** to review current activity and **Limits** to see the
-    published tier row resolved for the selected access. Legacy access can use a
-    fallback row, so treat runtime responses as authoritative for enforcement.
+    Open **Usage** for current activity and **Limits** for the values shown for
+    the selected access.
   </Step>
   <Step title="Test the intended configuration">
-    Obtain the target and credential through the product's self-service or
-    guided integration path after selecting the access, network, and location,
-    then run one low-impact operation.
+    Obtain the target and credential after selecting the access, network, and
+    location, then run one low-impact operation.
   </Step>
 </Steps>
 
-Success means the product's server response supports the access and location, the test reaches the product's documented success signal, and the workload stays below the relevant published and runtime-enforced constraints.
+Run a low-impact test, then keep the workload within the limits shown in the dashboard.
 
 ## Understand the monthly and live limits
 
-ThorEdge RPC does **not currently enforce a monthly request-count cutoff**. Requests do not stop because a monthly compatibility counter reaches a value. If an API payload contains quota-style metadata, do not treat it as an enforced cutoff unless the authenticated dashboard explicitly presents a monthly limit for the selected access.
+ThorEdge RPC has no monthly request cap. Throughput and concurrency limits still apply.
 
 Live constraints still apply:
 
-| Limit                     | What it governs                                       | When it is reached                                                         |
-| ------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------- |
-| RPC RPS                   | JSON-RPC request throughput                           | Requests can be throttled; inspect `429` responses and retry volume.       |
-| Transaction TPS           | Transaction-submission throughput                     | Submissions can be throttled; bound application concurrency and retries.   |
-| WebSocket capacity        | Connections, subscriptions, or related concurrent use | New work can be rejected; reuse connections and close idle subscriptions.  |
-| Yellowstone capacity      | Concurrent streams and account or filter usage        | Subscriptions can be rejected; narrow filters and close unused streams.    |
-| Raw Shred Stream capacity | Active UDP receiver registrations                     | A new registration can be rejected; remove registrations no longer in use. |
-| Location access           | Locations enabled for a product and access            | A location does not appear as an available choice.                         |
+| Limit                     | What it governs                                                            | When it is reached                                                         |
+| ------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| RPC RPS                   | JSON-RPC request throughput                                                | Requests can be throttled; inspect `429` responses and retry volume.       |
+| Transaction TPS           | Transaction-submission throughput                                          | Submissions can be throttled; bound application concurrency and retries.   |
+| WebSocket capacity        | Connections, subscriptions, or related concurrent use                      | New work can be rejected; reuse connections and close idle subscriptions.  |
+| Yellowstone capacity      | Concurrent streams; account and owner keys across live streams for a token | Subscriptions can be rejected; narrow filters and close unused streams.    |
+| Pulse capacity            | Concurrent streams and total accounts across filters                       | New streams or unfiltered firehose requests can be rejected.               |
+| Raw Shred Stream capacity | Active UDP receiver registrations                                          | A new registration can be rejected; remove registrations no longer in use. |
+| Location access           | Locations enabled for a product and access                                 | A location does not appear as an available choice.                         |
 
 The dashboard can show additional product-specific constraints. [Read **Usage** and **Limits**](/dashboard/usage-and-limits) for the selected access instead of encoding a tier table into application logic. RPC rate and subscription caps apply per active location token where the published table says so.
 
@@ -70,7 +68,7 @@ Product availability is access-specific. Access to ThorEdge RPC does not imply a
 - Reuse WebSocket and streaming connections where the protocol permits.
 - Keep Yellowstone filters narrow and close streams that are no longer needed.
 - Review **Usage** and **Limits** after releases or material traffic changes.
-- Contact [ThorNode support](mailto:support@thornode.io) before a planned workload needs more capacity.
+- Contact [ThorNode support](mailto:support@thornode.io) before a traffic increase needs more capacity.
 
 For a `429`, rejected subscription, or other capacity symptom, use the [limit troubleshooting table](/reference/troubleshooting#requests-or-subscriptions-are-rate-limited).
 

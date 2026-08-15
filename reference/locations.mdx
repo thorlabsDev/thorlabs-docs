@@ -3,12 +3,11 @@ title: "Locations"
 description: "Select, configure, and fail over between the ThorNode locations enabled for your access."
 ---
 
-Use this page when you need to choose a ThorNode location, move a workload, or prepare regional failover. A location is ready when the target and credential match the same access and location under the applicable product contract, and a low-impact test succeeds from the application runtime.
+Use this page when you need to choose a ThorNode location, move a workload, or prepare regional failover. Keep each target paired with the credential shown for the same access and location, then test it from the application runtime.
 
 <Note>
-  The dashboard location selector is the current source of truth. Available
-  locations depend on the selected pass or rental, product, and network, and can
-  differ from old guides or screenshots.
+  The dashboard lists the locations available for the selected pass or rental,
+  product, and network.
 </Note>
 
 ## Choose and verify a location
@@ -20,15 +19,12 @@ Use this page when you need to choose a ThorNode location, move a workload, or p
   </Step>
   <Step title="Choose an enabled location">
     Start with the available location nearest your application infrastructure.
-    Product availability and measurements from the real runtime should decide
-    the final choice.
+    Test from the application host and compare latency before making the final
+    choice.
   </Step>
   <Step title="Copy the matching configuration">
-    Use the source required by the product contract. Copy dashboard-supplied
-    target and credential pairs from the same location view; for a guided
-    integration, obtain the endpoint and authentication contract for that exact
-    selection. Do not assemble a target manually or combine values from
-    different locations.
+    Copy the target and credential from the same dashboard location. Do not
+    assemble a target manually or combine values from different locations.
   </Step>
   <Step title="Test from the application runtime">
     Run one low-impact request, connection, or subscription from the network
@@ -45,10 +41,10 @@ Use the public hostname exactly as displayed. Do not replace it with a resolved 
 | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | ThorEdge RPC and WebSocket | The target and token are location-bound and must be copied together.                                                                                                                                                   |
 | Yellowstone gRPC           | The dial target and `x-token` credential must belong to the same location.                                                                                                                                             |
-| Pulse Decoded Shreds       | After deployment confirmation, the target and control-message token must belong to the same location and the owner-supplied contract.                                                                                  |
+| Pulse Decoded Shreds       | The QUIC target and control-message token must belong to the same location.                                                                                                                                            |
 | Bifrost Transaction Routes | The dashboard reuses one Private TX key for the selected access across its enabled Bifrost location URLs. Copy each provider route URL from the intended location; ThorNode manages the upstream provider credentials. |
 | Raw Shred Stream           | The registration selects the ThorNode location that sends UDP to your receiver.                                                                                                                                        |
-| Replay                     | After the server confirms job availability, use the target and replay flow for the selected access; Replay has its own per-access key.                                                                                 |
+| Replay                     | Replay has a per-access key; each job supplies its own UDP receiver target.                                                                                                                                            |
 
 See [Security](/reference/security#credential-scope-and-placement) for where each credential belongs and how to store it.
 
@@ -62,13 +58,13 @@ Raw Shred Stream and Replay send UDP in the other direction, from ThorNode to a 
 
 1. Confirm the destination is enabled for the same access, product, and network.
 2. Prepare the destination according to its scope:
-   - For ThorEdge or Yellowstone, obtain the destination target and location token together. Do the same for Pulse only after its deployment contract is confirmed.
+   - For ThorEdge, Yellowstone, or Pulse, copy the destination target and location token together.
    - For Bifrost, select the destination in **Private TX** and copy the provider route URL shown there. The access key remains the same, but the location URL changes.
    - For Raw Shred Stream, create the receiver registration for the destination location; packets do not use a customer credential.
-   - Availability-confirmed Replay uses its per-access key and job contract rather than a location-token pair.
+   - Replay uses its per-access key and job flow rather than a location-token pair.
 3. Add the destination as separate configuration or registration. Do not edit only a hostname in an existing target.
 4. Test a low-impact operation and observe the new path before moving production traffic.
-5. Keep the old path only for the planned rollback window, then remove stale registrations and revoke only credentials that are no longer needed.
+5. Keep the old path through the rollback window, then remove stale registrations and revoke credentials that are no longer needed.
 
 Regenerating or revoking one ThorEdge location token does not affect other locations. For a credential exposure, follow the [rotation procedure](/reference/security#rotate-or-revoke-a-credential) instead of treating a regional move as sufficient remediation.
 

@@ -1,32 +1,21 @@
 ---
-title: "Refund policy status"
-description: "Check the refund-policy status and distinguish a refund request from payment recovery."
+title: "Refunds"
+description: "Request the refund policy or recover a payment without paying twice."
 ---
 
-No business- and legal-approved refund policy for current ThorNode rentals, renewals, or other paid flows has been published in this documentation.
+The current ThorNode refund policy is not hosted in this documentation. Contact [support@thornode.io](mailto:support@thornode.io) to request the policy or ask about a refund. Eligibility, timing, and payment method depend on the terms supplied for the purchase.
 
-<Warning>
-  This page is a status notice, not a refund policy. It does not promise
-  eligibility, timing, payment method, or an outcome for any refund request.
-</Warning>
+## Payment recovery or refund
 
-## Choose the correct path
+| Situation                                          | What to do                                                                                                                                                              |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A signed payment exists but access has not updated | Do not pay again. Keep the transaction signature and follow [payment recovery troubleshooting](/reference/troubleshooting#payment-is-signed-but-access-is-not-updated). |
+| You want money returned                            | Contact support with the public transaction signature, paying public wallet, approximate payment time, and the product or pass involved.                                |
 
-| Situation                                          | What it means                                                                                                                  | Action                                                                                                                                                                   |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| A signed payment exists but access has not updated | The existing transaction and dashboard state need operational reconciliation. This is payment recovery, not a refund decision. | Do not pay again. Preserve the transaction signature and use [payment recovery troubleshooting](/reference/troubleshooting#payment-is-signed-but-access-is-not-updated). |
-| You want money returned                            | Eligibility and handling depend on an approved policy or an authorized decision that is not documented here.                   | Contact [support@thornode.io](mailto:support@thornode.io) for the applicable approved refund terms and request process.                                                  |
-
-Before paying, request the current approved refund terms and review the amount, currency, duration, and other details shown in the payment flow. The previous ThorNode Cloud refund policy covered a different service and is not presented as the policy for current purchases.
-
-## Prepare a safe support request
-
-Keep the public transaction signature, connected public wallet address, approximate payment time and timezone, and any recovery or support reference shown by the dashboard. Share only what official support asks for.
-
-Never send a seed phrase, private key, endpoint token, replay key, Bifrost credential, credential-bearing URL, or another payment secret.
+Never send a seed phrase, private key, endpoint token, replay key, Bifrost route URL, or another payment secret.
 
 ## Next steps
 
 - [Recover a payment without paying twice](/reference/troubleshooting#payment-is-signed-but-access-is-not-updated)
-- [Check all legal document publication statuses](/legal/policies)
-- [Prepare a safe support request](/reference/troubleshooting#contact-support-safely)
+- [Request another legal document](/legal/policies)
+- [Contact support safely](/reference/troubleshooting#contact-support-safely)

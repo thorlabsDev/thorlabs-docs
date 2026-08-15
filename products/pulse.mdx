@@ -1,94 +1,105 @@
 ---
 title: "Pulse Decoded Shreds"
-description: "Prepare a QUIC decoded-transaction integration after ThorNode confirms deployment availability."
+description: "Receive transaction signatures or decoded transactions over QUIC."
 ---
 
-**Planned, availability-unverified integration.** Pulse is the defined QUIC stream of transactions decoded from Solana shreds. Each payload is a decoded transaction, not a raw shred or a decoded shred object. A target visible in the dashboard does not prove that the replacement service, authentication, client, and schema are deployed in your environment.
+Pulse exposes two live QUIC feeds from decoded Solana shreds. The sig-first feed sends transaction signatures in low-overhead datagrams. The full-tx feed sends decoded transactions on an ordered, reliable stream. Neither feed sends raw shred bytes.
 
-## Use Pulse when
+Copy the Pulse target and token from the same dashboard location. The client sends the token in its first control message after opening the QUIC connection.
 
-Use Pulse only after a ThorNode owner confirms the service is deployed for your environment and supplies the client, trust configuration, authentication contract, and schema.
+## Decoded transactions over QUIC
 
-Choose [Raw Shred Stream](/products/raw-shred-stream) when you need raw Solana shred bytes. Choose [Yellowstone gRPC](/products/yellowstone-grpc) when you need a Yellowstone Subscribe-compatible filtered stream.
+Use Pulse when you need transaction signatures or decoded transactions before building the same result through RPC calls, and your application can receive QUIC traffic.
 
-## Connection contract
+Use [Raw Shred Stream](/products/raw-shred-stream) when you need the original shred bytes. Use [Yellowstone gRPC](/products/yellowstone-grpc) when you need a Geyser Subscribe-compatible filtered stream.
 
-| Item                       | Value                                                             |
-| -------------------------- | ----------------------------------------------------------------- |
-| Transport                  | QUIC over UDP                                                     |
-| Payload                    | Transactions decoded from Solana shreds                           |
-| Target                     | Location target copied from the dashboard                         |
-| Authentication             | Selected access and location token in a versioned control message |
-| Server identity and trust  | Confirmed during onboarding                                       |
-| Payload and control schema | Pinned during onboarding                                          |
-| Supported client           | Supplied or confirmed during onboarding                           |
-| Deployment availability    | Confirmed by a ThorNode owner for the exact environment           |
+## Quick reference
 
-## Get the integration package
+| Item           | Value                                                                                                            |
+| -------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Dashboard path | **Endpoints** sidebar → **Endpoints** tab → **Token & Endpoints** → **Streaming** → **Pulse**                    |
+| Transport      | QUIC over UDP with TLS 1.3                                                                                       |
+| ALPN           | `pulse`                                                                                                          |
+| Protocol       | Pulse wire v2                                                                                                    |
+| Sig-first tier | `full: false`; `(slot, sequence, signature)` over unordered QUIC datagrams                                       |
+| Full-tx tier   | `full: true`; decoded transactions over an ordered, reliable QUIC stream                                         |
+| Authentication | Location token in the first client control message                                                               |
+| Live limits    | Concurrent streams and total accounts across filters shown in **Limits**; account-capped tiers reject a firehose |
 
-First obtain owner confirmation that Pulse is deployed for the intended environment. A dashboard target by itself is configuration evidence, not a deployment check. Then copy the target and token for one location and obtain all of the following from ThorNode onboarding or [support](mailto:support@thornode.io):
-
-- Supported client package or build, including its version and installation steps
-- Server name, trust roots, and the expected QUIC/TLS identity checks
-- Versioned control-message schema and exact token field
-- Confirmation that token enforcement is enabled on the selected deployment
-- Pinned decoded-transaction payload schema and decoding contract
-- Reconnect, gap, ordering, and current limit behavior for your access
-
-ThorNode does not publish a generic wire example because the dashboard target and token do not define the client, trust, authentication, or payload contract.
-
-## Prepare the stream
+## Open a stream
 
 <Steps>
-  <Step title="Confirm deployment readiness">
-    Obtain owner confirmation that the selected environment runs the supported
-    Pulse replacement, enforces authentication, and has a pinned client and
-    payload contract.
+  <Step title="Choose a location">
+    Open **Endpoints**, keep the **Endpoints** tab selected, choose the access,
+    network, and location, then copy the target and token from **Pulse** in the
+    **Streaming** section of **Token & Endpoints**.
   </Step>
-  <Step title="Choose one location">
-    Select an active access and enabled location, then copy the Pulse target and
-    its token together.
+  <Step title="Configure the connection">
+    Use a Pulse wire-v2 client, configure ALPN as `pulse`, and enable QUIC
+    datagrams if you use the sig-first tier.
   </Step>
-  <Step title="Install the supported client">
-    Pin the onboarding-confirmed client and payload schema for that deployment.
+  <Step title="Choose a trusted network path">
+    Official Pulse clients encrypt the session but currently do not verify the
+    server certificate. Run them through a trusted private network or a
+    UDP-capable VPN such as WireGuard. A custom client can instead pin or verify
+    the endpoint certificate.
   </Step>
-  <Step title="Verify the server">
-    Apply the supplied trust configuration and require the expected server
-    identity during the QUIC handshake.
+  <Step title="Send the first control message">
+    Immediately open a client-initiated bidirectional stream and send wire
+    version `2`, your chosen tier, filters, and the location token. Official
+    Pulse subscribe calls perform this handshake.
   </Step>
-  <Step title="Authenticate and decode">
-    Send the token in the supplied control-message field, then decode incoming
-    transactions with the pinned schema.
+  <Step title="Consume the selected feed">
+    Read signature datagrams or full transaction frames and move application
+    work to a bounded queue outside the receive path.
   </Step>
 </Steps>
 
+The first control message has this shape:
+
+```json
+{
+  "token": "<PULSE_TOKEN>",
+  "account_include": ["<BASE58_ACCOUNT_OR_PROGRAM>"],
+  "account_exclude": [],
+  "account_required": [],
+  "vote": false,
+  "full": true,
+  "v": 2,
+  "fields": []
+}
+```
+
+Set `full` to `false` for sig-first datagrams. Keep at least one `account_include` or `account_required` entry when the selected tier limits account filters.
+
 <Warning>
-  Never place a Pulse token in a URL or query string, and never use a client
-  that skips certificate, hostname, or server-identity verification. If the
-  deployment delivers transactions without the required token, stop and report
-  it to ThorNode.
+  Official Pulse clients do not currently authenticate the server certificate.
+  Use them only over a trusted network path, or use a custom client that pins or
+  verifies the certificate. Keep the bearer token out of URLs, source code, and
+  logs.
 </Warning>
 
-The success signal is an identity-verified QUIC session that accepts the control-message credential and yields a transaction matching the pinned payload schema. A completed handshake by itself is not success.
+The subscription starts when the control stream returns `{"type":"ack","ok":true,"v":2}` and the connection begins receiving data for the selected tier.
 
 ## Run in production
 
-- Permit outbound UDP/QUIC traffic to the dashboard target.
-- Keep credentials out of source control, logs, and crash reports.
-- Bound processing queues and monitor consumer lag.
+- Permit outbound UDP traffic to the Pulse target.
+- Keep the receive path small and use bounded downstream queues.
+- Monitor consumer lag and queue depth.
 - Reconnect with bounded exponential backoff and jitter.
-- Detect gaps and reconcile application state when correctness requires it.
+- In sig-first mode, treat a jump in `seq` as loss or reordering. The counter restarts at `0` after reconnecting and datagrams are not retransmitted.
+- Use full-tx when you need decoded transaction bodies. Reconcile through RPC after reconnecting when completeness matters.
 - Reuse connections instead of opening unbounded concurrent sessions.
 
 ## Troubleshooting
 
-| Symptom                   | Verify                                                                      | Expected result                                                              | Action                                                   |
-| ------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------- |
-| Handshake fails           | Target, server name, trust roots, and outbound UDP policy                   | The client verifies the server and opens a QUIC session                      | Restore the supplied trust configuration or network rule |
-| Authentication fails      | Token and target share a location; control schema and client version match  | The confirmed deployment accepts the versioned authenticated control message | Recopy the token and restore the pinned integration      |
-| No transactions arrive    | Access is active; location exposes Pulse; decoder matches the pinned schema | The stream yields a transaction matching the pinned payload schema           | Confirm entitlement and schema with onboarding           |
-| Works on one network only | Firewall, VPN, and egress policy permit QUIC                                | The same confirmed target opens from the intended runtime                    | Allow outbound UDP to the supplied target                |
-| Consumer falls behind     | Queue depth and work in the receive path                                    | Queue depth remains bounded under expected load                              | Bound the queue and move expensive work downstream       |
+| Problem               | Fix                                                                                                                                         |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Handshake fails       | Check the copied target, ALPN `pulse`, outbound UDP policy, and the trusted private or VPN path.                                            |
+| Authentication fails  | Recopy the target and token from the same location, send `v: 2`, and put the token in the first control message.                            |
+| Close code `3`        | Reduce active streams or account keys. On an account-capped tier, include at least one account or program instead of requesting a firehose. |
+| No data arrives       | Confirm whether the client selected sig-first or full-tx, then decode that tier's wire-v2 payload.                                          |
+| Consumer falls behind | Move expensive work downstream, bound queue growth, and use full-tx or RPC reconciliation when sig-first loss cannot be tolerated.          |
 
 ## Next steps
 

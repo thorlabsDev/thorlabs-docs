@@ -3,7 +3,7 @@ title: "Create and manage endpoints"
 description: "Generate a location-scoped token, copy SSL RPC and WebSocket URLs, add one IPv4 restriction, and rotate or revoke the token."
 ---
 
-Use **Endpoints → Endpoints** to create RPC and WebSocket credentials for one access, network, and location. You are finished when **Token & Endpoints** shows the selected location's token and connection details.
+Open **Endpoints** and keep the **Endpoints** tab selected to create RPC and WebSocket credentials for one access, network, and location. **Token & Endpoints** then shows the selected location's token and connection details.
 
 ## Before you start
 
@@ -71,11 +71,9 @@ The restriction applies to RPC and WebSocket traffic authenticated by the select
   <Step title="Save the restriction">
     Enter the address under **Restrict to IP — _location_ (optional)** and choose **Save restriction**.
 
-    The field accepts one IPv4 value and rejects common private, local, and
-    multicast ranges. Enter the deployment's real, globally routable public
-    egress address; syntactic acceptance alone does not prove that the value is
-    routable. The field does not accept a hostname, URL, port, CIDR range, IPv6
-    address, or address list.
+    Enter the server's real, globally routable public egress IPv4 address. The
+    field does not accept a hostname, URL, port, CIDR range, IPv6 address, or
+    address list.
 
   </Step>
   <Step title="Test from the deployment">

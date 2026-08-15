@@ -10,7 +10,7 @@ Use the access model to identify which dashboard object grants a product and whi
 | Discord account             | Identifies your dashboard account                        | **Login with Discord** and **Overview**                 |
 | Registered wallet           | Proves control of a Solana address with a signed message | **Wallets**                                             |
 | Access source               | Grants products for an owned pass or an active rental    | **Your passes**, **Your rentals**, and access selectors |
-| Location token              | Authenticates an access on one network and location      | **Endpoints → Endpoints**                               |
+| Location token              | Authenticates an access on one network and location      | **Endpoints** sidebar, **Endpoints** tab                |
 | Product key or registration | Authorizes a product-specific workflow when offered      | The corresponding **Endpoints** product tab             |
 
 The application credential is the final layer. A wallet address or wallet signature is never an API token.
@@ -37,36 +37,36 @@ Register the wallet in [Wallets](/dashboard/wallets) before starting a payment.
 
 An **owned pass** is an eligible NFT held by a registered wallet. An **active rental** grants time-limited access without transferring an NFT.
 
-Both can appear in access selectors and can supply RPC location tokens. Product-specific rental support differs and must be confirmed by that product's controls and server response. Their lifecycle differs:
+Passes and rentals can both provide RPC location tokens. Select an access to see its products and locations. Their lifecycle differs:
 
 | Access source | Starts from                                             | Ends or extends through                                                       |
 | ------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | Owned pass    | Eligible ownership detected through a registered wallet | **Renew** when the pass is eligible                                           |
 | Rental        | A completed offer under **Rent**                        | The expiration shown for that rental; rentals are not renewed under **Renew** |
 
-Product access comes from the selected pass or rental. A visible product tab alone does not establish eligibility; use the enabled controls, offered locations, and current response for that access.
+Select a pass or rental to see the products and locations enabled for it.
 
 ## Location tokens authenticate applications
 
-For RPC and WebSocket access, a token belongs to one access source, network, and location. Generate it in **Endpoints → Endpoints**, then copy the complete URL supplied for the selected location.
+For RPC and WebSocket access, a token belongs to one access source, network, and location. Open **Endpoints**, keep the **Endpoints** tab selected, then copy the complete URL supplied for the selected location.
 
 Location tokens have independent lifecycles:
 
 - Generating or rotating one location does not change another location's token.
 - Revoking one location token does not delete the underlying pass or rental.
-- An optional IP restriction accepts one IPv4 value and applies to that token's RPC and WebSocket traffic. Use the deployment's real, globally routable public egress address; field validation alone does not prove routability.
+- An optional IP restriction accepts one IPv4 value and applies to that token's RPC and WebSocket traffic. Use the server's real, globally routable public egress address and test the request after saving it.
 
 This boundary lets you rotate one deployment without interrupting another location.
 
 ## Product-specific access can differ
 
-Not every product uses the RPC URL. Yellowstone gRPC and the planned Pulse integration appear under **Endpoints → Streaming** and use location credentials only after their deployment-specific contracts are confirmed. Raw Shred Stream registers your UDP receiver, availability-confirmed Replay uses a dedicated per-access key, and Bifrost generates one Private TX key per access and places it in the complete route URLs copied from enabled locations. ThorNode manages the upstream Bifrost provider credentials. For a rental, continue only when the selected product confirms that access type is supported.
+Not every product uses the RPC URL. Yellowstone gRPC and Pulse appear in the **Streaming** section of **Endpoints** and use location tokens with their own transports. Raw Shred Stream registers your UDP receiver, Replay uses a dedicated per-access key, and Bifrost generates one Private TX key per access and places it in the route URLs copied from enabled locations. ThorNode manages the upstream Bifrost provider credentials.
 
 [Choose a product](/getting-started/choose-a-product) before creating a credential so that you use the correct transport and authentication placement.
 
 ## Apply the credential lifecycle
 
-| Action     | Use it when                                                      | Observable result                                                        |
+| Action     | Use it when                                                      | Result                                                                   |
 | ---------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------ |
 | Create     | A deployment needs access in a location                          | **Token & Endpoints** shows the masked token and connection details      |
 | Restrict   | The deployment has one stable public egress IPv4                 | Requests from other public addresses stop authenticating with that token |

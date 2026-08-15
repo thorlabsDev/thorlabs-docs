@@ -3,20 +3,20 @@ title: "Security"
 description: "Place, store, rotate, and report ThorNode credentials without exposing them."
 ---
 
-Treat every ThorNode token, route credential, replay key, and credential-bearing endpoint URL as a secret. A secure configuration keeps the secret on a trusted server, places it only where the product contract requires, and can rotate it without leaving an unknown consumer behind.
+Treat every ThorNode token, route credential, replay key, and credential-bearing endpoint URL as a secret. Keep each secret on a trusted server, place it only where that product expects it, and track every consumer so you can rotate it safely.
 
 Wallet private keys and seed phrases are never ThorNode support credentials. Never share them with ThorNode or anyone claiming to troubleshoot your access.
 
 ## Credential scope and placement
 
-| Product                    | Scope                                                                                | Required placement                                                                                                              |
-| -------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
-| ThorEdge RPC and WebSocket | Selected access, network, and location                                               | Use the complete URL copied from that location's dashboard view. The URL carries or resolves to the token.                      |
-| Yellowstone gRPC           | Selected access and location                                                         | Attach the token as `x-token` request metadata; never append it to the dial target.                                             |
-| Pulse Decoded Shreds       | Selected access and location after owner-confirmed deployment                        | Send the token only in the supported, version-pinned control message after server identity and token enforcement are confirmed. |
-| Bifrost Transaction Routes | The dashboard issues one Private TX key per access for its enabled Bifrost locations | Use the complete route URL copied for the selected location and operation only after HTTPS and key rejection checks pass.       |
-| Replay                     | Selected access after the current server confirms job availability                   | Use the dedicated replay key only through the availability-confirmed Replay flow.                                               |
-| Raw Shred Stream           | Dashboard registration                                                               | UDP packets do not carry a customer credential; the dashboard authorizes the receiver registration.                             |
+| Product                    | Scope                                                                                | Required placement                                                                                                        |
+| -------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| ThorEdge RPC and WebSocket | Selected access, network, and location                                               | Use the complete URL copied from that location's dashboard view. The URL carries or resolves to the token.                |
+| Yellowstone gRPC           | Selected access and location                                                         | Attach the token as `x-token` request metadata; never append it to the dial target.                                       |
+| Pulse Decoded Shreds       | Selected access and location                                                         | Send the token in the first Pulse client control message; never append it to the target.                                  |
+| Bifrost Transaction Routes | The dashboard issues one Private TX key per access for its enabled Bifrost locations | Use the complete route URL copied for the selected location and operation only after HTTPS and key rejection checks pass. |
+| Replay                     | Selected access                                                                      | Use the dedicated replay key for ShredReplay jobs only.                                                                   |
+| Raw Shred Stream           | Dashboard registration                                                               | UDP packets do not carry a customer credential; the dashboard authorizes the receiver registration.                       |
 
 Do not move a credential into a URL, header, query parameter, or control message unless the product row requires it. Copy location-bound targets and credentials together; see [Locations](/reference/locations#apply-location-scope-correctly) when moving a workload.
 
@@ -57,12 +57,12 @@ For diagnostics, keep only the product, location, time, status code, and hostnam
 ## Verify transport and network controls
 
 - Prefer the `https://` and `wss://` targets supplied by the dashboard.
-- Do not send a Yellowstone token until onboarding supplies a TLS-verified target or an explicitly trusted private path and its trust configuration.
-- Use Pulse only after owner-confirmed deployment and with a supplied client and trust configuration that verifies server identity. Never disable hostname or certificate verification to connect.
-- For Bifrost, continue only when the complete route URL copied from **Private TX** begins with `https://` and the route rejects a missing or invalid Private TX key. ThorNode manages the upstream provider credential; do not add or expose a provider API key.
+- Yellowstone currently uses plaintext gRPC. Keep the token in `x-token` metadata and carry the connection through a trusted private network, VPN, or encrypted tunnel.
+- Official Pulse clients currently do not verify the server certificate. Use a trusted private network or UDP-capable VPN, or use a custom client that pins or verifies the endpoint certificate.
+- Bifrost route URLs must use `https://` and reject requests with a missing or invalid Private TX key. ThorNode manages the upstream provider credential; do not add or expose a provider API key.
 - Keep public hostnames intact; substituting a resolved IP can break TLS validation and routing.
 - Restrict a ThorEdge location token to a stable public egress IPv4 address when the dashboard offers that control.
-- Restrict inbound Raw Shred Stream and Replay UDP traffic with host firewalls, cloud security groups, and approved source rules.
+- Restrict inbound Raw Shred Stream and Replay UDP traffic with host firewalls, cloud security groups, and trusted source ranges.
 
 An IP restriction reduces where a token can be used; it does not make a leaked token safe. Continue to store and redact it as a secret.
 

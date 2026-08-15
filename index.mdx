@@ -28,23 +28,21 @@ Follow the [five-minute RPC quickstart](/getting-started/quickstart) for the com
 
 ## Choose by outcome
 
-| What you want to build                               | Start with                                                         | What your application receives                          |
-| ---------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------- |
-| Solana JSON-RPC requests or subscriptions            | [ThorEdge RPC](/products/thoredge-rpc)                             | JSON-RPC responses over HTTPS or events over WSS        |
-| Account-heavy queries through supported methods      | [FastGate Account API](/products/fastgate-account-api)             | Solana account data through the same ThorEdge HTTPS URL |
-| Filtered, Geyser Subscribe-compatible data           | [Yellowstone gRPC](/products/yellowstone-grpc)                     | A persistent gRPC stream                                |
-| A planned stream of transactions decoded from shreds | [Pulse Decoded Shreds](/products/pulse)                            | A persistent QUIC stream after deployment confirmation  |
-| Raw live Solana shreds at your receiver              | [Raw Shred Stream](/products/raw-shred-stream)                     | UDP datagrams at your public IPv4 and port              |
-| Recently captured raw shreds for recovery or testing | [Replay](/products/shredreplay)                                    | An availability-confirmed slot-range job over UDP       |
-| A provider-specific transaction operation            | [Bifrost Transaction Routes](/products/bifrost-transaction-routes) | A route-specific HTTP response without a provider key   |
+| What you want to build                                   | Start with                                                         | What your application receives                          |
+| -------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------- |
+| Solana JSON-RPC requests or subscriptions                | [ThorEdge RPC](/products/thoredge-rpc)                             | JSON-RPC responses over HTTPS or events over WSS        |
+| Account-heavy queries through supported methods          | [FastGate Account API](/products/fastgate-account-api)             | Solana account data through the same ThorEdge HTTPS URL |
+| Filtered, Geyser Subscribe-compatible data               | [Yellowstone gRPC](/products/yellowstone-grpc)                     | A persistent gRPC stream                                |
+| Transaction signatures or decoded transactions over QUIC | [Pulse Decoded Shreds](/products/pulse)                            | A sig-first datagram feed or reliable full-tx stream    |
+| Raw live Solana shreds at your receiver                  | [Raw Shred Stream](/products/raw-shred-stream)                     | UDP datagrams at your public IPv4 and port              |
+| Recently captured raw shreds for recovery or testing     | [Replay](/products/shredreplay)                                    | A slot-range replay over UDP                            |
+| A provider-specific transaction operation                | [Bifrost Transaction Routes](/products/bifrost-transaction-routes) | A route-specific HTTP response via your Private TX key  |
 
-If more than one row fits, use [Choose a product](/getting-started/choose-a-product) to compare delivery model, authentication, and integration readiness.
+If more than one row fits, use [Choose a product](/getting-started/choose-a-product) to compare protocol, transport, authentication, and receiver requirements.
 
 ## Understand dashboard access
 
-Your Discord login identifies the dashboard account. An owned pass or active rental supplies an access source; each product's controls and server response determine whether that access type is supported. Credentials are then created for the selected access and, where applicable, for a specific network and location.
-
-The dashboard displays product controls, locations, credential state, usage, and a published tier-limit row. Runtime responses remain authoritative for actual availability and enforcement.
+Your Discord account contains your passes and rentals. Select one to see its products and locations, then create the credential required by your application. The dashboard also shows current usage and limits.
 
 <CardGroup cols={2}>
   <Card

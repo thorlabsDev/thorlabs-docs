@@ -1,83 +1,76 @@
 ---
 title: "Replay raw shreds"
 sidebarTitle: "Replay"
-description: "Prepare a rolling-window replay after the current environment confirms the ShredReplay job service."
+description: "Replay recently captured raw shreds from ThorNode's rolling window."
 ---
 
-**Availability-dependent dashboard workflow.** When the ShredReplay job service is deployed for an environment, Replay sends recently captured raw shreds from its rolling availability window to your UDP receiver. The dashboard labels this product **ShredReplay**, but a visible tab does not prove that job creation, status, and cancellation are deployed. Confirm those operations through the current server response before relying on this workflow.
+ShredReplay sends recently captured raw shreds from a selected slot range to your UDP receiver. The dashboard labels this product **ShredReplay**.
 
-Replay is a rolling window, not a historical archive: slots leave the window as it advances.
+Replay uses a rolling window, not a historical archive. Slots leave the window as it advances. Its key and jobs are separate from the live [Raw Shred Stream](/products/raw-shred-stream) registration.
 
-ShredReplay has its own per-access key and job flow. Creating a replay key or job does not create, replace, or modify a live **ShredStream** registration.
+## Live feed or replay
 
-## Choose ShredReplay
+| Good fit                                                  | Choose another product                                                         |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| You need raw shreds still inside the rolling window       | The slot has already expired from the window                                   |
+| You want to test a consumer against a known recent range  | You need a continuous feed; use [Raw Shred Stream](/products/raw-shred-stream) |
+| Your receiver can handle UDP and the selected replay pace | You require acknowledged, lossless, or ordered delivery                        |
 
-| Use it when                                                 | Choose something else when                                                          |
-| ----------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| You need raw shreds still present in the rolling window     | You need an older slot that has already expired from the window                     |
-| You want to test a consumer against a known recent range    | You need a continuous live feed; use [Raw Shred Stream](/products/raw-shred-stream) |
-| Your receiver can tolerate UDP delivery behavior and pacing | You require acknowledged, lossless, or ordered delivery                             |
+## Quick reference
 
-## Replay contract
-
-| Item               | Value                                                                                                                            |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
-| Dashboard path     | **Endpoints → ShredReplay**                                                                                                      |
-| Availability       | Current server must expose replay job creation, status, and cancellation                                                         |
-| Credential         | Dedicated replay key for the selected access                                                                                     |
-| Source range       | Start and end slots inside the rolling window shown by the dashboard                                                             |
-| Target input       | A nonempty `host:port` value; use a globally routable numeric IPv4 and UDP port `1024`–`65535` for the supported public receiver |
-| Pacing             | Maximum speed or original pacing                                                                                                 |
-| Active-job limit   | One queued or running job per access                                                                                             |
-| Delivery behavior  | Packet loss, duplication, and reordering are possible                                                                            |
-| Completion meaning | The replay sender finished; receiver delivery is not acknowledged                                                                |
+| Item               | Value                                                                       |
+| ------------------ | --------------------------------------------------------------------------- |
+| Dashboard path     | **Endpoints → ShredReplay**                                                 |
+| Credential         | Dedicated replay key for the selected access                                |
+| Source range       | Start and end slots inside the rolling window shown by the dashboard        |
+| Receiver           | Globally routable numeric IPv4 and UDP port from `1024` through `65535`     |
+| Pacing             | Maximum speed or original pacing                                            |
+| Active-job limit   | One queued or running job per access                                        |
+| Delivery behavior  | Packet loss, duplication, and reordering are possible                       |
+| Completion meaning | The replay sender finished the range; receiver delivery is not acknowledged |
 
 ## Prepare the receiver
 
-Start a UDP listener before creating a job. Use a numeric, globally routable public IPv4 address and a port from `1024` through `65535` for the supported public receiver. The shipped form and backend can accept a broader nonempty `host:port` string; that acceptance does not prove routability or enforce the documented operational port range.
+Start the UDP listener before creating a job. Open the selected port through the host firewall, cloud security group, network ACL, and any NAT forwarding rule.
 
-You can run the [minimal ShredStream receiver](/products/raw-shred-stream#receive-your-first-packets) because both products deliver raw UDP datagrams. Open the chosen port through the host firewall, cloud security group, network ACL, and any NAT forwarding rule.
+You can use the [minimal ShredStream receiver](/products/raw-shred-stream#receive-your-first-packets) because both products deliver raw UDP datagrams.
 
-## 1. Create a replay key
-
-Continue only when the current ShredReplay server response confirms the job service is available for the selected environment and access.
+## Create a replay key
 
 <Steps>
   <Step title="Open ShredReplay">
-    Go to **Endpoints → ShredReplay** and select the exact active access you
-    intend to use.
+    Go to **Endpoints → ShredReplay** and select the access you want to use.
   </Step>
-  <Step title="Generate the dedicated key">
-    Generate the ShredReplay key for that access. Store it as a secret; it is
-    separate from the UDP target and from location-scoped RPC credentials.
+  <Step title="Generate the key">
+    Generate a ShredReplay key for that access. Store it as a secret; it is
+    separate from the UDP receiver and RPC location tokens.
   </Step>
 </Steps>
 
-Revoking or regenerating this key affects future replay authorization for the selected access. Follow the [credential storage and rotation guidance](/reference/security).
+Revoking or regenerating the key affects future replay jobs for that access.
 
-## 2. Create a replay job
+## Create a replay job
 
 <Steps>
-  <Step title="Check for an active job">
-    Confirm that the selected access has no job in the queued or running state.
-    Wait for that job to finish or cancel it before creating another.
+  <Step title="Check the active job">
+    Wait for the current queued or running job to finish, or cancel it before
+    creating another job for the same access.
   </Step>
   <Step title="Choose the slot range">
-    Enter start and end slots inside the current minimum and maximum displayed
-    by ShredReplay. Refresh the range immediately before submission because the
-    window continues to roll.
+    Enter start and end slots inside the minimum and maximum shown by
+    ShredReplay. Refresh the range before submission because the window keeps
+    moving.
   </Step>
   <Step title="Enter the receiver">
-    Supply the receiver's globally routable numeric IPv4 address and a UDP port
-    from `1024` through `65535`. Treat these as operational requirements even if
-    the form accepts a broader `host:port` value.
+    Enter the receiver's globally routable numeric IPv4 address and a UDP port
+    from `1024` through `65535`.
   </Step>
   <Step title="Choose pacing">
-    Select **Maximum speed** or **Original pacing** based on the receiver's
-    measured capacity.
+    Select **Maximum speed** for the shortest replay time or **Original pacing**
+    to follow the capture timing.
   </Step>
   <Step title="Start and observe">
-    Start the job, monitor its state, and verify that the receiver reports
+    Start the job, monitor its state, and confirm that the receiver reports
     nonzero packet and byte counts.
   </Step>
 </Steps>
@@ -87,30 +80,31 @@ Revoking or regenerating this key affects future replay authorization for the se
 | Mode            | Sender behavior                                      | Receiver implication                                                             |
 | --------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------- |
 | Maximum speed   | Sends without recreating the original capture timing | The network path, socket, and queues must absorb a potentially higher burst rate |
-| Original pacing | UI intent is to replay according to captured timing  | Confirm deployed multiplier behavior before depending on an exact timing profile |
+| Original pacing | Replays according to the captured timing             | The receiver sees traffic closer to the original packet cadence                  |
 
-The UI exposes a multiplier with **Original pacing**, but its deployed sender behavior is not confirmed by the current public contract. Do not depend on that value until ThorNode supplies the environment's pacing contract. Measure the packet rate at the receiver.
+Leave **Speed multiplier** at `1`. The replay service uses captured timing in **Original pacing** mode; other multiplier values are not applied.
+
+Measure packet rate and socket drops at the receiver before replaying a large range.
 
 ## Interpret job outcomes
 
-| Observable outcome                | What it means                                                      | What it does not mean                               |
-| --------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------- |
-| Job is queued or running          | This access has its one active replay job                          | Another job can start in parallel                   |
-| Receiver reports nonzero packets  | UDP traffic reached the application                                | Every requested packet will arrive or be processed  |
-| Job is completed                  | ThorNode's replay sender finished the selected range               | The receiver acknowledged every datagram            |
-| Range is rejected after a refresh | One or more requested slots are outside the current rolling window | ThorNode retains those slots as a long-term archive |
+| Status                            | Interpretation                                       | Limitation                                                            |
+| --------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------------- |
+| Job is queued or running          | This access has its one active replay job            | No second job can be queued or run for the same access                |
+| Receiver reports nonzero packets  | UDP traffic reached the application                  | It does not show that every requested packet arrived or was processed |
+| Job is completed                  | ThorNode's replay sender finished the selected range | It does not mean the receiver acknowledged every datagram             |
+| Range is rejected after a refresh | A requested slot left the rolling window             | It does not mean ThorNode retains the slot as a long-term archive     |
 
-The receiver must tolerate packet loss, duplication, and reordering. A completed job and a nonzero packet count are separate signals: the first describes sender state, while the second proves that at least some datagrams reached your application.
+The receiver must tolerate packet loss, duplication, and reordering. Job completion and receiver packet counts are separate signals.
 
 ## Troubleshooting
 
-| Symptom                                      | Verify                                                            | Expected result                                       | Action                                                                       |
-| -------------------------------------------- | ----------------------------------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Slot range is rejected                       | Refresh the displayed minimum and maximum slots                   | Both endpoints remain inside the rolling window       | Select a current range; expired slots are not available as archive data      |
-| New job cannot start                         | Inspect the selected access for queued or running work            | At most one such job exists                           | Wait for completion or cancel the active job                                 |
-| Receiver gets no packets                     | Check the numeric public IPv4, port, listener, firewall, and NAT  | The listener reports nonzero packet counts            | Correct the target path and retry a small current range                      |
-| Receiver drops at high rate                  | Compare maximum-speed traffic with socket and queue metrics       | The receive path stays within measured capacity       | Switch to original pacing and remove work from the socket callback           |
-| Original multiplier differs from expectation | Deployed pacing contract, selected mode, and measured packet rate | Behavior matches the owner-confirmed service contract | Use a confirmed setting; do not infer multiplier semantics from the UI label |
+| Problem                | Fix                                                                                 |
+| ---------------------- | ----------------------------------------------------------------------------------- |
+| Slot range is rejected | Refresh the rolling minimum and maximum, then choose a current range.               |
+| New job cannot start   | Wait for the queued or running job to finish, or cancel it before creating another. |
+| No packets arrive      | Check the public IPv4, UDP port, listener, firewall, NAT, and job state.            |
+| Receiver drops packets | Use original pacing and move work out of the socket callback into bounded queues.   |
 
 ## Next steps
 

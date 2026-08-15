@@ -5,13 +5,13 @@ description: "Run supported account queries through your existing ThorEdge RPC U
 
 FastGate is ThorNode's account-query route behind ThorEdge RPC. Send a standard routed method to the complete ThorEdge HTTPS URL; a successful query returns its result in a JSON-RPC response.
 
-## Use FastGate when
+## Account queries
 
 Use FastGate for the 14 routed account methods listed below. You do not need a FastGate hostname or a second credential.
 
 Choose [Yellowstone gRPC](/products/yellowstone-grpc) when your application needs a persistent filtered stream instead of point-in-time account queries.
 
-## Connection contract
+## Quick reference
 
 | Item                  | Value                                               |
 | --------------------- | --------------------------------------------------- |
@@ -24,7 +24,7 @@ Choose [Yellowstone gRPC](/products/yellowstone-grpc) when your application need
 
 ## Send an account query
 
-You need a ThorEdge HTTPS URL, `curl`, and `jq`. Create or select a location token under **Endpoints → Endpoints**, then copy its complete HTTPS URL.
+You need a ThorEdge HTTPS URL, `curl`, and `jq`. Open **Endpoints**, keep the **Endpoints** tab selected, create or select a location token, then copy its complete HTTPS URL.
 
 ```bash
 export THORNODE_RPC_URL='<copied-https-url>'
@@ -88,17 +88,19 @@ V2 methods:
 - `getTokenAccountsByOwnerV2`
 - `getTokenAccountsByDelegateV2`
 
-## Guided integration: V2 methods
+## V2 methods
 
-The three V2 names are routed, but their response envelope is not a public contract. Before you build against one, obtain these artifacts from [ThorNode support](mailto:support@thornode.io):
+The V2 methods add cursor pagination and slot-based change filtering to large account queries.
 
-- Exact request parameters and allowed values
-- Response envelope and field types
-- Pagination cursor, termination, and consistency semantics
-- Supported encodings and filters
-- Error, retry, response-size, and limit behavior
+| Method                         | Parameters                                                          |
+| ------------------------------ | ------------------------------------------------------------------- |
+| `getProgramAccountsV2`         | Program ID, then options                                            |
+| `getTokenAccountsByOwnerV2`    | Owner, `{ "mint": ... }` or `{ "programId": ... }`, then options    |
+| `getTokenAccountsByDelegateV2` | Delegate, `{ "mint": ... }` or `{ "programId": ... }`, then options |
 
-Do not infer the V2 envelope from another provider or archived ThorNode documentation.
+Options include `encoding`, `dataSlice`, `limit`, `paginationKey`, and `changedSinceSlot`. `getProgramAccountsV2` also accepts the standard `dataSize` and `memcmp` filters. The default page size is `1000`; valid values range from `1` through `10000`.
+
+`getProgramAccountsV2` returns `accounts`, `count`, and `paginationKey`. The token-account V2 methods return `context.slot` plus `value.accounts`, `value.count`, and `value.paginationKey`. Pass the returned `paginationKey` into the next request until the response no longer contains a cursor.
 
 ## Run in production
 
@@ -106,18 +108,18 @@ Do not infer the V2 envelope from another provider or archived ThorNode document
 - Set explicit connect, request, and response-size limits.
 - Treat non-2xx responses and JSON-RPC `error` objects as failures.
 - Retry only transient failures with bounded backoff and jitter.
-- Do not assume JSON-RPC batch support unless your access contract documents it.
+- Send one JSON-RPC request at a time unless the dashboard explicitly enables batch requests for your access.
 - Keep the complete RPC URL in a server-side secret store and redact it from telemetry.
 
 ## Troubleshooting
 
-| Symptom                       | Verify                                                          | Expected result                                          | Action                                                       |
-| ----------------------------- | --------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------ |
-| Unauthorized or forbidden     | ThorEdge access, location, token, and optional IPv4 restriction | One listed account method returns a JSON-RPC result      | Recopy the complete ThorEdge URL                             |
-| Method not found              | Exact spelling and the routed list above                        | The request uses one exact supported method name         | Use a listed method or a different RPC route                 |
-| Invalid params                | Matching Solana definition or supplied V2 contract              | The request fields and types match the selected method   | Correct the request; retries will not fix invalid input      |
-| Response is too large or slow | Filters, requested data, and current limits                     | The filtered response completes within the client bounds | Narrow the query and set a response-size limit               |
-| Rate limited                  | Current traffic against **Usage** and **Limits**                | Traffic remains below the applicable live limit          | Reduce concurrency and retry transient failures with backoff |
+| Problem                       | Fix                                                                                      |
+| ----------------------------- | ---------------------------------------------------------------------------------------- |
+| Unauthorized or forbidden     | Recopy the complete ThorEdge URL and check the optional IPv4 restriction.                |
+| Method not found              | Match the method name exactly to the routed list above or use another RPC route.         |
+| Invalid params                | Match the Solana definition or V2 fields above; retrying unchanged input will not help.  |
+| Response is too large or slow | Add selective filters, request less account data, and set a client response-size limit.  |
+| Rate limited                  | Compare traffic with **Usage** and **Limits**, reduce concurrency, and back off retries. |
 
 ## Next steps
 
