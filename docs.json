@@ -33,7 +33,18 @@
       {
         "group": "Data streams",
         "icon": "wave-pulse",
-        "pages": ["products/yellowstone-grpc", "products/pulse"]
+        "pages": ["products/yellowstone-grpc"]
+      },
+      {
+        "group": "Pulse Decoded Shreds",
+        "icon": "bolt",
+        "root": "products/pulse",
+        "expanded": true,
+        "pages": [
+          "products/pulse/quickstart",
+          "products/pulse/protocol",
+          "products/pulse/production"
+        ]
       },
       {
         "group": "Raw Shred Stream",

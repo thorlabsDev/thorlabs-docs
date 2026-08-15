@@ -1,0 +1,190 @@
+---
+title: "Production and errors"
+description: "Operate a Pulse consumer with bounded queues, safe reconnects, and explicit reconciliation."
+---
+
+Run Pulse as a live, reconnectable feed. Keep the receive path fast, preserve close codes, and reconcile externally when your application requires complete or confirmed transaction state.
+
+## Production checklist
+
+- Copy the target and token from the same dashboard location.
+- Permit outbound UDP to the displayed Pulse port.
+- Keep certificate and hostname validation enabled.
+- Use an explicit account or program filter unless you know the selected access includes an unfiltered feed.
+- Move parsing results into a bounded application queue instead of doing slow work in the receive loop.
+- Record the feed, target location, reconnect count, close code, processing lag, and the queue metrics exposed by your SDK.
+- Reconnect only when the error can succeed on a new connection.
+- Reconcile after disconnects when missing a transaction would change application state.
+
+## Preserve transport security
+
+The official Rust, Go, and Python SDKs validate the certificate chain and target hostname by default. They send the bearer token in the first control message after the secure connection opens.
+
+Keep the dashboard hostname in the target. Dialling a resolved IP without setting the original server name can break certificate validation.
+
+Private certificate authorities can be added without disabling normal validation:
+
+| SDK    | Custom trust option                                   |
+| ------ | ----------------------------------------------------- |
+| Rust   | `PulseClient::builder(target).add_custom_ca_der(der)` |
+| Go     | `pulseclient.WithRootCAs(pool)`                       |
+| Python | `connect_pulse(..., ca_file="pulse-ca.pem")`          |
+
+In Go, start with `x509.SystemCertPool()`, append the private CA, and pass the resulting pool to `WithRootCAs` when the client must trust both public and private roots.
+
+The insecure development options are limited to loopback targets. Do not use them with a production token.
+
+Pulse uses QUIC over UDP. `ssh -L`, HTTP proxies, and TCP-only tunnels do not carry the connection. Use a network path that preserves UDP.
+
+## Keep the receive path bounded
+
+Backpressure signals differ by SDK:
+
+| SDK    | Sig-first                                                                 | Full-tx                                                                    |
+| ------ | ------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Rust   | Fixed bounded queue; monitor `dropped()` and `gaps()`                     | Read directly from the QUIC stream; bound your downstream application work |
+| Go     | Bounded queue; monitor `QueueStats()`, `Dropped()`, and `Gaps()`           | Read directly from the QUIC stream; bound your downstream application work |
+| Python | Bounded queue; monitor `metrics`, `gaps`, and local drops                  | Bounded local queue; handle `FullQueueOverflow` and monitor `metrics`       |
+
+Decode or copy the minimum data needed in the receive task. Send CPU-heavy parsing, database writes, and network calls to bounded workers. An unbounded queue only turns a temporary slowdown into memory growth.
+
+## Understand the delivery boundary
+
+### Sig-first
+
+QUIC datagrams can be lost, reordered, or duplicated. Use the signature as the deduplication key. A jump in `seq` can indicate loss, but reordering can make a high-watermark gap counter over-report.
+
+The sequence counter starts again at `0` on every connection. It cannot resume an earlier subscription.
+
+### Full-tx
+
+QUIC preserves order and delivery for frames after Pulse enqueues them on the stream. A bounded server queue can shed a transaction before enqueue, so stream ordering does not imply an end-to-end lossless or at-least-once feed.
+
+Full-tx frames contain decoded transaction data observed from shreds. They do not prove that a transaction landed or reached a confirmation level.
+
+### Reconcile when correctness requires it
+
+Wire v2 has no cursor, resume, retransmission, or backfill request. After a gap or disconnect, query [ThorEdge RPC](/products/thoredge-rpc) to rebuild any state your application cannot safely infer from the live feed.
+
+Choose the reconciliation key from the workload: signatures for transaction tracking, slots for range checks, or account state for stateful processors. Make reconciliation idempotent so reconnects and duplicate datagrams do not repeat side effects.
+
+## Handle application close codes
+
+Read the QUIC application close code and reason before deciding to reconnect. Official SDKs expose this information as a typed error.
+
+| Code | Meaning                                                                     | Action                                                                 |
+| ---: | --------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+|  `0` | Normal close                                                                | Reconnect only if the application should keep the feed running         |
+|  `1` | Invalid control message                                                     | Fix the filter, key encoding, or request shape before reconnecting     |
+|  `2` | Missing, invalid, or revoked token                                          | Recopy the target and token from the same location, then reconnect     |
+|  `3` | Current quota or capacity is exhausted                                      | Retry with bounded exponential backoff and jitter                      |
+|  `4` | Unsupported wire version                                                    | Update the client to wire v2 before reconnecting                       |
+|  `5` | Pulse or the requested filter shape is not included for the selected access | Choose an access that includes Pulse or add a permitted account filter |
+
+Do not retry the same request after codes `1`, `4`, or `5`. Code `2` requires a credential change. Code `3` is the only Pulse rejection that should be retried unchanged.
+
+The SDKs preserve this decision data instead of collapsing a server close into end-of-file:
+
+<Tabs>
+  <Tab title="Rust">
+    ```rust
+    if let Some(close) = error.close_info() {
+        eprintln!(
+            "code={} reason={} retry={:?}",
+            close.code,
+            close.reason,
+            close.retry_class(),
+        );
+    }
+
+    if error.is_bad_frame() || error.is_bad_preamble() {
+        eprintln!("the stream ended with incomplete or invalid wire data");
+    }
+    ```
+
+  </Tab>
+  <Tab title="Go">
+    ```go
+    if closeInfo, ok := pulseclient.CloseInfoFromError(err); ok {
+        log.Printf(
+            "code=%d reason=%q retry=%s",
+            closeInfo.Code,
+            closeInfo.Reason,
+            closeInfo.Retry,
+        )
+    }
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```python
+    from thornode_pulse import PulseConnectionClosed
+
+    try:
+        async with connect_pulse(target, token=token) as client:
+            # Subscribe and consume the feed.
+            ...
+    except PulseConnectionClosed as error:
+        print(
+            error.close.code,
+            error.close.reason,
+            error.close.retry_disposition.value,
+        )
+    ```
+
+  </Tab>
+</Tabs>
+
+Stop and surface an unknown Pulse application close code; do not guess that it is retryable. For a network interruption, reconnect a bounded number of times with backoff. If the failure continues, stop the loop and log enough redacted context to diagnose it.
+
+## Reconnect without creating a storm
+
+Use one reconnect loop per intended feed:
+
+1. Close the old client and its workers.
+2. Classify the terminal error.
+3. Stop on a non-retryable close code.
+4. Apply exponential backoff with jitter to transient failures.
+5. Open a new connection with the same location target and current token.
+6. Restore the complete filter and enrichment selection.
+7. Reconcile the missing interval when necessary.
+
+Cap the delay and the number of immediate attempts. Opening parallel replacement connections can consume more capacity and make a transient problem worse.
+
+## Change filters safely
+
+A filter update replaces the include, exclude, require, vote, and enrichment values as one complete selection. Include every value you want to keep.
+
+After an accepted update, items already queued can still match the earlier filter. Design the consumer to tolerate a short overlap. If an update is rejected, the connection continues with the previous filter; log the reason and keep that earlier configuration as the active state.
+
+## Monitor the feed
+
+Useful signals include:
+
+- Active connection and selected feed
+- Reconnect count and last close code
+- Time since the last transaction or idle heartbeat
+- Sig-first local drops, duplicates, gap signal, and queue depth where the SDK exposes it
+- Full-tx processing latency and stream errors; for Python, local queue depth and overflow
+- Reconciliation duration and unmatched records
+
+Heartbeats are emitted when the feed is idle, not on a fixed schedule during busy traffic. Track both transaction traffic and idle heartbeats when choosing an application liveness threshold.
+
+## Troubleshoot common failures
+
+| Symptom                             | Check                                                                                          |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------- |
+| TLS handshake fails                 | Use the exact dashboard hostname, correct system time, trusted roots, and ALPN `pulse`         |
+| Connection times out                | Confirm outbound UDP is allowed to the target port; a TCP connectivity check is not sufficient |
+| Authentication closes with code `2` | Pair the target and token from the same location and recopy the token                          |
+| Subscription closes with code `5`   | Add an account or program filter, or select access that includes the requested Pulse feed      |
+| No transactions arrive              | Verify that the filter can match current traffic and that vote selection is intentional        |
+| Sig-first gaps increase             | Check local queue drops, receive-path work, network loss, and datagram reordering              |
+| Full-tx consumer falls behind       | Reduce receive-path work, increase bounded worker throughput, or narrow the filter             |
+
+For account-specific capacity, concurrent stream capacity, and current access status, read **Usage** and **Limits** in the dashboard instead of encoding a tier table into the application.
+
+## Next steps
+
+- [Review exact wire layouts](/products/pulse/protocol)
+- [Check current usage and limits](/dashboard/usage-and-limits)
+- [Contact support safely](/reference/troubleshooting#contact-support-safely)

@@ -1,0 +1,24 @@
+name: Documentation checks
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --global @mintlify/cli@4
+      - run: bash scripts/check-public-copy.sh
+      - run: mint validate
+      - run: mint broken-links --check-anchors --check-redirects
+      - run: mint a11y

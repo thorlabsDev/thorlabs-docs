@@ -1,0 +1,316 @@
+---
+title: "Quickstart and SDKs"
+description: "Connect to Pulse with Rust, Go, or Python and receive a filtered transaction feed."
+---
+
+Use an official SDK to connect securely, send the first control message, decode wire v2, and preserve Pulse close codes.
+
+## SDKs
+
+| Language | Package | API and source |
+| -------- | ------- | -------------- |
+| Rust | [`thornode-pulse`](https://crates.io/crates/thornode-pulse) | [docs.rs](https://docs.rs/thornode-pulse/latest/thornode_pulse/) · [GitHub](https://github.com/thorlabsDev/pulse-sdk/tree/main/clients/rust) |
+| Go | [`github.com/thorlabsDev/pulse-go`](https://github.com/thorlabsDev/pulse-go) | [pkg.go.dev](https://pkg.go.dev/github.com/thorlabsDev/pulse-go) |
+| Python | [`thornode-pulse`](https://github.com/thorlabsDev/pulse-sdk/releases/latest) | [API and examples](https://github.com/thorlabsDev/pulse-sdk/tree/main/clients/python) |
+
+## Before you begin
+
+In the dashboard, select the access and location your application will use. Copy both values from **Endpoints → Streaming → Pulse**:
+
+- The Pulse target in `host:port` form
+- The token for that same location
+
+Choose an account or program to watch. The examples use an explicit filter so they work with access plans that do not allow an unfiltered feed.
+
+```bash
+export PULSE_TARGET='<HOST:PORT_FROM_DASHBOARD>'
+export PULSE_TOKEN='<TOKEN_FROM_THE_SAME_LOCATION>'
+export PULSE_ACCOUNT='<ACCOUNT_OR_PROGRAM_PUBKEY>'
+```
+
+Keep the token in a secret manager in production. Do not put it in the target URL, source code, or logs.
+
+## Receive signatures
+
+Sig-first sends the slot, per-connection sequence number, and signature for each matching transaction.
+
+<Tabs>
+  <Tab title="Rust">
+    Create a project and install the SDK:
+
+    ```bash
+    cargo new pulse-example
+    cd pulse-example
+    cargo add thornode-pulse
+    cargo add tokio --features rt-multi-thread,macros
+    cargo add bs58
+    ```
+
+    Replace `src/main.rs` with:
+
+    ```rust
+    use std::env;
+    use thornode_pulse::{Filter, PulseClient};
+
+    #[tokio::main]
+    async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let target = env::var("PULSE_TARGET")?;
+        let token = env::var("PULSE_TOKEN")?;
+        let account = env::var("PULSE_ACCOUNT")?;
+
+        let client = PulseClient::connect_with_token(target, token).await?;
+        let filter = Filter::accounts([account]);
+        let mut sub = client.subscribe_sig_first(&filter).await?;
+
+        while let Some(item) = sub.next().await? {
+            let signature = bs58::encode(item.signature).into_string();
+            println!("slot={} seq={} signature={}", item.slot, item.seq, signature);
+        }
+
+        Ok(())
+    }
+    ```
+
+    Run it:
+
+    ```bash
+    cargo run
+    ```
+
+  </Tab>
+  <Tab title="Go">
+    Create a module and install the SDK:
+
+    ```bash
+    mkdir pulse-example && cd pulse-example
+    go mod init pulse-example
+    go get github.com/thorlabsDev/pulse-go
+    go get github.com/mr-tron/base58
+    ```
+
+    Save this as `main.go`:
+
+    ```go
+    package main
+
+    import (
+        "context"
+        "fmt"
+        "log"
+        "os"
+
+        "github.com/mr-tron/base58"
+        pulseclient "github.com/thorlabsDev/pulse-go"
+    )
+
+    func main() {
+        ctx := context.Background()
+        client, err := pulseclient.Connect(
+            ctx,
+            os.Getenv("PULSE_TARGET"),
+            pulseclient.WithToken(os.Getenv("PULSE_TOKEN")),
+        )
+        if err != nil {
+            log.Fatal(err)
+        }
+        defer client.Close()
+
+        filter := pulseclient.Accounts(os.Getenv("PULSE_ACCOUNT"))
+        sub, err := client.SubscribeSigFirst(ctx, filter)
+        if err != nil {
+            log.Fatal(err)
+        }
+
+        for {
+            item, err := sub.Next(ctx)
+            if err != nil {
+                log.Fatal(err)
+            }
+            signature := base58.Encode(item.Signature[:])
+            fmt.Printf("slot=%d seq=%d signature=%s\n", item.Slot, item.Seq, signature)
+        }
+    }
+    ```
+
+    Run it:
+
+    ```bash
+    go run .
+    ```
+
+  </Tab>
+  <Tab title="Python">
+    Create an environment and install the SDK:
+
+    ```bash
+    python -m venv .venv
+    source .venv/bin/activate
+    pip install 'thornode-pulse[examples] @ https://github.com/thorlabsDev/pulse-sdk/releases/latest/download/thornode-pulse.tar.gz'
+    ```
+
+    Save this as `main.py`:
+
+    ```python
+    import asyncio
+    import os
+
+    import base58
+    from thornode_pulse import Filter, connect_pulse
+
+
+    async def main() -> None:
+        filter = Filter.accounts(os.environ["PULSE_ACCOUNT"])
+
+        async with connect_pulse(
+            os.environ["PULSE_TARGET"],
+            token=os.environ["PULSE_TOKEN"],
+        ) as client:
+            sub = await client.subscribe_sig_first(filter)
+            async for item in sub:
+                signature = base58.b58encode(item.signature).decode("ascii")
+                print(f"slot={item.slot} seq={item.seq} signature={signature}")
+
+
+    asyncio.run(main())
+    ```
+
+    Run it:
+
+    ```bash
+    python main.py
+    ```
+
+  </Tab>
+</Tabs>
+
+Each line represents a transaction observed by Pulse. A signature is not a landing or confirmation result; use your normal Solana confirmation flow when that distinction matters.
+
+## Receive decoded transactions
+
+Open a new connection and select full-tx when you need transaction bodies. The examples request `alt` enrichment so decoded v0 transactions can include loaded writable and readonly addresses when available.
+
+<Tabs>
+  <Tab title="Rust">
+    ```rust
+    use std::env;
+    use thornode_pulse::{Filter, Frame, PulseClient};
+
+    #[tokio::main]
+    async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = PulseClient::connect_with_token(
+            env::var("PULSE_TARGET")?,
+            env::var("PULSE_TOKEN")?,
+        ).await?;
+        let filter = Filter::accounts([env::var("PULSE_ACCOUNT")?]);
+        let mut sub = client.subscribe_full(&filter, &["alt"]).await?;
+
+        while let Some(Frame::Tx(frame)) = sub.next().await? {
+            println!(
+                "slot={} signatures={} instructions={}",
+                frame.tx.slot,
+                frame.tx.signatures.len(),
+                frame.tx.instructions.len(),
+            );
+        }
+
+        Ok(())
+    }
+    ```
+
+  </Tab>
+  <Tab title="Go">
+    ```go
+    package main
+
+    import (
+        "context"
+        "fmt"
+        "log"
+        "os"
+
+        pulseclient "github.com/thorlabsDev/pulse-go"
+    )
+
+    func main() {
+        ctx := context.Background()
+        client, err := pulseclient.Connect(
+            ctx,
+            os.Getenv("PULSE_TARGET"),
+            pulseclient.WithToken(os.Getenv("PULSE_TOKEN")),
+        )
+        if err != nil {
+            log.Fatal(err)
+        }
+        defer client.Close()
+
+        filter := pulseclient.Accounts(os.Getenv("PULSE_ACCOUNT"))
+        sub, err := client.SubscribeFull(ctx, filter, "alt")
+        if err != nil {
+            log.Fatal(err)
+        }
+
+        for {
+            frame, err := sub.Next()
+            if err != nil {
+                log.Fatal(err)
+            }
+            fmt.Printf(
+                "slot=%d signatures=%d instructions=%d\n",
+                frame.Tx.Slot,
+                len(frame.Tx.Signatures),
+                len(frame.Tx.Instructions),
+            )
+        }
+    }
+    ```
+
+  </Tab>
+  <Tab title="Python">
+    ```python
+    import asyncio
+    import os
+
+    from thornode_pulse import Filter, connect_pulse
+
+
+    async def main() -> None:
+        filter = Filter.accounts(os.environ["PULSE_ACCOUNT"])
+
+        async with connect_pulse(
+            os.environ["PULSE_TARGET"],
+            token=os.environ["PULSE_TOKEN"],
+        ) as client:
+            sub = await client.subscribe_full(filter, fields=("alt",))
+            async for frame in sub:
+                print(
+                    f"slot={frame.tx.slot} "
+                    f"signatures={len(frame.tx.signatures)} "
+                    f"instructions={len(frame.tx.instructions)}"
+                )
+
+
+    asyncio.run(main())
+    ```
+
+  </Tab>
+</Tabs>
+
+Full-tx frames remain ordered once they enter the QUIC stream. A bounded server queue can drop transactions before that point. After a disconnect—or whenever your application must reconstruct complete state—query RPC for the missing state.
+
+## Filter transactions
+
+The common helper in each SDK builds an `account_include` filter:
+
+| Rust                      | Go                          | Python                 |
+| ------------------------- | --------------------------- | ---------------------- |
+| `Filter::accounts([key])` | `pulseclient.Accounts(key)` | `Filter.accounts(key)` |
+
+Pulse also supports exclude and require predicates. All configured predicates apply together. An empty include and required set requests an unfiltered feed, which may not be available for the selected access.
+
+One connection carries either sig-first or full-tx. Open a second connection if the application needs both feeds. You can update the active filter without changing feeds.
+
+## Next steps
+
+- [Understand Pulse wire v2](/products/pulse/protocol)
+- [Handle reconnects and backpressure](/products/pulse/production)
+- [Protect the location token](/reference/security)

@@ -1,0 +1,267 @@
+---
+title: "Wire protocol v2"
+description: "Implement the Pulse QUIC handshake, filters, datagrams, and full transaction frames."
+---
+
+Pulse wire v2 is a compact protocol for streaming filtered Solana transactions over QUIC. Use this reference when an official SDK is not available for your language.
+
+## Connect over QUIC
+
+Open a QUIC connection to the dashboard target with these settings:
+
+| Setting           | Value                                              |
+| ----------------- | -------------------------------------------------- |
+| Network transport | UDP                                                |
+| Encryption        | TLS 1.3                                            |
+| ALPN              | `pulse`                                            |
+| Server identity   | Validate the certificate chain and target hostname |
+| QUIC datagrams    | Enable for sig-first                               |
+
+Send the bearer token only after TLS certificate validation succeeds. Public Pulse targets use a hostname so clients can validate the certificate and set SNI correctly.
+
+## Send the first control message
+
+Immediately open a client-initiated bidirectional stream. Write one JSON object, then finish the stream's send side:
+
+```json
+{
+  "token": "<PULSE_TOKEN>",
+  "account_include": ["<ACCOUNT_OR_PROGRAM_PUBKEY>"],
+  "account_exclude": [],
+  "account_required": [],
+  "vote": false,
+  "full": false,
+  "v": 2,
+  "fields": []
+}
+```
+
+The first message authenticates the connection, selects one feed, and installs its filter. It is required even when a server does not require authentication.
+
+| Field              | Type               | Default | Meaning                                                                            |
+| ------------------ | ------------------ | ------- | ---------------------------------------------------------------------------------- |
+| `token`            | string             | Empty   | Bearer token for the selected location                                             |
+| `account_include`  | string array       | Empty   | Match a transaction that touches any listed key                                    |
+| `account_exclude`  | string array       | Empty   | Drop a transaction that touches any listed key                                     |
+| `account_required` | string array       | Empty   | Match only when the transaction touches every listed key                           |
+| `vote`             | boolean or omitted | Omitted | `true` selects vote transactions; `false` or omitted selects non-vote transactions |
+| `full`             | boolean            | `false` | `false` selects sig-first; `true` selects full-tx                                  |
+| `v`                | unsigned integer   | `1`     | Highest wire version the client supports; send `2` for wire v2                     |
+| `fields`           | string array       | Empty   | Full-tx enrichment groups; `alt` requests loaded addresses                         |
+
+Pulse base58-decodes every filter key and requires a 32-byte result. Invalid keys reject the control message.
+
+### Filter behavior
+
+The include, exclude, require, and vote predicates apply together:
+
+- An empty include list removes the include constraint; it does not match zero transactions.
+- `account_include` matches any listed static or resolved loaded key.
+- `account_required` requires every listed key.
+- `account_exclude` rejects a transaction that touches any listed key.
+- `vote: true` selects vote transactions only. `false` or omitted selects non-vote transactions.
+
+When ALT resolution is incomplete, Pulse conservatively drops a transaction for subscriptions that contain `account_exclude`. This avoids sending a transaction that might touch an excluded loaded address.
+
+Pulse does not support an execution-status filter because status is not available when it decodes the shreds.
+
+### Select one feed
+
+The first message fixes `full` for the connection. To switch between sig-first and full-tx, open a new connection.
+
+Later control messages can replace the filter, vote selection, and enrichment fields. Their `token`, `full`, and `v` values do not change the established connection.
+
+## Read the acknowledgement
+
+The server returns one length-prefixed JSON object on the control stream:
+
+```text
+u32 JSON length, big-endian
+JSON body
+```
+
+Reject a declared JSON length above 16,384 bytes before allocating or reading the body.
+
+A successful first subscription returns:
+
+```json
+{ "type": "ack", "ok": true, "v": 2 }
+```
+
+Require `type: "ack"`, `ok: true`, and `v: 2` before reading the feed. Bound the acknowledgement read with a timeout, and treat an incomplete length or body as an error.
+
+A rejected filter update returns an acknowledgement with `ok: false` and a reason. The connection stays open with its previous filter.
+
+## Sig-first datagrams
+
+Sig-first sends one QUIC datagram for each matching transaction. It also sends a heartbeat datagram while the feed is idle. All multi-byte fields use little-endian encoding.
+
+|            Type | Layout                                                | Minimum size |
+| --------------: | ----------------------------------------------------- | -----------: |
+| `1` transaction | `u8 type \| u64 slot \| u64 seq \| 64-byte signature` |     81 bytes |
+|   `2` heartbeat | `u8 type \| u64 server_ts_ms \| u64 highest_seq`      |     17 bytes |
+
+Treat these sizes as minimums. Decode the known prefix and ignore trailing bytes. Skip an unknown type tag so a future message type does not break the connection.
+
+QUIC datagrams can be lost, reordered, or duplicated. Deduplicate by signature when needed, and do not infer landing or confirmation from receipt.
+
+## Sequence numbers and heartbeats
+
+`seq` is a transaction counter scoped to one connection. It starts at `0`, increases for every transaction assigned to the subscription, and resets after reconnecting. Heartbeats do not consume a sequence number.
+
+Pulse assigns `seq` before a droppable delivery stage. A gap can therefore expose a server-side or network drop. Because datagrams can arrive out of order, a simple high-watermark counter can also report a temporary gap for a late packet. Treat the SDK gap metric as a loss-or-reordering signal, not an exact permanent-loss count.
+
+Heartbeat `highest_seq` is the highest value assigned so far. The value `u64::MAX` means no transaction has been assigned yet; `0` is the first valid sequence number.
+
+Heartbeats are idle signals rather than a fixed metronome. A busy feed can continue sending transactions without a heartbeat.
+
+## Full-tx stream
+
+After a successful control message with `full: true`, the server opens one unidirectional QUIC stream.
+
+### Preamble
+
+Read and validate the six-byte preamble before decoding a frame:
+
+```text
+50 4C 53 32 02 00
+ P  L  S  2  v2 flags=0
+```
+
+| Offset | Size | Value               |
+| -----: | ---: | ------------------- |
+|    `0` |    4 | ASCII `PLS2`        |
+|    `4` |    1 | Version `2`         |
+|    `5` |    1 | Reserved flags, `0` |
+
+A missing, incomplete, or different preamble is a protocol error.
+
+### Frame envelope
+
+The rest of the stream is a sequence of frames:
+
+```text
+u32 frame length, big-endian
+u8  message type
+u8  flags
+... message body
+... TLV records
+```
+
+| Message type | Body                                 |
+| -----------: | ------------------------------------ |
+|          `1` | Decoded transaction followed by TLVs |
+|          `2` | Heartbeat TLVs only                  |
+
+Skip an unknown message type using the outer length. Reject a frame length above `196614` before allocating its receive buffer. For a transaction frame, reject the combined positional body and TLV trailer when it exceeds `65536` bytes; `196614` is only the outer pre-allocation ceiling.
+
+For a transaction, flag bit `0` is `alt_incomplete`; bits `1–7` are reserved and must be zero. Every heartbeat flag bit is reserved and must be zero.
+
+If the stream ends after any part of a length prefix or frame body has arrived, report a truncated frame. Only an end on a frame boundary is a clean stream end.
+
+### Decoded transaction body
+
+The transaction body is positional. All multi-byte values inside it use little-endian encoding.
+
+|     Size | Field                                   |
+| -------: | --------------------------------------- |
+|        8 | `slot` as `u64`                         |
+|        1 | `num_required_signatures`               |
+|        1 | `num_readonly_signed_accounts`          |
+|        1 | `num_readonly_unsigned_accounts`        |
+|        1 | `versioned`: `0` for legacy, `1` for v0 |
+|       32 | `recent_blockhash`                      |
+|        2 | Signature count `S` as `u16`            |
+| `64 × S` | Signatures                              |
+|        2 | Account-key count `K` as `u16`          |
+| `32 × K` | Static account keys                     |
+|        2 | Instruction count `I` as `u16`          |
+| Variable | `I` encoded instructions                |
+|        2 | Address-table-lookup count `A` as `u16` |
+| Variable | `A` encoded address-table lookups       |
+
+Each instruction is encoded as:
+
+```text
+u8  program_id_index
+u16 account_index_count, little-endian
+u8  account_indexes[account_index_count]
+u16 data_length, little-endian
+u8  data[data_length]
+```
+
+Each address-table lookup is encoded as:
+
+```text
+u8  account_key[32]
+u16 writable_index_count, little-endian
+u8  writable_indexes[writable_index_count]
+u16 readonly_index_count, little-endian
+u8  readonly_indexes[readonly_index_count]
+```
+
+Bounds-check each count before allocating or reading. The positional body is followed by zero or more TLV records inside the same frame.
+
+### TLV records
+
+Each TLV has this layout:
+
+```text
+u8  type
+u16 value_length, little-endian
+u8  value[value_length]
+```
+
+| Type | Value                                    | Used by     |
+| ---: | ---------------------------------------- | ----------- |
+|  `1` | Writable loaded addresses, each 32 bytes | Transaction |
+|  `2` | Readonly loaded addresses, each 32 bytes | Transaction |
+|  `3` | `server_ts_ms` as `u64` little-endian    | Heartbeat   |
+|  `4` | `highest_seq` as `u64` little-endian     | Heartbeat   |
+
+Parse TLVs in any order. Skip unknown types, but reject duplicate types in one frame. The `alt` field request controls loaded-address TLVs. The `alt_incomplete` transaction flag is present independently of that request.
+
+Values such as fee payer, program IDs, static writable accounts, compute-unit price, and compute-unit limit are derived from the decoded transaction. They are not separate wire fields.
+
+## Replace a filter
+
+Open another client-initiated bidirectional stream and send a complete control JSON object. The new `account_include`, `account_exclude`, `account_required`, `vote`, and `fields` values replace the previous values; omitted fields return to their defaults.
+
+An `ok: true` acknowledgement applies the new filter to future matching work. Transactions already waiting in the delivery queue can still reflect the earlier filter.
+
+An `ok: false` acknowledgement leaves the earlier filter active. It does not close the feed.
+
+## Application close codes
+
+Pulse preserves the reason as UTF-8 QUIC application-close data.
+
+| Code | Meaning                                                             | Retry unchanged?                     |
+| ---: | ------------------------------------------------------------------- | ------------------------------------ |
+|  `0` | Normal close                                                        | Application decision                 |
+|  `1` | Invalid control message                                             | No; fix the request                  |
+|  `2` | Missing, invalid, or revoked token                                  | No; correct or recopy the credential |
+|  `3` | Current quota or capacity is exhausted                              | Yes, with bounded backoff and jitter |
+|  `4` | Unsupported wire version                                            | No; use a wire-v2 client             |
+|  `5` | Pulse or the requested filter shape is not included for this access | No; change the access or filter      |
+
+When a client opens a control stream with an unsupported version, the server can send this framed error before closing with code `4`:
+
+```json
+{
+  "type": "error",
+  "code": 4,
+  "reason": "unsupported protocol version; this server speaks wire v2"
+}
+```
+
+Codes `1`, `2`, `3`, and `5` use the QUIC close reason rather than a JSON error envelope.
+
+## Delivery boundary
+
+Both feeds start with live data after subscription. Wire v2 does not provide a cursor, resume request, retransmission, or backfill.
+
+Sig-first datagrams offer no transport ordering or delivery guarantee. Full-tx frames are ordered and reliable after Pulse places them on the QUIC stream, but a bounded queue can drop a transaction before that point. Neither feed is an end-to-end completeness or transaction-confirmation source.
+
+Use [production guidance](/products/pulse/production) to choose a reconnect and reconciliation strategy.
+
+For another language, use the complete [wire-v2 specification](https://github.com/thorlabsDev/pulse-sdk/blob/main/docs/PROTOCOL.md) and run the shared [conformance vectors](https://github.com/thorlabsDev/pulse-sdk/blob/main/conformance/wire-v2/vectors.json) against your decoder.

@@ -13,7 +13,7 @@ Choose the product by the data your application needs and how it can receive tha
 | Subscribe through Solana WebSocket methods           | [ThorEdge RPC](/products/thoredge-rpc)                             | JSON-RPC subscription                                   | Events over WSS                                  |
 | Run supported account-heavy queries                  | [FastGate Account API](/products/fastgate-account-api)             | Supported account method sent to ThorEdge               | Solana account data over HTTPS JSON-RPC          |
 | Receive filtered Geyser-compatible data              | [Yellowstone gRPC](/products/yellowstone-grpc)                     | Subscribe request and filters                           | Persistent gRPC stream                           |
-| Receive signatures or decoded transactions over QUIC | [Pulse Decoded Shreds](/products/pulse)                            | Location target, token, feed, filters, and Pulse client | Sig-first datagrams or a reliable full-tx stream |
+| Receive signatures or decoded transactions over QUIC | [Pulse Decoded Shreds](/products/pulse)                            | Location target, token, feed, filters, and Pulse client | Sig-first datagrams or an ordered full-tx stream |
 | Decode and process live shreds yourself              | [Raw Shred Stream](/products/raw-shred-stream)                     | Registered public IPv4 and UDP port                     | Live raw shred datagrams over UDP                |
 | Re-run recently captured raw shreds                  | [Replay](/products/shredreplay)                                    | Slot range, pacing, and UDP receiver                    | Raw shred datagrams over UDP                     |
 | Call a provider-specific transaction route           | [Bifrost Transaction Routes](/products/bifrost-transaction-routes) | Route-specific request                                  | Route-specific HTTP response                     |
@@ -26,7 +26,7 @@ Use the [RPC quickstart](/getting-started/quickstart) for either path, then veri
 
 ## Yellowstone or Pulse
 
-**Yellowstone gRPC** provides a Geyser Subscribe-compatible stream with server-side filters. **Pulse Decoded Shreds** provides either a low-overhead signature feed or a reliable stream of decoded transactions over QUIC; it does not send raw shred objects.
+**Yellowstone gRPC** provides a Geyser Subscribe-compatible stream with server-side filters. **Pulse Decoded Shreds** provides either low-overhead signature datagrams or an ordered stream of decoded transactions over QUIC; it does not send raw shred objects. Full-tx ordering begins after server enqueue and is not an end-to-end completeness guarantee.
 
 Yellowstone sends its location token as `x-token` gRPC metadata. Pulse sends its location token in the first client control message. Copy each target and token from the same dashboard location.
 

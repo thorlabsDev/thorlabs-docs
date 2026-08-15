@@ -39,15 +39,15 @@ ThorEdge RPC has no monthly request cap. Throughput and concurrency limits still
 
 Live constraints still apply:
 
-| Limit                     | What it governs                                                            | When it is reached                                                         |
-| ------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| RPC RPS                   | JSON-RPC request throughput                                                | Requests can be throttled; inspect `429` responses and retry volume.       |
-| Transaction TPS           | Transaction-submission throughput                                          | Submissions can be throttled; bound application concurrency and retries.   |
-| WebSocket capacity        | Connections, subscriptions, or related concurrent use                      | New work can be rejected; reuse connections and close idle subscriptions.  |
-| Yellowstone capacity      | Concurrent streams; account and owner keys across live streams for a token | Subscriptions can be rejected; narrow filters and close unused streams.    |
-| Pulse capacity            | Concurrent streams and total accounts across filters                       | New streams or unfiltered firehose requests can be rejected.               |
-| Raw Shred Stream capacity | Active UDP receiver registrations                                          | A new registration can be rejected; remove registrations no longer in use. |
-| Location access           | Locations enabled for a product and access                                 | A location does not appear as an available choice.                         |
+| Limit                     | What it governs                                                            | When it is reached                                                                                              |
+| ------------------------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| RPC RPS                   | JSON-RPC request throughput                                                | Requests can be throttled; inspect `429` responses and retry volume.                                            |
+| Transaction TPS           | Transaction-submission throughput                                          | Submissions can be throttled; bound application concurrency and retries.                                        |
+| WebSocket capacity        | Connections, subscriptions, or related concurrent use                      | New work can be rejected; reuse connections and close idle subscriptions.                                       |
+| Yellowstone capacity      | Concurrent streams; account and owner keys across live streams for a token | Subscriptions can be rejected; narrow filters and close unused streams.                                         |
+| Pulse capacity            | Concurrent streams and total accounts across filters                       | New streams can be rejected; an unfiltered request can be unavailable when the access requires account filters. |
+| Raw Shred Stream capacity | Active UDP receiver registrations                                          | A new registration can be rejected; remove registrations no longer in use.                                      |
+| Location access           | Locations enabled for a product and access                                 | A location does not appear as an available choice.                                                              |
 
 The dashboard can show additional product-specific constraints. [Read **Usage** and **Limits**](/dashboard/usage-and-limits) for the selected access instead of encoding a tier table into application logic. RPC rate and subscription caps apply per active location token where the published table says so.
 

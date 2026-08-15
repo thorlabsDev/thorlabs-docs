@@ -1,102 +1,80 @@
 ---
 title: "Pulse Decoded Shreds"
-description: "Receive transaction signatures or decoded transactions over QUIC."
+description: "Stream Solana transaction signatures or decoded transactions over QUIC."
 ---
 
-Pulse exposes two live QUIC feeds from decoded Solana shreds. The sig-first feed sends transaction signatures in low-overhead datagrams. The full-tx feed sends decoded transactions on an ordered, reliable stream. Neither feed sends raw shred bytes.
+Pulse turns decoded Solana shreds into a live transaction feed. Filter by account or program, then receive signatures or decoded transaction bodies over QUIC.
 
-Copy the Pulse target and token from the same dashboard location. The client sends the token in its first control message after opening the QUIC connection.
+Pulse does not send raw shred bytes. Use [Raw Shred Stream](/products/raw-shred-stream) when your application needs to decode the shreds itself.
 
-## Decoded transactions over QUIC
+## Choose a feed
 
-Pulse delivers transaction signatures or decoded transactions over QUIC without rebuilding the same result through RPC calls.
+Each connection carries one feed.
 
-Use [Raw Shred Stream](/products/raw-shred-stream) when you need the original shred bytes. Use [Yellowstone gRPC](/products/yellowstone-grpc) when you need a Geyser Subscribe-compatible filtered stream.
+| Feed          | Payload                                                                                              | Delivery                                                            | Good fit                                                               |
+| ------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| **Sig-first** | Slot, sequence number, and transaction signature                                                     | Unordered QUIC datagrams that can be lost, reordered, or duplicated | Detect a matching transaction with the least payload overhead          |
+| **Full-tx**   | Decoded signatures, account keys, instructions, address-table lookups, and optional loaded addresses | Ordered QUIC stream after server enqueue                            | Process decoded transaction bodies without rebuilding them through RPC |
 
-## Quick reference
+Full-tx stream ordering is not an end-to-end lossless guarantee. Pulse can drop a transaction before it enters the stream's bounded server queue. Both feeds are live: there is no resume, retransmission, or backfill after a disconnect.
 
-| Item           | Value                                                                                                            |
-| -------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Dashboard path | **Endpoints** sidebar → **Endpoints** tab → **Token & Endpoints** → **Streaming** → **Pulse**                    |
-| Transport      | QUIC over UDP with TLS 1.3                                                                                       |
-| ALPN           | `pulse`                                                                                                          |
-| Protocol       | Pulse wire v2                                                                                                    |
-| Sig-first feed | `full: false`; `(slot, sequence, signature)` over unordered QUIC datagrams                                       |
-| Full-tx feed   | `full: true`; decoded transactions over an ordered, reliable QUIC stream                                         |
-| Authentication | Location token in the first client control message                                                               |
-| Live limits    | Concurrent streams and total accounts across filters shown in **Limits**; account-capped tiers reject a firehose |
+## Start with sig-first
 
-<Warning>
-  Official Pulse clients encrypt transport but do not authenticate the server
-  certificate. Use a trusted private network or UDP-capable VPN, or use a client
-  that verifies or pins the certificate. Keep the bearer token out of URLs,
-  source code, and logs.
-</Warning>
+Copy the Pulse target and token from the same dashboard location, then subscribe with an account or program filter. The official SDKs validate the endpoint certificate and hostname by default.
 
-## Open a stream
+<CardGroup cols={2}>
+  <Card
+    title="Run the quickstart"
+    icon="bolt"
+    href="/products/pulse/quickstart"
+  >
+    Install the Rust, Go, or Python SDK and receive your first signature.
+  </Card>
+  <Card
+    title="Read the wire protocol"
+    icon="code"
+    href="/products/pulse/protocol"
+  >
+    Implement Pulse wire v2 in another language.
+  </Card>
+  <Card
+    title="Run in production"
+    icon="server"
+    href="/products/pulse/production"
+  >
+    Handle close codes, reconnects, backpressure, and reconciliation.
+  </Card>
+  <Card
+    title="Check live limits"
+    icon="gauge-high"
+    href="/dashboard/usage-and-limits"
+  >
+    View the capacity attached to the selected access.
+  </Card>
+</CardGroup>
 
-<Steps>
-  <Step title="Choose a location">
-    Open **Endpoints**, keep the **Endpoints** tab selected, choose the access,
-    network, and location. Copy the location token from the token row and the
-    target from **Streaming → Pulse** for that location.
-  </Step>
-  <Step title="Configure the connection">
-    Use a Pulse wire-v2 client, configure ALPN as `pulse`, and enable QUIC
-    datagrams if you use the sig-first feed.
-  </Step>
-  <Step title="Send the first control message">
-    Immediately open a client-initiated bidirectional stream and send wire
-    version `2`, your chosen feed, filters, and the location token. Official
-    Pulse subscribe calls perform this handshake.
-  </Step>
-  <Step title="Consume the selected feed">
-    Read signature datagrams or full transaction frames and move application
-    work to a bounded queue outside the receive path.
-  </Step>
-</Steps>
+## Connection summary
 
-The first control message has this shape:
+| Setting        | Value                                                 |
+| -------------- | ----------------------------------------------------- |
+| Dashboard      | **Endpoints** → **Streaming** → **Pulse**             |
+| Target         | `host:port` copied from the selected location         |
+| Authentication | Matching location token in the first control message  |
+| Transport      | QUIC over UDP with TLS 1.3                            |
+| ALPN           | `pulse`                                               |
+| Protocol       | Pulse wire v2                                         |
+| Filtering      | Include, exclude, and require account or program keys |
 
-```json
-{
-  "token": "<PULSE_TOKEN>",
-  "account_include": ["<BASE58_ACCOUNT_OR_PROGRAM>"],
-  "account_exclude": [],
-  "account_required": [],
-  "vote": false,
-  "full": true,
-  "v": 2,
-  "fields": []
-}
-```
+Your network must permit outbound UDP to the displayed Pulse port. A TCP tunnel such as `ssh -L` cannot carry QUIC traffic.
 
-Set `full` to `false` for sig-first datagrams. Keep at least one `account_include` or `account_required` entry when the selected plan limits account filters.
+## Pulse, Yellowstone, or Raw Shred Stream
 
-The subscription starts when the control stream returns `{"type":"ack","ok":true,"v":2}` and the connection begins receiving data for the selected feed.
+| Choose                                         | When you need                                                           |
+| ---------------------------------------------- | ----------------------------------------------------------------------- |
+| [Pulse Decoded Shreds](/products/pulse)        | Matching transaction signatures or decoded transaction bodies over QUIC |
+| [Yellowstone gRPC](/products/yellowstone-grpc) | A Geyser `Subscribe`-compatible stream and its filter model             |
+| [Raw Shred Stream](/products/raw-shred-stream) | Original shred bytes delivered to a UDP receiver you operate            |
 
-## Run in production
+## Next step
 
-- Permit outbound UDP traffic to the Pulse target.
-- Keep the receive path small and use bounded downstream queues.
-- Monitor consumer lag and queue depth.
-- Reconnect with bounded exponential backoff and jitter.
-- In sig-first mode, treat a jump in `seq` as loss or reordering. The counter restarts at `0` after reconnecting and datagrams are not retransmitted.
-- Use full-tx when you need decoded transaction bodies. Reconcile through RPC after reconnecting when completeness matters.
-- Reuse connections instead of opening unbounded concurrent sessions.
-
-## Troubleshooting
-
-| Problem               | Fix                                                                                                                                         |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Handshake fails       | Check the copied target, ALPN `pulse`, outbound UDP policy, and the trusted private or VPN path.                                            |
-| Authentication fails  | Recopy the target and token from the same location, send `v: 2`, and put the token in the first control message.                            |
-| Close code `3`        | Reduce active streams or account keys. On an account-capped tier, include at least one account or program instead of requesting a firehose. |
-| No data arrives       | Confirm whether the client selected sig-first or full-tx, then decode that feed's wire-v2 payload.                                          |
-| Consumer falls behind | Move expensive work downstream, bound queue growth, and use full-tx or RPC reconciliation when sig-first loss cannot be tolerated.          |
-
-## Next steps
-
-- [Compare with Raw Shred Stream](/products/raw-shred-stream)
-- [Protect streaming credentials](/reference/security)
-- [Review current plans and limits](/reference/plans-and-limits)
+[Receive your first Pulse signature](/products/pulse/quickstart) with an official SDK.
