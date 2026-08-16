@@ -1,0 +1,277 @@
+---
+title: "Bifrost route reference"
+description: "Every bloXroute, Astralane, BlockRazor, and LunarLander route Bifrost exposes, with its HTTP method and request shape."
+---
+
+Each route below is one path on a Bifrost location base URL. Build the full URL as `https://<location-base>/<private-tx-key>/<route>`, or copy it from **Endpoints → Private TX** in the dashboard.
+
+Bifrost forwards your body to the selected provider. Send the request that provider's own API defines for that operation, without the provider API key — ThorNode supplies the upstream credential.
+
+## Authentication and health
+
+| Behavior             | Detail                                                                       |
+| -------------------- | ------------------------------------------------------------------------------ |
+| Key placement        | First path segment: `/<private-tx-key>/<route>`                              |
+| Missing or bad key   | `401` with body `{"error":"invalid or missing authentication key"}`           |
+| Unknown route        | `401`, not `404`; an unrecognized path never reaches a provider               |
+| Health check         | `GET` or `HEAD /healthz` on the base URL, without a key, returns `200`        |
+| Keep-warm            | Use `/healthz` to hold the client-to-Bifrost connection open between sends    |
+
+`/healthz` only works on the bare base URL. A key-prefixed `/<key>/healthz` returns `401`.
+
+## Route index
+
+| Provider    | Operation | Method       | Route                    |
+| ----------- | --------- | ------------ | ------------------------ |
+| bloXroute   | Submit    | `POST`       | `/bloxroute`             |
+| bloXroute   | Batch     | `POST`       | `/blxrt-submit-batch`    |
+| bloXroute   | Paladin   | `POST`       | `/blxrt-submit-paladin`  |
+| bloXroute   | Snipe     | `POST`       | `/blxrt-submit-snipe`    |
+| Astralane   | Submit    | `POST`       | `/astralane`             |
+| Astralane   | Bundle    | `POST`       | `/astrln-submit-bundle`  |
+| Astralane   | Batch     | `POST`       | `/astrln-submit-batch`   |
+| Astralane   | Ideal     | `POST`       | `/astrln-submit-ideal`   |
+| Astralane   | Get nonce | `GET`, `POST` | `/astrln-get-nonce`      |
+| BlockRazor  | Submit    | `POST`       | `/blockrazor`            |
+| LunarLander | Submit    | `POST`       | `/lunarlander`           |
+| LunarLander | Bundle    | `POST`       | `/lunar-submit-bundle`   |
+| LunarLander | Batch     | `POST`       | `/lunar-submit-batch`    |
+
+Every Bifrost-enabled ThorNode location serves this same catalog.
+
+## bloXroute
+
+### Submit
+
+```
+POST /bloxroute
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "sendTransaction",
+  "params": ["<BASE64_SIGNED_TRANSACTION>"]
+}
+```
+
+### Batch
+
+Submit several transactions in one request.
+
+```
+POST /blxrt-submit-batch
+```
+
+```json
+{
+  "transactions": [
+    "<BASE64_SIGNED_TRANSACTION_1>",
+    "<BASE64_SIGNED_TRANSACTION_2>"
+  ]
+}
+```
+
+### Paladin
+
+Submit through bloXroute's Paladin path.
+
+```
+POST /blxrt-submit-paladin
+```
+
+```json
+{ "transaction": "<BASE64_SIGNED_TRANSACTION>" }
+```
+
+### Snipe
+
+```
+POST /blxrt-submit-snipe
+```
+
+```json
+{ "transaction": "<BASE64_SIGNED_TRANSACTION>" }
+```
+
+Read the [bloXroute docs](https://docs.bloxroute.com/) for the tip and minimum-fee requirements each path enforces.
+
+## Astralane
+
+### Submit
+
+```
+POST /astralane
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "sendTransaction",
+  "params": ["<BASE64_SIGNED_TRANSACTION>"]
+}
+```
+
+### Bundle
+
+Up to 4 transactions executed in order. Astralane reverts the whole bundle if a member fails.
+
+```
+POST /astrln-submit-bundle
+```
+
+```json
+{
+  "transactions": [
+    "<BASE64_SIGNED_TRANSACTION_1>",
+    "<BASE64_SIGNED_TRANSACTION_2>"
+  ],
+  "encoding": "base64",
+  "mevProtect": true,
+  "revertProtection": false
+}
+```
+
+### Batch
+
+Up to 25 independent transactions. Unlike a bundle, batch members are processed individually and each returns its own signature.
+
+```
+POST /astrln-submit-batch
+```
+
+```json
+{
+  "transactions": [
+    "<BASE64_SIGNED_TRANSACTION_1>",
+    "<BASE64_SIGNED_TRANSACTION_2>",
+    "<BASE64_SIGNED_TRANSACTION_3>"
+  ],
+  "mevProtect": true
+}
+```
+
+| Parameter      | Type       | Required | Description                                                             |
+| -------------- | ---------- | -------- | ------------------------------------------------------------------------- |
+| `transactions` | `string[]` | Yes      | Base64-encoded serialized transactions. Maximum batch size is 25.       |
+| `mevProtect`   | `boolean`  | No       | When `true`, requests MEV protection for every transaction in the batch. |
+
+The same batch is also reachable as a JSON-RPC call on `/astralane`:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "sendBatch",
+  "params": [
+    ["<BASE64_SIGNED_TRANSACTION_1>", "<BASE64_SIGNED_TRANSACTION_2>"],
+    { "mevProtect": true }
+  ]
+}
+```
+
+```json
+{
+  "result": ["<SIGNATURE_1>", "<SIGNATURE_2>"]
+}
+```
+
+### Ideal
+
+An ideal pair takes exactly two transactions — one weighted toward priority fees, one toward tips — and uses a durable nonce so the loser cancels once the other lands.
+
+```
+POST /astrln-submit-ideal
+```
+
+```json
+{
+  "transactions": [
+    "<BASE64_SIGNED_TRANSACTION_1>",
+    "<BASE64_SIGNED_TRANSACTION_2>"
+  ]
+}
+```
+
+### Get nonce
+
+Retrieve the managed nonce account details an ideal pair needs.
+
+```
+GET /astrln-get-nonce
+POST /astrln-get-nonce
+```
+
+Read the [Astralane submit-transactions reference](https://astralane.gitbook.io/docs/low-latency/submit-transactions) for field-level detail and minimum tip requirements.
+
+## BlockRazor
+
+### Submit
+
+```
+POST /blockrazor
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "sendTransaction",
+  "params": ["<BASE64_SIGNED_TRANSACTION>"]
+}
+```
+
+Read the [BlockRazor docs](https://docs.blockrazor.io/) for its minimum-fee requirements.
+
+## LunarLander
+
+### Submit
+
+```
+POST /lunarlander
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "sendTransaction",
+  "params": [
+    "<BASE64_SIGNED_TRANSACTION>",
+    { "encoding": "base64" }
+  ]
+}
+```
+
+### Bundle
+
+Group related transactions for atomic execution.
+
+```
+POST /lunar-submit-bundle
+```
+
+### Batch
+
+Submit several transactions in one request.
+
+```
+POST /lunar-submit-batch
+```
+
+Bundle and batch bodies follow Lunar Lander's own schema, including its tip-account and minimum-tip rules. Read the [Lunar Lander reference](https://docs.hellomoon.io/reference/lunar-lander) before building either request.
+
+## What a response means
+
+A `2xx` means Bifrost completed the HTTP call to the provider. It does not mean the provider accepted the transaction, and acceptance does not mean the transaction landed. Parse the body, then reconcile any returned signature through Solana RPC until it reaches your commitment or its blockhash expires.
+
+Bifrost never retries through a second provider. If a route fails, your application decides whether to rebuild and resubmit.
+
+## Next steps
+
+- [Return to the Bifrost overview](/products/bifrost-transaction-routes)
+- [Check Hofund availability](/products/bifrost-transaction-routes/hofund)
+- [Confirm signatures through ThorEdge RPC](/products/thoredge-rpc)
+- [Store credential-bearing URLs safely](/reference/security)

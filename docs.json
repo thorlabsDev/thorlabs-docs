@@ -56,7 +56,12 @@
       {
         "group": "Transaction routes",
         "icon": "route",
-        "pages": ["products/bifrost-transaction-routes"]
+        "root": "products/bifrost-transaction-routes",
+        "expanded": true,
+        "pages": [
+          "products/bifrost-transaction-routes/provider-routes",
+          "products/bifrost-transaction-routes/hofund"
+        ]
       },
       {
         "group": "Dashboard",
@@ -171,6 +176,14 @@
     {
       "source": "/infrastructure/asgard-vision",
       "destination": "/products/thoredge-rpc"
+    },
+    {
+      "source": "/infrastructure/bifrost-api/endpoints/:slug*",
+      "destination": "/products/bifrost-transaction-routes/provider-routes"
+    },
+    {
+      "source": "/infrastructure/bifrost-api/endpoints",
+      "destination": "/products/bifrost-transaction-routes/provider-routes"
     },
     {
       "source": "/infrastructure/bifrost-api/:slug*",

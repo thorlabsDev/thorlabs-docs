@@ -1,17 +1,32 @@
 ---
 title: "Bifrost Transaction Routes"
-description: "Call provider-specific transaction routes through ThorNode without separate provider accounts or API keys."
+description: "Call bloXroute, Astralane, BlockRazor, and LunarLander transaction routes through one ThorNode Private TX key."
 ---
 
-Bifrost aggregates provider-specific transaction routes behind your ThorNode access. The dashboard labels this product **Private TX**. When it is enabled for your selected pass or rental, ThorNode provides the route catalog, Private TX key, and location URLs.
+Bifrost puts several Solana transaction providers behind one ThorNode credential. The dashboard labels this product **Private TX**. Select a pass or rental, generate a Private TX key, then copy the complete route URL for the provider operation you want to call.
 
 You do not need a separate upstream-provider account, subscription, API key, or commercial agreement.
 
 <Note>
   Bifrost aggregation is included with eligible ThorNode access at no additional
-  aggregator charge. Solana network fees, priority fees, and route-specific tips
-  can still apply to the transactions you sign.
+  aggregator charge. Solana network fees, priority fees, and provider tip
+  requirements still apply to the transactions you sign.
 </Note>
+
+## Providers you can call
+
+Every Bifrost-enabled location serves the same provider catalog. Your access decides which locations are enabled, not which providers appear.
+
+| Provider        | Operations                              | Provider reference                                                                          |
+| --------------- | --------------------------------------- | ------------------------------------------------------------------------------------------- |
+| **bloXroute**   | Submit, Batch, Paladin, Snipe           | [bloXroute docs](https://docs.bloxroute.com/)                                               |
+| **Astralane**   | Submit, Bundle, Batch, Ideal, Get nonce | [Astralane submit transactions](https://astralane.gitbook.io/docs/low-latency/submit-transactions) |
+| **BlockRazor**  | Submit                                  | [BlockRazor docs](https://docs.blockrazor.io/)                                              |
+| **LunarLander** | Submit, Bundle, Batch                   | [Lunar Lander reference](https://docs.hellomoon.io/reference/lunar-lander)                  |
+
+Bifrost forwards your request body to the provider route you selected. Each route takes the request that provider's own API defines, so a payload built for one route is not automatically valid for another, even when both routes are labeled **Submit**.
+
+[Read the route reference](/products/bifrost-transaction-routes/provider-routes) for every route path, HTTP method, request shape, and limit.
 
 ## Direct provider routes
 
@@ -20,6 +35,8 @@ You do not need a separate upstream-provider account, subscription, API key, or 
 | You want to call a specific provider route through one ThorNode flow | You need automatic provider selection, fallback, or smart routing |
 | You do not want to manage separate provider credentials              | You need a guarantee of privacy, MEV protection, or landing       |
 
+Bifrost does not choose a provider for you, retry through a different provider, or reorder your submissions.
+
 ## Quick reference
 
 | Item                 | Value                                                                             |
@@ -27,10 +44,11 @@ You do not need a separate upstream-provider account, subscription, API key, or 
 | Dashboard path       | **Endpoints → Private TX**                                                        |
 | Access               | An eligible pass or rental with at least one Bifrost location                     |
 | Private TX key       | The dashboard generates one per access and reuses it in each enabled location URL |
-| Route URL            | Complete URL copied from the selected location and provider operation             |
-| Client configuration | The Private TX key is embedded in the copied route URL                            |
-| Provider credentials | Managed by ThorNode; do not add an upstream provider API key                      |
+| Route URL            | `https://<location-base>/<private-tx-key>/<route>`, copied from the dashboard     |
+| Authentication       | The Private TX key sits in the URL path; do not add a provider API key            |
+| Provider credentials | Managed by ThorNode                                                               |
 | Route selection      | Explicit: your application chooses the provider and operation                     |
+| Health check         | `GET` or `HEAD /healthz` on the location base URL, no key                         |
 | HTTP success         | A `2xx` response reports HTTP transport success; always parse the response body   |
 | Chain success        | Track a returned transaction signature with your own Solana confirmation policy   |
 
@@ -51,7 +69,7 @@ You do not need a separate upstream-provider account, subscription, API key, or 
     complete route URL with your Private TX key.
   </Step>
   <Step title="Send the route-specific request">
-    Copy the complete URL and send the request body required by that operation.
+    Copy the complete URL and send the request body that operation requires.
     ThorNode manages the upstream provider credential.
   </Step>
   <Step title="Verify the result">
@@ -61,40 +79,9 @@ You do not need a separate upstream-provider account, subscription, API key, or 
   </Step>
 </Steps>
 
-## Understand the route catalog
+## Send your first transaction
 
-The dashboard lists the providers and operations available for the selected access and location. Routes can include `submit`, `batch`, `bundle`, `status`, `nonce`, and provider-specific delivery operations.
-
-| Operation family | Typical input                           | Typical result                                |
-| ---------------- | --------------------------------------- | --------------------------------------------- |
-| `submit`         | One signed, encoded transaction         | A signature or provider acceptance identifier |
-| `batch`          | Multiple signed transactions            | Per-item or aggregate acceptance results      |
-| `bundle`         | An ordered group of signed transactions | A bundle or provider acceptance identifier    |
-| `status`         | A submission identifier                 | The provider's current submission state       |
-| `nonce`          | Route-specific nonce parameters         | A nonce and related metadata                  |
-
-Request formats are route-specific. A payload for one provider or operation is not automatically valid for another, even when both routes are labeled **Submit**.
-
-## Connect directly to Hofund over QUIC
-
-Native Hofund QUIC ingress sends a signed raw transaction directly to Hofund. It does not pass through the Bifrost HTTP edge and does not use a copied Bifrost route URL.
-
-The intended public listeners are separate UDP endpoints:
-
-| Lane      | Intended listener |
-| --------- | ----------------- |
-| Standard  | `7000/UDP`        |
-| Protected | `9000/UDP`        |
-
-Use either listener only after ThorNode confirms that it has been deployed and onboards your customer mTLS certificate and certificate-public-key (SPKI) fingerprint. The port assignments do not by themselves indicate that a production listener is enabled or that your certificate is authorized.
-
-Persistent Hofund QUIC server and client connections use a 25-second transport keepalive period and a 30-second maximum idle timeout by default. This is QUIC transport keepalive, not an application ping or acknowledgement. A keepalive packet says nothing about Hofund accepting a transaction or the transaction landing on chain.
-
-The one-shot `hofund-quic-client` behaves differently from a persistent client: after it hands the transaction bytes and stream FIN to QUIC, it waits 100 milliseconds by default for a post-FIN transport drain and then intentionally closes the connection. A successful handoff, including completion of that drain, means only that the bytes and FIN reached the QUIC transport. It is not Hofund application acceptance or evidence of chain landing. Reconcile the transaction signature through Solana RPC when acceptance or landing matters.
-
-## Send a LunarLander transaction
-
-This example uses the **LunarLander → Submit** URL copied from the dashboard. It does not require a LunarLander account or API key.
+The **Submit** route of each provider accepts the Solana JSON-RPC `sendTransaction` shape. This example uses the **LunarLander → Submit** URL copied from the dashboard, and needs no LunarLander account or API key.
 
 ```bash
 export BIFROST_ROUTE_URL='<LUNARLANDER_SUBMIT_URL_COPIED_FROM_DASHBOARD>'
@@ -122,7 +109,7 @@ A successful route can return a Solana signature:
 }
 ```
 
-Use the request format for the selected route. Do not reuse the LunarLander body for another provider or operation.
+Swap the URL for the **bloXroute → Submit**, **Astralane → Submit**, or **BlockRazor → Submit** route to send the same shape to another provider. Bundle, batch, ideal, snipe, and nonce operations take different bodies; see the [route reference](/products/bifrost-transaction-routes/provider-routes).
 
 <Warning>
   A copied Bifrost route URL contains your Private TX key. Keep the complete URL
@@ -140,19 +127,47 @@ Use the request format for the selected route. Do not reuse the LunarLander body
 | Route-specific acceptance identifier | The selected provider accepted the operation     | Check the provider status route when available |
 | Transaction signature                | You can query the transaction through Solana RPC | Track it to the required commitment            |
 
-Always parse the response body after `2xx`; a JSON-RPC error can be returned in a successful HTTP response. Bifrost does not automatically choose another provider or retry through a different route.
+Always parse the response body after `2xx`; a JSON-RPC error can be returned inside a successful HTTP response. Accepted is not landed, and landed is not confirmed at your commitment.
 
 ## Troubleshooting
 
-| Problem                     | Fix                                                                                       |
-| --------------------------- | ----------------------------------------------------------------------------------------- |
-| `401` or `403`              | Generate or copy the current Private TX key and route URL; do not add a provider API key. |
-| Route not found             | Refresh the catalog for the selected access and location, then copy the route again.      |
-| `2xx` with no usable result | Parse the response body and handle route-specific or JSON-RPC errors.                     |
-| Signature does not land     | Apply your expiry policy or rebuild and resubmit through a route you explicitly choose.   |
+| Problem                                                    | Fix                                                                                            |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `401` with `invalid or missing authentication key`         | Copy the current complete route URL from the dashboard; the key belongs in the path, not a header |
+| `401` on a URL that looks correct                          | The key may be revoked or the route path misspelled; regenerate the key and copy the URL again    |
+| Route not found in the dashboard                           | Refresh the catalog for the selected access and location, then copy the route again               |
+| `2xx` with no usable result                                | Parse the response body and handle route-specific or JSON-RPC errors                              |
+| Signature does not land                                    | Apply your expiry policy, then rebuild and resubmit through a route you explicitly choose         |
 
 ## Next steps
 
-- [Track signatures with ThorEdge RPC](/products/thoredge-rpc)
-- [Store the complete route URL safely](/reference/security)
-- [Troubleshoot HTTP and route responses](/reference/troubleshooting#http-and-rpc-responses)
+<CardGroup cols={2}>
+  <Card
+    title="Read the route reference"
+    icon="route"
+    href="/products/bifrost-transaction-routes/provider-routes"
+  >
+    Every bloXroute, Astralane, BlockRazor, and LunarLander route with its request shape.
+  </Card>
+  <Card
+    title="Check Hofund availability"
+    icon="satellite-dish"
+    href="/products/bifrost-transaction-routes/hofund"
+  >
+    The capability-gated direct submission surface and its QUIC ingress.
+  </Card>
+  <Card
+    title="Track signatures"
+    icon="magnifying-glass"
+    href="/products/thoredge-rpc"
+  >
+    Confirm a returned signature through ThorEdge RPC.
+  </Card>
+  <Card
+    title="Store route URLs safely"
+    icon="lock"
+    href="/reference/security"
+  >
+    Handle a credential-bearing URL as a secret.
+  </Card>
+</CardGroup>
