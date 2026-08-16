@@ -58,10 +58,7 @@
         "icon": "route",
         "root": "products/bifrost-transaction-routes",
         "expanded": true,
-        "pages": [
-          "products/bifrost-transaction-routes/provider-routes",
-          "products/bifrost-transaction-routes/hofund"
-        ]
+        "pages": ["products/bifrost-transaction-routes/provider-routes"]
       },
       {
         "group": "Dashboard",
@@ -295,6 +292,10 @@
     },
     {
       "source": "/products/private-transactions",
+      "destination": "/products/bifrost-transaction-routes"
+    },
+    {
+      "source": "/products/bifrost-transaction-routes/hofund",
       "destination": "/products/bifrost-transaction-routes"
     }
   ]
