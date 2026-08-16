@@ -68,8 +68,6 @@ Persistent connections use a 25-second keepalive and a 30-second idle timeout. K
 
 `POST /hofund-status` with `getHofundSubmissionStatus` returns the current state of your submissions. `getFastTipConfig` on the same route returns the tip configuration for the fast lanes.
 
-Every Hofund surface acknowledges that it took your transaction, not that the transaction landed. A QUIC or WebSocket write is weaker still: it confirms the bytes left your process. Track the signature through Solana RPC until it reaches your commitment or its blockhash expires.
-
 ## Next steps
 
 - [Return to the Bifrost overview](/products/bifrost-transaction-routes)
