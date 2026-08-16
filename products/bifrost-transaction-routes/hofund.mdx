@@ -58,9 +58,9 @@ The WebSocket surfaces are one-way. They accept transactions and send nothing ba
 
 ## Connect over QUIC
 
-Hofund also accepts a signed raw transaction over QUIC, without going through the Bifrost HTTP edge or a copied route URL. The standard lane listens on `7000/UDP` and the protected lane on `9000/UDP`.
+Hofund also accepts a signed raw transaction over QUIC, without going through the Bifrost HTTP edge or a copied route URL. Each lane has its own listener, one for standard and one for protected.
 
-QUIC access is issued per customer: contact ThorNode to have your mTLS certificate and its public-key (SPKI) fingerprint onboarded before you connect.
+QUIC access is issued per customer. Contact ThorNode to have your mTLS certificate and its public-key (SPKI) fingerprint onboarded; you receive the host and port for your location at the same time.
 
 Persistent connections use a 25-second keepalive and a 30-second idle timeout. Keepalive holds the connection open and says nothing about any individual transaction.
 
