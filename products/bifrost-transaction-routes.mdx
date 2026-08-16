@@ -75,6 +75,23 @@ The dashboard lists the providers and operations available for the selected acce
 
 Request formats are route-specific. A payload for one provider or operation is not automatically valid for another, even when both routes are labeled **Submit**.
 
+## Connect directly to Hofund over QUIC
+
+Native Hofund QUIC ingress sends a signed raw transaction directly to Hofund. It does not pass through the Bifrost HTTP edge and does not use a copied Bifrost route URL.
+
+The intended public listeners are separate UDP endpoints:
+
+| Lane      | Intended listener |
+| --------- | ----------------- |
+| Standard  | `7000/UDP`        |
+| Protected | `9000/UDP`        |
+
+Use either listener only after ThorNode confirms that it has been deployed and onboards your customer mTLS certificate and certificate-public-key (SPKI) fingerprint. The port assignments do not by themselves indicate that a production listener is enabled or that your certificate is authorized.
+
+Persistent Hofund QUIC server and client connections use a 25-second transport keepalive period and a 30-second maximum idle timeout by default. This is QUIC transport keepalive, not an application ping or acknowledgement. A keepalive packet says nothing about Hofund accepting a transaction or the transaction landing on chain.
+
+The one-shot `hofund-quic-client` behaves differently from a persistent client: after it hands the transaction bytes and stream FIN to QUIC, it waits 100 milliseconds by default for a post-FIN transport drain and then intentionally closes the connection. A successful handoff, including completion of that drain, means only that the bytes and FIN reached the QUIC transport. It is not Hofund application acceptance or evidence of chain landing. Reconcile the transaction signature through Solana RPC when acceptance or landing matters.
+
 ## Send a LunarLander transaction
 
 This example uses the **LunarLander → Submit** URL copied from the dashboard. It does not require a LunarLander account or API key.
