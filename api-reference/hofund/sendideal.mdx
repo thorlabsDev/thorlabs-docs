@@ -3,12 +3,6 @@ title: "sendIdeal and getNonce"
 description: "Submit a fast/Jito pair that shares a durable nonce so only one can land, and fetch the nonce it needs."
 ---
 
-<Note>
-  `sendIdeal` and `getNonce` require both the fast and the Jito lane; both are
-  live, but ThorNode has not yet run this pair end to end in production. Treat
-  this page as the interface contract and expect it to be verified shortly.
-</Note>
-
 An ideal pair is two versions of the same intent: one tuned for the fast rails (priority fee), one for Jito (tip). Both use the same durable nonce, so whichever lands first cancels the other. Both methods live on `/hofund`.
 
 ## getNonce
@@ -31,7 +25,7 @@ An ideal pair is two versions of the same intent: one tuned for the fast rails (
   `["<FAST_SIGNATURE>", "<JITO_SIGNATURE>"]`
 </ResponseField>
 
-Header: `X-Hofund-Submission-ID`. Poll [`getHofundSubmissionStatus`](/api-reference/hofund/status-and-tips) with it; an ideal status carries per-member `items` and can report `anomalous` if both members appear to have landed.
+Header: `X-Hofund-Submission-ID`. Poll [`getHofundSubmissionStatus`](/api-reference/hofund/status-and-tips) with it; an ideal status carries per-member `items` (`role` `fast` or `jito-bundle-only`, `chainState`, `slot`, `err`). The member that lost the race reports `err: "cancelled_by_nonce"` and never lands; the status can report `anomalous` if both members appear to have landed.
 
 ## Errors
 
