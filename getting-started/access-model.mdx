@@ -60,7 +60,7 @@ This boundary lets you rotate one deployment without interrupting another locati
 
 ## Product-specific access can differ
 
-Not every product uses the RPC URL. Yellowstone gRPC and Pulse appear in the **Streaming** section of **Endpoints** and use location tokens with their own transports. Raw Shred Stream registers your UDP receiver, Replay uses a dedicated per-access key, and Bifrost generates one Private TX key per access and places it in the route URLs copied from enabled locations. ThorNode manages the upstream Bifrost provider credentials.
+Not every product uses the RPC URL. Yellowstone gRPC and Pulse appear in the **Streaming** section of **Endpoints** and use location tokens with their own transports. Raw Shred Stream registers your UDP receiver, Replay uses a dedicated per-access key, and Bifrost generates one Bifrost key per access and places it in the route URLs copied from enabled locations. ThorNode manages the upstream Bifrost provider credentials.
 
 [Choose a product](/getting-started/choose-a-product) before creating a credential so that you use the correct transport and authentication placement.
 

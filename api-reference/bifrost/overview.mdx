@@ -1,23 +1,23 @@
 ---
 title: "Bifrost routes"
 sidebarTitle: "Overview"
-description: "How a Bifrost route URL is built, where the Private TX key goes, what Bifrost checks before forwarding, and the errors it returns itself."
+description: "How a Bifrost route URL is built, where the Bifrost key goes, what Bifrost checks before forwarding, and the errors it returns itself."
 ---
 
 Every Bifrost route is one path on a location base URL:
 
 ```text
-https://<location-base>/<private-tx-key>/<route>
+https://<location-base>/<bifrost-key>/<route>
 ```
 
-Copy the complete URL from **Endpoints → Private TX**. Bifrost forwards your request body to the selected provider unchanged and returns the provider's response unchanged. Each route takes the request its provider's own API defines, without a provider API key.
+Copy the complete URL from **Endpoints → Bifrost**. Bifrost forwards your request body to the selected provider unchanged and returns the provider's response unchanged. Each route takes the request its provider's own API defines, without a provider API key.
 
 ## Authentication
 
 | Placement | Form |
 | --- | --- |
-| URL path (what the dashboard copies) | `/<private-tx-key>/<route>` |
-| `Authorization` header | `Authorization: Bearer <private-tx-key>` on `/<route>` |
+| URL path (what the dashboard copies) | `/<bifrost-key>/<route>` |
+| `Authorization` header | `Authorization: Bearer <bifrost-key>` on `/<route>` |
 
 `GET` or `HEAD /healthz` on the bare base URL needs no key and returns `{"status":"ok","service":"Bifrost Transaction Proxy"}`. A key-prefixed `/<key>/healthz` returns `401`. Use `/healthz` on a kept-alive connection to hold it open between sends; the public listener closes idle connections after about 30 seconds.
 
