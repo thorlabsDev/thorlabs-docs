@@ -1,0 +1,90 @@
+---
+title: "sendBundle"
+description: "Submit an atomic Jito bundle through Hofund, and query bundle statuses and tip accounts."
+---
+
+A bundle lands as one unit or not at all. Hofund forwards it to Jito atomically and never splits or retries it through another rail.
+
+Two surfaces accept `sendBundle` and they differ in size and config:
+
+| Route | Transactions | `params[1]` |
+| --- | --- | --- |
+| `/hofund` | 1–4 | Exactly `{ "encoding": "base64", "mevProtect": true, "revertProtection": true }` |
+| `/hofund-bundle` | 1–5 | Exactly `{ "encoding": "base64" }` |
+
+One member with an application instruction (not a tip-only transfer) must pay both the Thor and the Jito tip floors. A tip-only member does not qualify.
+
+## Parameters
+
+<ParamField body="params[0]" type="string[]" required>
+  Fully signed transactions in execution order, canonical padded base64, at most 1232 bytes each, no duplicates.
+</ParamField>
+
+<ParamField body="params[1]" type="object" required>
+  The exact config object for the route, as in the table above. Any other key or value is rejected.
+</ParamField>
+
+## Response
+
+<ResponseField name="result" type="string | string[]">
+  On `/hofund-bundle`: the Jito bundle id. On `/hofund`: the member signatures in order.
+</ResponseField>
+
+Headers: `X-Hofund-Submission-ID` and `X-Bundle-ID`.
+
+## Errors
+
+| Code | Message |
+| --- | --- |
+| `-32602` | `sendBundle transaction count exceeds 4` (`/hofund`) |
+| `-32602` | `one bundle member must pay at least N Thor and M Jito tip lamports and include an application instruction with a writable static account` |
+| `-32010` | Jito capacity exhausted; `Retry-After: 1` |
+
+## Other `/hofund-bundle` methods
+
+| Method | `params` | Result |
+| --- | --- | --- |
+| `getBundleStatuses` | `[["<bundle-id>", …]]`, 1–5 unique 64-hex ids | Jito's response, unchanged |
+| `getInflightBundleStatuses` | same | Jito's response, unchanged |
+| `getTipAccounts` | `[]` | The Jito tip accounts Hofund uses |
+| `getThorTipConfig` | `[]` | See [Status and tips](/api-reference/hofund/status-and-tips) |
+
+<RequestExample>
+```bash /hofund-bundle
+curl --fail-with-body "$HOFUND_BUNDLE_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "sendBundle",
+    "params": [
+      ["<BASE64_SIGNED_TRANSACTION_1>", "<BASE64_SIGNED_TRANSACTION_2>"],
+      { "encoding": "base64" }
+    ]
+  }'
+```
+
+```bash /hofund
+curl --fail-with-body "$HOFUND_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "sendBundle",
+    "params": [
+      ["<BASE64_SIGNED_TRANSACTION_1>", "<BASE64_SIGNED_TRANSACTION_2>"],
+      { "encoding": "base64", "mevProtect": true, "revertProtection": true }
+    ]
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json /hofund-bundle
+{ "jsonrpc": "2.0", "id": 1, "result": "<BUNDLE_ID>" }
+```
+
+```json /hofund
+{ "jsonrpc": "2.0", "id": 1, "result": ["<SIGNATURE_1>", "<SIGNATURE_2>"] }
+```
+</ResponseExample>

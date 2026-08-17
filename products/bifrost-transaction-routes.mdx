@@ -26,7 +26,7 @@ Every Bifrost-enabled location serves the same provider catalog. Your access dec
 
 Bifrost forwards your request body to the provider route you selected. Each route takes the request that provider's own API defines, so a payload built for one route is not automatically valid for another, even when both routes are labeled **Submit**.
 
-[Read the route reference](/products/bifrost-transaction-routes/provider-routes) for every route path, HTTP method, request shape, and limit.
+[Read the route reference](/api-reference/bifrost/overview) for every route path, HTTP method, request shape, and limit.
 
 ## Direct provider routes
 
@@ -81,35 +81,7 @@ Bifrost does not choose a provider for you, retry through a different provider, 
 
 ## Send your first transaction
 
-The **Submit** route of each provider accepts the Solana JSON-RPC `sendTransaction` shape. This example uses the **LunarLander → Submit** URL copied from the dashboard, and needs no LunarLander account or API key.
-
-```bash
-export BIFROST_ROUTE_URL='<LUNARLANDER_SUBMIT_URL_COPIED_FROM_DASHBOARD>'
-
-curl --fail-with-body --silent --show-error "$BIFROST_ROUTE_URL" \
-  --header 'content-type: application/json' \
-  --data '{
-    "jsonrpc": "2.0",
-    "id": 1,
-    "method": "sendTransaction",
-    "params": [
-      "<BASE64_SIGNED_TRANSACTION>",
-      { "encoding": "base64" }
-    ]
-  }'
-```
-
-A successful route can return a Solana signature:
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 1,
-  "result": "<TRANSACTION_SIGNATURE>"
-}
-```
-
-Swap the URL for the **bloXroute → Submit**, **Astralane → Submit**, or **BlockRazor → Submit** route to send the same shape to another provider. Bundle, batch, ideal, snipe, and nonce operations take different bodies; see the [route reference](/products/bifrost-transaction-routes/provider-routes).
+Follow the [Bifrost quickstart](/products/bifrost-transaction-routes/quickstart) to submit one transaction through **LunarLander → Submit** and confirm the signature. Every route's body, bounds, and tip addresses are in the [route reference](/api-reference/bifrost/overview).
 
 <Warning>
   A copied Bifrost route URL contains your Private TX key. Keep the complete URL
@@ -145,7 +117,7 @@ Always parse the response body after `2xx`; a JSON-RPC error can be returned ins
   <Card
     title="Read the route reference"
     icon="route"
-    href="/products/bifrost-transaction-routes/provider-routes"
+    href="/api-reference/bifrost/overview"
   >
     Every bloXroute, Astralane, BlockRazor, and LunarLander route with its request shape.
   </Card>

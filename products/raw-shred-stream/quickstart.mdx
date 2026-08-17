@@ -1,0 +1,95 @@
+---
+title: "Quickstart: receive raw shreds"
+sidebarTitle: "Quickstart"
+description: "Run a UDP receiver, register its public IPv4 and port, and watch the first shred packets arrive."
+---
+
+In about five minutes you will see nonzero packet counts from a UDP receiver fed by Raw Shred Stream.
+
+## Before you start
+
+You need:
+
+- An access with **ShredStream** enabled for at least one location
+- Node.js on a host with a globally routable public IPv4 address
+- One UDP port from `1024` through `65535`, open in every firewall, security group, and NAT rule on the path
+
+Do not register a hostname, private address, loopback address, or IPv6 address. Behind NAT, forward the public port to the listening host.
+
+## Run the receiver
+
+Save this as `receiver.mjs`:
+
+```javascript
+import dgram from "node:dgram";
+
+const port = Number(process.env.SHREDSTREAM_PORT);
+
+if (!Number.isInteger(port) || port < 1024 || port > 65535) {
+  throw new Error(
+    "SHREDSTREAM_PORT must be an integer from 1024 through 65535",
+  );
+}
+
+const socket = dgram.createSocket("udp4");
+let packets = 0;
+let bytes = 0;
+
+socket.on("message", (datagram) => {
+  packets += 1;
+  bytes += datagram.byteLength;
+});
+
+socket.on("error", (error) => {
+  console.error(error);
+  process.exitCode = 1;
+  socket.close();
+});
+
+socket.bind(port, "0.0.0.0", () => {
+  console.log(`Listening for ShredStream on UDP ${port}`);
+});
+
+setInterval(() => {
+  console.log(`packets=${packets} bytes=${bytes}`);
+  packets = 0;
+  bytes = 0;
+}, 1_000);
+```
+
+<Steps>
+  <Step title="Start the receiver">
+    Pick the port you will register and run the file on the host behind the
+    public IPv4 address:
+
+    ```bash
+    SHREDSTREAM_PORT='<udp-port>' node receiver.mjs
+    ```
+
+  </Step>
+  <Step title="Register the public target">
+    Open **Endpoints → ShredStream**, select the access and an enabled
+    location, then enter the receiver's public IPv4 address and the same UDP
+    port. Save the registration.
+  </Step>
+  <Step title="Watch for packets">
+    Wait until the receiver prints a one-second line with nonzero `packets`
+    and `bytes`.
+  </Step>
+</Steps>
+
+Representative output; counts vary with live traffic:
+
+```text
+Listening for ShredStream on UDP 20000
+packets=0 bytes=0
+packets=1842 bytes=2271057
+```
+
+The stream is working once `packets` is nonzero. The listening line only means the local socket opened.
+
+## Next steps
+
+- [Handle loss, duplication, and bursts in production](/products/raw-shred-stream#handle-udp-in-production)
+- [Replay recently captured shreds](/products/shredreplay)
+- [Diagnose UDP delivery](/reference/troubleshooting#raw-shred-stream-or-replay-sends-no-udp-data)

@@ -1,0 +1,100 @@
+---
+title: "Status and tip configuration"
+description: "Look up what happened to a Hofund submission, and read the live tip accounts, floors, and limits before you build a transaction."
+---
+
+## getHofundSubmissionStatus
+
+`POST /hofund-status`. Returns the current state of one submission you made. Lookup is scoped to your key; another key's submission id returns `404`, `-32004 submission not found`.
+
+<ParamField body="params[0]" type="string" required>
+  The `X-Hofund-Submission-ID` value from the submission response: 64 lowercase hex characters.
+</ParamField>
+
+<ResponseField name="result" type="object">
+  <Expandable title="properties">
+    <ResponseField name="submissionId" type="string" />
+    <ResponseField name="mode" type="string">Lane the submission used, for example `fast`, `direct-tpu`, `swqos`, `jito-bundle-only`, `bundle`, `ideal`, `protected-batch`.</ResponseField>
+    <ResponseField name="status" type="string">`pending`, `processed`, `confirmed`, `finalized`, `failed`, `expired`, `unknown`; `anomalous` for an ideal pair where both members landed.</ResponseField>
+    <ResponseField name="signature" type="string | null">First signature.</ResponseField>
+    <ResponseField name="signatures" type="string[]">All signatures.</ResponseField>
+    <ResponseField name="result" type="object | null">Rail result, when recorded.</ResponseField>
+    <ResponseField name="bundleId" type="string | null">Jito bundle id on protected submissions.</ResponseField>
+    <ResponseField name="atlasOutcome" type="string | null">Direct-TPU rail outcome; `not_selected` on SWQoS-only.</ResponseField>
+    <ResponseField name="swqosOutcome" type="string | null">SWQoS rail outcome; `not_selected` on direct-TPU-only.</ResponseField>
+    <ResponseField name="landedSlot" type="integer | null" />
+    <ResponseField name="createdAt" type="string" />
+    <ResponseField name="updatedAt" type="string" />
+    <ResponseField name="expiresAt" type="string">When Hofund drops the record; about 10 minutes after creation.</ResponseField>
+    <ResponseField name="items" type="array">`ideal` and `protected-batch` only. One entry per member: `index`, `role`, `signature`, `dispatchState`, `chainState`, `slot`, `err`, `result`, `detail`, `updatedAt`. `dispatchState` is `queued`, `sending`, `sent_unconfirmed`, `verified_ack`, `rejected`, or `ambiguous`; `chainState` is `unobserved`, `processed`, `confirmed`, `finalized`, or `dropped`.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+The record lives about 10 minutes. After that, or for WebSocket submissions (which return no submission id), reconcile the signature through [ThorEdge RPC](/api-reference/thoredge-rpc/http-methods).
+
+## getFastTipConfig
+
+`POST /hofund-status`, `params: []`. Returns the fast-lane contract for the instance you reached.
+
+<ResponseField name="result" type="object">
+  <Expandable title="properties">
+    <ResponseField name="mode" type="string">`fast`</ResponseField>
+    <ResponseField name="region" type="string">Region slug for `region` / `Hofund-Expected-Region`.</ResponseField>
+    <ResponseField name="thorTipAccounts" type="string[]">Pay the tip to one of these.</ResponseField>
+    <ResponseField name="thorMinTipLamports" type="integer">Minimum tip on the fast rails.</ResponseField>
+    <ResponseField name="supportedLanes" type="string[]">`["fast", "direct-tpu", "swqos"]`</ResponseField>
+    <ResponseField name="maxRetries" type="object">`{ "min": 0, "max": 5 }`</ResponseField>
+    <ResponseField name="deadlineMs" type="object">`{ "min": 100, "max": <dispatch timeout> }`</ResponseField>
+    <ResponseField name="deadlineHeader" type="string">`Hofund-Deadline-Ms`</ResponseField>
+    <ResponseField name="expectedRegionHeader" type="string">`Hofund-Expected-Region`</ResponseField>
+    <ResponseField name="maxTransactionBytes" type="integer">`1232`</ResponseField>
+  </Expandable>
+</ResponseField>
+
+## getThorTipConfig
+
+`POST /hofund-bundle`, `params: []`. Returns the protected-lane contract.
+
+<ResponseField name="result" type="object">
+  <Expandable title="properties">
+    <ResponseField name="mode" type="string">`jito-bundle-only`</ResponseField>
+    <ResponseField name="thorTipAccounts" type="string[]" />
+    <ResponseField name="thorMinTipLamports" type="integer" />
+    <ResponseField name="jitoTipAccounts" type="string[]" />
+    <ResponseField name="jitoMinTipLamports" type="integer" />
+    <ResponseField name="maxBundleTransactions" type="integer">`5` on `/hofund-bundle`.</ResponseField>
+    <ResponseField name="maxTransactionBytes" type="integer">`1232`</ResponseField>
+    <ResponseField name="maxProtectedBatchTransactions" type="integer">Ceiling for a protected `sendBatch`.</ResponseField>
+    <ResponseField name="protectedBatchTimeoutMs" type="integer">Per-member timeout of a protected batch.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+## getHealth
+
+`/hofund` with `params` absent or `[]`. Result is the string `"ok"`.
+
+<RequestExample>
+```bash getHofundSubmissionStatus
+curl --fail-with-body "$HOFUND_STATUS_URL" \
+  --header 'content-type: application/json' \
+  --data '{ "jsonrpc": "2.0", "id": 1, "method": "getHofundSubmissionStatus", "params": ["<SUBMISSION_ID>"] }'
+```
+
+```bash getFastTipConfig
+curl --fail-with-body "$HOFUND_STATUS_URL" \
+  --header 'content-type: application/json' \
+  --data '{ "jsonrpc": "2.0", "id": 1, "method": "getFastTipConfig", "params": [] }'
+```
+
+```bash getThorTipConfig
+curl --fail-with-body "$HOFUND_BUNDLE_URL" \
+  --header 'content-type: application/json' \
+  --data '{ "jsonrpc": "2.0", "id": 1, "method": "getThorTipConfig", "params": [] }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json getHealth
+{ "jsonrpc": "2.0", "id": 1, "result": "ok" }
+```
+</ResponseExample>

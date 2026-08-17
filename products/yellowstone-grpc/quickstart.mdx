@@ -1,0 +1,72 @@
+---
+title: "Quickstart: subscribe with grpcurl"
+sidebarTitle: "Quickstart"
+description: "Open a Yellowstone slot subscription with grpcurl, then narrow it to transactions that touch one program."
+---
+
+In about five minutes you will stream slot updates from a ThorNode Yellowstone target and then switch to a transaction filter, using nothing but `grpcurl`.
+
+## Before you start
+
+You need:
+
+- An access with **Yellowstone DM** enabled for a location
+- [`grpcurl`](https://github.com/fullstorydev/grpcurl) and `git`
+
+Copy the target and token for the same location from **Endpoints → Endpoints tab → Token & Endpoints → Streaming → Yellowstone DM**.
+
+```bash
+export THORNODE_YELLOWSTONE_TARGET='<host:port>'
+read -r -s -p 'Yellowstone token: ' THORNODE_YELLOWSTONE_TOKEN
+export THORNODE_YELLOWSTONE_TOKEN
+printf '\n'
+```
+
+The target is plaintext gRPC, so the token travels unencrypted. Use it from a trusted network and keep it out of shell history and logs.
+
+## Get the proto
+
+```bash
+git clone --depth 1 https://github.com/rpcpool/yellowstone-grpc.git
+cd yellowstone-grpc/yellowstone-grpc-proto/proto
+```
+
+## Stream slots
+
+```bash
+printf '%s\n' '{"slots":{"s":{}}}' \
+  | grpcurl -plaintext -expand-headers \
+      -import-path . -proto geyser.proto \
+      -H 'x-token: ${THORNODE_YELLOWSTONE_TOKEN}' \
+      -d @ "$THORNODE_YELLOWSTONE_TARGET" geyser.Geyser/Subscribe
+```
+
+Output; the first message is a server ping, then slot updates keep coming until you stop:
+
+```json
+{ "ping": {}, "createdAt": "2026-08-17T00:30:46.278722941Z" }
+{ "filters": ["s"], "slot": { "slot": "439745765", "status": "SLOT_COMPLETED" }, "createdAt": "2026-08-17T00:30:46.481476318Z" }
+{ "filters": ["s"], "slot": { "slot": "439745765", "parent": "439745764" }, "createdAt": "2026-08-17T00:30:46.487095058Z" }
+```
+
+You are connected when updates carry `"filters": ["s"]`.
+
+## Filter transactions
+
+Replace the request with a transaction filter for one program. This example watches Pump.fun:
+
+```bash
+printf '%s\n' '{"transactions":{"pump":{"vote":false,"failed":false,"account_include":["6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P"]}}}' \
+  | grpcurl -plaintext -expand-headers \
+      -import-path . -proto geyser.proto \
+      -H 'x-token: ${THORNODE_YELLOWSTONE_TOKEN}' \
+      -d @ "$THORNODE_YELLOWSTONE_TARGET" geyser.Geyser/Subscribe
+```
+
+Each update includes the `slot`, the base64 `signature`, the full `transaction`, and `meta.logMessages`. An unfiltered `{"transactions":{"t":{}}}` is rejected; every account or transaction filter needs at least one key.
+
+## Next steps
+
+- [Every request field and what it returns here](/api-reference/yellowstone/subscribe)
+- [Use an upstream client library](https://github.com/rpcpool/yellowstone-grpc/tree/master/examples) instead of `grpcurl`
+- [Run in production](/products/yellowstone-grpc#run-in-production)

@@ -1,0 +1,158 @@
+---
+title: "Yellowstone Subscribe"
+sidebarTitle: "Subscribe"
+description: "The geyser.Geyser/Subscribe request fields, what ThorNode serves for each, authentication errors, filter limits, and the per-token caps."
+---
+
+ThorNode serves `geyser.Geyser/Subscribe` from the upstream [`rpcpool/yellowstone-grpc`](https://github.com/rpcpool/yellowstone-grpc) proto. Build your client from that repository's `geyser.proto`; this page documents ThorNode's authentication, what each filter returns here, and the limits.
+
+`Subscribe` is the only method available. The unary methods (`Ping`, `GetVersion`, `GetSlot`, `GetLatestBlockhash`, `GetBlockHeight`, `IsBlockhashValid`) and `SubscribeReplayInfo` return `Unimplemented`.
+
+## Connection and authentication
+
+| Item | Value |
+| --- | --- |
+| Target | `host:port` copied from **Yellowstone DM** in the dashboard |
+| Transport | Plaintext gRPC over HTTP/2 (`h2c`) |
+| Authentication | Location token in request metadata, key `x-token` |
+| Compression | `gzip`, `zstd`, and `lz4` can be negotiated |
+
+Authentication runs when the stream opens. A token that is revoked later stops opening new streams; streams already open keep running until they close.
+
+| Condition | gRPC status | Message |
+| --- | --- | --- |
+| No `x-token` metadata | `Unauthenticated` | `missing x-token header` |
+| Empty `x-token` | `Unauthenticated` | `empty x-token` |
+| Unknown or revoked token | `Unauthenticated` | `invalid x-token` |
+| Over the concurrent-stream cap | `ResourceExhausted` | `max concurrent streams (N) reached for this token (plan tier: T)` |
+| Over the accounts-across-filters cap | `ResourceExhausted` | `max total accounts (N) exceeded for this token (plan tier: T)` |
+| Backend unavailable | `Unavailable` | `dial upstream: …` / `subscribe upstream: …` |
+
+## SubscribeRequest
+
+Send one `SubscribeRequest` after opening the stream. Sending another replaces the filter set for that stream. Each map key is a filter name you choose; matching updates echo it in `filters`.
+
+| Field | Type | On ThorNode |
+| --- | --- | --- |
+| `accounts` | `map<string, SubscribeRequestFilterAccounts>` | Served. Requires at least one `account` or `owner` key. |
+| `slots` | `map<string, SubscribeRequestFilterSlots>` | Served. An empty filter returns every slot status. |
+| `transactions` | `map<string, SubscribeRequestFilterTransactions>` | Served. Requires at least one of `vote`, `failed`, `signature`, `account_include`, `account_exclude`, `account_required`. |
+| `transactions_status` | `map<string, SubscribeRequestFilterTransactions>` | Served, same rule as `transactions`. |
+| `blocks` | `map<string, SubscribeRequestFilterBlocks>` | Accepted, returns no updates. |
+| `blocks_meta` | `map<string, SubscribeRequestFilterBlocksMeta>` | Accepted, returns no updates. |
+| `entry` | `map<string, SubscribeRequestFilterEntry>` | Accepted, returns no updates. |
+| `commitment` | `CommitmentLevel` | `PROCESSED` (default), `CONFIRMED`, `FINALIZED`. Account updates are delivered at `PROCESSED` only; a `CONFIRMED` or `FINALIZED` account subscription receives nothing. |
+| `accounts_data_slice` | `repeated { offset, length }` | Served. Slices must be ordered and must not overlap. |
+| `ping` | `{ id }` | Answered with `pong`; the current filter is kept. |
+| `from_slot` | `uint64` | Not supported. Returns `Internal: from_slot is not supported` and closes the stream. |
+
+Use uppercase enum names (`PROCESSED`, `SLOT_CONFIRMED`) in JSON requests such as `grpcurl`.
+
+### Filter messages
+
+```proto
+message SubscribeRequestFilterAccounts {
+  repeated string account = 2;
+  repeated string owner = 3;
+  repeated SubscribeRequestFilterAccountsFilter filters = 4;   // max 4
+  optional bool nonempty_txn_signature = 5;
+}
+
+message SubscribeRequestFilterAccountsFilter {
+  oneof filter {
+    SubscribeRequestFilterAccountsFilterMemcmp memcmp = 1;     // offset + bytes|base58|base64, ≤128 bytes decoded
+    uint64 datasize = 2;                                       // at most once per filter
+    bool token_account_state = 3;                              // must be true
+    SubscribeRequestFilterAccountsFilterLamports lamports = 4; // eq|ne|lt|gt
+  }
+}
+
+message SubscribeRequestFilterSlots {
+  optional bool filter_by_commitment = 1;
+  optional bool interslot_updates = 2;   // defaults to true here
+}
+
+message SubscribeRequestFilterTransactions {
+  optional bool vote = 1;
+  optional bool failed = 2;
+  optional string signature = 5;
+  repeated string account_include = 3;
+  repeated string account_exclude = 4;
+  repeated string account_required = 6;
+}
+
+message SubscribeRequestAccountsDataSlice { uint64 offset = 1; uint64 length = 2; }
+message SubscribeRequestPing { int32 id = 1; }
+```
+
+### Accounts ThorNode does not stream
+
+Accounts owned by the Vote program and by the SPL Token program (`TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`) are dropped at ingest. Subscribing to them by `owner` or `account` succeeds and returns nothing. Token-2022 accounts, System-owned accounts, and program-owned accounts stream normally.
+
+Transactions that touch SPL Token accounts still stream; only the account-update feed is filtered.
+
+## SubscribeUpdate
+
+```proto
+message SubscribeUpdate {
+  repeated string filters = 1;
+  oneof update_oneof {
+    SubscribeUpdateAccount account = 2;
+    SubscribeUpdateSlot slot = 3;
+    SubscribeUpdateTransaction transaction = 4;
+    SubscribeUpdateTransactionStatus transaction_status = 10;
+    SubscribeUpdateBlock block = 5;               // never sent here
+    SubscribeUpdatePing ping = 6;
+    SubscribeUpdatePong pong = 9;
+    SubscribeUpdateBlockMeta block_meta = 7;      // never sent here
+    SubscribeUpdateEntry entry = 8;               // never sent here
+  }
+  google.protobuf.Timestamp created_at = 11;
+}
+```
+
+The server sends an unsolicited `ping` update about every 10 seconds; treat it as liveness, not data. `pubkey`, `owner`, `signature`, and account `data` are raw bytes; base-58 encode them for display.
+
+## Limits
+
+Two caps apply per location token, read from **Limits → gRPC Yellowstone** in the dashboard:
+
+| Cap | Counts |
+| --- | --- |
+| Concurrent streams | Open `Subscribe` streams for the token, across all connections |
+| Accounts across filters | `account` plus `owner` keys in every `accounts` filter, summed over the token's open streams |
+
+Both are re-evaluated whenever a stream sends a new `SubscribeRequest`, and released when the stream closes.
+
+## Filter validation errors
+
+Rejected filters close the stream with `InvalidArgument` and a message starting `failed to create filter:`.
+
+| Message | Cause |
+| --- | --- |
+| ``Subscribe on full stream with `any` is not allowed, at least one filter required`` | An `accounts` or `transactions` filter without any key or predicate. |
+| `Max amount of Pubkeys reached, only N allowed` | Too many keys in one filter. |
+| `Too many filters provided; max 4` | More than 4 entries in `accounts[].filters`. |
+| `data too large` | `memcmp` payload over 128 decoded bytes. |
+| `datasize used more than once` | Two `datasize` entries in one filter. |
+| `token_account_state only allowed to be true` | `token_account_state: false`. |
+| `data slices out of order` / `data slices overlapped` | `accounts_data_slice` ordering. |
+| `failed to create CommitmentLevel from N` | Unknown `commitment` value. |
+
+## Example
+
+```bash
+printf '%s\n' '{"transactions":{"pump":{"vote":false,"failed":false,"account_include":["6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P"]}}}' \
+  | grpcurl -plaintext -expand-headers \
+      -import-path . -proto geyser.proto \
+      -H 'x-token: ${THORNODE_YELLOWSTONE_TOKEN}' \
+      -d @ "$THORNODE_YELLOWSTONE_TARGET" geyser.Geyser/Subscribe
+```
+
+Each update carries `filters: ["pump"]`, the `slot`, and a `transaction` with `signature`, `transaction`, and `meta` (including `logMessages`).
+
+## Next steps
+
+- [Run the quickstart](/products/yellowstone-grpc/quickstart)
+- [Read stream caps for your access](/dashboard/usage-and-limits)
+- [Reconcile gaps through FastGate](/api-reference/fastgate/overview)

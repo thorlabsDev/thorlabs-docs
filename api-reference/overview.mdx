@@ -1,0 +1,89 @@
+---
+title: "API reference overview"
+sidebarTitle: "Overview"
+description: "Base URLs, authentication, request format, error codes, rate-limit headers, and limits shared by every ThorNode HTTP API."
+---
+
+This section documents the working interface of each ThorNode product: what to send, what comes back, and what each error means. Product guides explain when to use a product; the reference pages describe the contract.
+
+| Product | Interface | Reference |
+| --- | --- | --- |
+| ThorEdge RPC | Solana JSON-RPC over HTTPS and WSS | [HTTP methods](/api-reference/thoredge-rpc/http-methods) · [WebSocket methods](/api-reference/thoredge-rpc/websocket-methods) |
+| FastGate | JSON-RPC account queries on the ThorEdge URL | [Routed methods](/api-reference/fastgate/overview) and one page per V2 method |
+| Yellowstone gRPC | `geyser.Geyser/Subscribe` | [Subscribe](/api-reference/yellowstone/subscribe) |
+| Bifrost | Provider routes on a Private TX URL | [Routes](/api-reference/bifrost/overview) |
+| Hofund | ThorNode's own submission surface | [JSON-RPC methods](/api-reference/hofund/overview) |
+| Pulse | QUIC wire protocol | [Wire protocol v2](/products/pulse/protocol) |
+
+## Base URL and authentication
+
+Copy the complete URL from the dashboard for the access, network, and location you use. The location token is the first path segment:
+
+```text
+https://<location-host>/<location-token>
+```
+
+A location token has the form `rpc_` followed by 64 lowercase hex characters. ThorEdge also accepts the token in a header, which keeps it out of URL logs:
+
+| Placement | Form |
+| --- | --- |
+| URL path (default; what the dashboard copies) | `https://<location-host>/rpc_…` |
+| `Authorization` header | `Authorization: Bearer rpc_…` on `https://<location-host>/` |
+| `X-Api-Token` header | `X-Api-Token: rpc_…` on `https://<location-host>/` |
+
+Query-string tokens are not read. If a request carries a token anywhere, the token decides the outcome; an invalid token fails even from an allowlisted IP.
+
+Bifrost and Hofund use a separate Private TX key in the same path position on a different base URL. Yellowstone sends the location token as `x-token` gRPC metadata. Each reference page states its own placement.
+
+## Request format
+
+Send `POST` with `content-type: application/json` and a JSON-RPC 2.0 body. A top-level array is a batch: elements are processed in order and answered as one HTTP `200` array in the same order, each carrying its own `id`. There is no batch element cap; the request body cap applies.
+
+## Response and error semantics
+
+Successful upstream responses are relayed unchanged. Failures are normalized into JSON-RPC errors; upstream error text never reaches the client.
+
+| HTTP | Code | Message | Meaning | Retry |
+| --- | --- | --- | --- | --- |
+| `200` | Solana codes | Solana error | The upstream rejected the call (bad params, preflight failure). | Fix the request |
+| `200` | `-32601` | `method not found` | The method is not served (`getSupply`). | No |
+| `200` | `-32004` | `method not available on current plan` | The access is not entitled to that method. | No |
+| `400` | `-32600` | `invalid JSON-RPC request` | Body is not a JSON-RPC object or array. | Fix the request |
+| `401` | `-32001` | `unauthorized` | Token malformed, unknown, revoked, expired, or issued for another location. | Recopy the URL |
+| `403` | `-32002` | `forbidden` | No token in the request, or a valid token used from an IP outside its restriction. | Add the token or fix the restriction |
+| `413` | `-32600` | `request body too large` | Body exceeds 1 MiB. | Split the batch |
+| `429` | `-32005` | `rate limit exceeded` | RPS or TPS cap reached. | Yes, after `Retry-After` |
+| `502` | `-32064` | `upstream request timed out` | The upstream did not answer within the class timeout. | Reads yes; `sendTransaction` decide yourself |
+| `502` | `-32603` | `upstream request failed` | Transport error or non-JSON upstream response. | Reads yes; `sendTransaction` decide yourself |
+| `502` | `-32063` | `no upstream configured for request class` | No healthy upstream for that method class. | Yes, with backoff |
+
+On `400`, `401`, `403`, `413`, and `429` the error `id` is `null`. Inside a batch, per-element failures use the same codes with the element's `id`; a batch never returns `429` as the HTTP status.
+
+## Rate limits
+
+Every request counts against the token's RPS cap and the account's RPS cap. `sendTransaction` also counts against the TPS caps. Read current values under **Limits** in the dashboard.
+
+A rejected request returns `429` with:
+
+| Header | Value |
+| --- | --- |
+| `Retry-After` | Seconds until the window resets |
+| `X-RateLimit-Limit` | The cap that was hit |
+| `X-RateLimit-Remaining` | `0` |
+| `X-RateLimit-Reset` | Same seconds as `Retry-After` |
+| `X-RateLimit-Scope: account` | Present only when the account cap tripped |
+| `X-RateLimit-Dimension: tps` | Present only when the TPS cap tripped |
+
+Successful responses carry no rate-limit headers.
+
+## Limits and timeouts
+
+| Item | Value |
+| --- | --- |
+| Request body | 1 MiB |
+| Account-query methods (FastGate) | 30 s, one retry on transport error |
+| Other read methods | 10 s, one retry on transport error |
+| `sendTransaction` | 8 s, exactly one submission, never retried by ThorEdge |
+| Forwarded request headers | `accept` and `content-type` only; other headers are dropped |
+
+Call ThorEdge from a server. The endpoint does not answer browser preflight (`OPTIONS`) requests.

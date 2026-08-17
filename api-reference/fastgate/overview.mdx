@@ -1,0 +1,84 @@
+---
+title: "FastGate methods"
+sidebarTitle: "Overview"
+description: "The account-query methods FastGate answers behind the ThorEdge URL, how they differ from a validator, and their error codes."
+---
+
+FastGate answers the methods below when you send them to the ThorEdge RPC URL. No separate endpoint or key exists. Standard methods keep the request and response shapes in the [Solana JSON-RPC reference](https://solana.com/docs/rpc/http); the differences that matter are listed on this page. The V2 methods are ThorNode additions and have their own pages.
+
+| Method | Reference |
+| --- | --- |
+| `getAccountInfo` | [Solana](https://solana.com/docs/rpc/http/getaccountinfo) |
+| `getMultipleAccounts` | [Solana](https://solana.com/docs/rpc/http/getmultipleaccounts) |
+| `getBalance` | [Solana](https://solana.com/docs/rpc/http/getbalance) |
+| `getTokenAccountBalance` | [Solana](https://solana.com/docs/rpc/http/gettokenaccountbalance) |
+| `getTokenSupply` | [Solana](https://solana.com/docs/rpc/http/gettokensupply) |
+| `getLargestAccounts` | [Solana](https://solana.com/docs/rpc/http/getlargestaccounts) |
+| `getMinimumBalanceForRentExemption` | [Solana](https://solana.com/docs/rpc/http/getminimumbalanceforrentexemption) |
+| `getTokenLargestAccounts` | [Solana](https://solana.com/docs/rpc/http/gettokenlargestaccounts) |
+| `getProgramAccounts` | [Solana](https://solana.com/docs/rpc/http/getprogramaccounts) |
+| `getTokenAccountsByOwner` | [Solana](https://solana.com/docs/rpc/http/gettokenaccountsbyowner) |
+| `getTokenAccountsByDelegate` | [Solana](https://solana.com/docs/rpc/http/gettokenaccountsbydelegate) |
+| `getProgramAccountsV2` | [ThorNode](/api-reference/fastgate/getprogramaccountsv2) |
+| `getTokenAccountsByOwnerV2` | [ThorNode](/api-reference/fastgate/gettokenaccountsbyownerv2) |
+| `getTokenAccountsByDelegateV2` | [ThorNode](/api-reference/fastgate/gettokenaccountsbydelegatev2) |
+
+## Shared behavior
+
+**Slot.** Responses reflect FastGate's indexed state and report that slot as `context.slot`. `commitment` and `minContextSlot` are accepted and ignored. `context` has no `apiVersion` field.
+
+**Config object.** The options parameter must be a JSON object or `null`. The legacy bare-string form `["<pubkey>", "base64"]` is rejected with `-32602 Invalid param: config must be an object`.
+
+**Encodings.** `base64` (default), `base58`, `base64+zstd`, and `jsonParsed`. Any other value returns `-32602 unsupported encoding: <value>`. `jsonParsed` decodes SPL Token and Token-2022 token accounts and mints; every other account falls back to base64. `dataSlice` is ignored with `jsonParsed`.
+
+**`dataSlice`.** `{ "offset": <int>, "length": <int> }`, both required. Out-of-range slices are clamped; `space` always reports the full account size.
+
+**Account object.** `{ "lamports", "data", "owner", "executable", "rentEpoch", "space" }`. `rentEpoch` can be `18446744073709551615`, which exceeds JavaScript's safe integer range; parse it as a big integer if you use it.
+
+**Result size.** `getProgramAccounts` returns at most 10,000 accounts; a larger result set returns `-32600` and asks you to switch to `getProgramAccountsV2`. Use the token V2 methods for owners or delegates with very large token-account sets so the query stays inside the read budget.
+
+## Differences by method
+
+| Method | FastGate behavior |
+| --- | --- |
+| `getBalance` | An account that does not exist returns `value: 0`, not `null`. |
+| `getMultipleAccounts` | No cap on the number of pubkeys per request. Missing accounts are `null` in position. |
+| `getTokenAccountBalance` | A non-token account returns `-32602 Invalid param: not a Token account`; a missing account returns `-32602 Invalid param: could not find account`. |
+| `getTokenSupply` | A non-mint returns `-32602 Invalid param: not a Token mint`. |
+| `getLargestAccounts` | Always the top 20 accounts by lamports. The `filter` option (`circulating` / `nonCirculating`) is not supported and is ignored. |
+| `getTokenLargestAccounts` | Always the top 20 holders, even for very large mints. |
+| `getMinimumBalanceForRentExemption` | Computed locally from the rent formula; result is a bare integer. |
+| `getProgramAccounts` | `filters` are optional. Accepts `changedSinceSlot` in addition to the standard options. `limit` and `paginationKey` are ignored; use `getProgramAccountsV2`. |
+| `getTokenAccountsByOwner` / `ByDelegate` | The second parameter (`{ "mint" }` or `{ "programId" }`) is required and must contain exactly one key. SPL Token and Token-2022 accounts are returned separately by `programId`. |
+
+## Errors
+
+FastGate errors arrive as HTTP `200` with a JSON-RPC `error` object.
+
+| Code | Message | Meaning | Retry |
+| --- | --- | --- | --- |
+| `-32602` | `Invalid param: …` / `unsupported encoding: …` | A parameter failed validation; the message names the field. | Fix the request |
+| `-32600` | `Too many accounts requested (Large number of pubkeys), Please use getProgramAccountsV2 with pagination …` | The result exceeds 10,000 accounts. | Use the V2 method |
+| `-32003` | `Query exceeded the read budget; narrow the filters or use pagination` | The query ran past its time budget. | Narrow filters, add `dataSlice`, page with `limit` |
+| `-32601` | `Method not found: <method>` | Method name is wrong. | Fix the name |
+| `-32603` | `database error: …` | Internal failure. | Yes, with backoff |
+
+## Example
+
+```bash
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0", "id": 1, "method": "getAccountInfo",
+    "params": ["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", { "encoding": "base64" }]
+  }'
+```
+
+```json
+{"jsonrpc":"2.0","result":{"context":{"slot":439745303},"value":{"lamports":519684617954,"data":["AQAAAJj+huiNm+Lqi8HMpIeLKYjCQPUrhCS/tA7Rot3LXhmbUFks8LJHGwAGAQEAAABicKqKWcWUBbRShshncubNEm6bil06OFNtN/e0FOi2Zw==","base64"],"owner":"TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA","executable":false,"rentEpoch":18446744073709551615,"space":82}},"id":1}
+```
+
+## Next steps
+
+- [Page through program accounts with `getProgramAccountsV2`](/api-reference/fastgate/getprogramaccountsv2)
+- [Read ThorEdge error codes and rate limits](/api-reference/overview)

@@ -1,0 +1,72 @@
+---
+title: "ThorEdge WebSocket methods"
+sidebarTitle: "WebSocket methods"
+description: "Solana subscription methods over the ThorEdge WSS URL, the per-token subscription cap, and what a rejected subscribe looks like."
+---
+
+Connect a Solana WebSocket client to the complete `wss://` URL copied from the dashboard. The location token is the first path segment, exactly as in the HTTPS URL. Subscription requests and notifications keep the shapes in the [Solana WebSocket reference](https://solana.com/docs/rpc/websocket).
+
+## Methods
+
+Every method whose name ends in `Subscribe` or `Unsubscribe` is forwarded. The upstream node decides whether an individual method is enabled.
+
+| Subscribe | Unsubscribe | Shape |
+| --- | --- | --- |
+| `accountSubscribe` | `accountUnsubscribe` | [Solana](https://solana.com/docs/rpc/websocket/accountsubscribe) |
+| `blockSubscribe` | `blockUnsubscribe` | [Solana](https://solana.com/docs/rpc/websocket/blocksubscribe) |
+| `logsSubscribe` | `logsUnsubscribe` | [Solana](https://solana.com/docs/rpc/websocket/logssubscribe) |
+| `programSubscribe` | `programUnsubscribe` | [Solana](https://solana.com/docs/rpc/websocket/programsubscribe) |
+| `rootSubscribe` | `rootUnsubscribe` | [Solana](https://solana.com/docs/rpc/websocket/rootsubscribe) |
+| `signatureSubscribe` | `signatureUnsubscribe` | [Solana](https://solana.com/docs/rpc/websocket/signaturesubscribe) |
+| `slotSubscribe` | `slotUnsubscribe` | [Solana](https://solana.com/docs/rpc/websocket/slotsubscribe) |
+| `slotsUpdatesSubscribe` | `slotsUpdatesUnsubscribe` | [Solana](https://solana.com/docs/rpc/websocket/slotsupdatessubscribe) |
+| `voteSubscribe` | `voteUnsubscribe` | [Solana](https://solana.com/docs/rpc/websocket/votesubscribe) |
+
+## Example
+
+Send after the socket opens:
+
+```json
+{ "jsonrpc": "2.0", "id": 1, "method": "slotSubscribe" }
+```
+
+The first frame back is the subscription id, then one notification per slot:
+
+```json
+{"jsonrpc":"2.0","result":3065,"id":1}
+{"jsonrpc":"2.0","method":"slotNotification","params":{"result":{"slot":439745191,"parent":439745190,"root":439745159},"subscription":3065}}
+```
+
+## Authentication
+
+| Outcome | HTTP status before upgrade | Body |
+| --- | --- | --- |
+| Token missing, malformed, unknown, revoked, or for another location | `401` | `{"jsonrpc":"2.0","error":{"code":-32001,"message":"unauthorized"},"id":null}` |
+| Valid token from an IP outside its restriction | `403` | `{"jsonrpc":"2.0","error":{"code":-32002,"message":"forbidden"},"id":null}` |
+| Accepted | `101 Switching Protocols` | — |
+
+Unlike HTTPS, a WebSocket connection is authenticated by the token only; the token must be present.
+
+## Subscription cap
+
+Active subscriptions are counted per location token across all of its connections, so the cap follows you through reconnects until the old subscriptions are unsubscribed or their connections close. Read the value under **Limits** in the dashboard.
+
+A subscribe request over the cap is not forwarded. The client receives:
+
+```json
+{"jsonrpc":"2.0","error":{"code":-32005,"message":"subscription limit exceeded"},"id":1}
+```
+
+Unsubscribing, or closing the connection, releases the slots.
+
+## Connection behavior
+
+- ThorEdge does not send keepalive pings and has no idle timeout of its own; ping and pong frames pass through in both directions.
+- Request and notification frames are relayed unchanged. WebSocket traffic does not count against the RPS cap.
+- After a reconnect, resubscribe and reconcile any state you missed through HTTPS.
+
+## Next steps
+
+- [HTTP methods](/api-reference/thoredge-rpc/http-methods)
+- [Reconcile with FastGate account queries](/api-reference/fastgate/overview)
+- [Read the subscription cap for your access](/dashboard/usage-and-limits)

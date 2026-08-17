@@ -1,0 +1,76 @@
+---
+title: "Quickstart: RPC and WebSocket"
+sidebarTitle: "Quickstart"
+description: "Send a JSON-RPC request over HTTPS and open a slot subscription over WSS with the URLs copied from one location."
+---
+
+In about five minutes you will receive a blockhash over HTTPS and live slot notifications over WSS from one ThorEdge location.
+
+## Before you start
+
+You need:
+
+- An active pass or rental with a location token ([create one](/getting-started/quickstart))
+- The complete **RPC** and **WS** URLs from the **SSL** column of that location
+- `curl`, `jq`, and Node.js 22 or newer
+
+```bash
+export THORNODE_RPC_URL='<copied-https-url>'
+export THORNODE_WS_URL='<copied-wss-url>'
+```
+
+Both URLs carry the location token. Keep them out of source control and logs.
+
+## Send a request
+
+```bash
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{"jsonrpc":"2.0","id":1,"method":"getLatestBlockhash"}' \
+  | jq '.result.value'
+```
+
+Output; the values change every slot:
+
+```json
+{
+  "blockhash": "7QuAFmCFhvbiCtELkNmhgMTeDgBSGiKreVtSuMSk5w9B",
+  "lastValidBlockHeight": 417795822
+}
+```
+
+## Open a subscription
+
+Save this as `slots.mjs`:
+
+```javascript
+const ws = new WebSocket(process.env.THORNODE_WS_URL);
+
+ws.onopen = () =>
+  ws.send(JSON.stringify({ jsonrpc: "2.0", id: 1, method: "slotSubscribe" }));
+
+ws.onmessage = (event) => console.log(event.data);
+ws.onerror = (event) => console.error(event.message);
+```
+
+Run it:
+
+```bash
+node slots.mjs
+```
+
+The first line is the subscription id; each following line is one slot:
+
+```text
+{"jsonrpc":"2.0","result":3065,"id":1}
+{"jsonrpc":"2.0","method":"slotNotification","params":{"result":{"slot":439745191,"parent":439745190,"root":439745159},"subscription":3065}}
+{"jsonrpc":"2.0","method":"slotNotification","params":{"result":{"slot":439745192,"parent":439745191,"root":439745160},"subscription":3065}}
+```
+
+Stop with `Ctrl+C`. You are connected when notifications keep arriving with increasing slots.
+
+## Next steps
+
+- [Every HTTP method ThorEdge serves](/api-reference/thoredge-rpc/http-methods)
+- [WebSocket methods and the subscription cap](/api-reference/thoredge-rpc/websocket-methods)
+- [Run in production](/products/thoredge-rpc#run-in-production)

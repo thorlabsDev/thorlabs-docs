@@ -1,0 +1,69 @@
+---
+title: "Quickstart: submit through Hofund"
+sidebarTitle: "Quickstart"
+description: "Read the live tip configuration, submit one transaction on the fast lane, and check its status."
+---
+
+In about five minutes you will discover Hofund's tip accounts, submit a transaction through `/hofund`, and look up what happened to it.
+
+## Before you start
+
+You need an access whose **Private TX** panel lists Hofund routes for a location, and a way to sign a Solana transaction. Copy the **Hofund** and **Hofund status** route URLs from **Endpoints → Private TX**.
+
+```bash
+export HOFUND_URL='<HOFUND_URL_COPIED_FROM_DASHBOARD>'
+export HOFUND_STATUS_URL='<HOFUND_STATUS_URL_COPIED_FROM_DASHBOARD>'
+```
+
+<Steps>
+  <Step title="Read the tip configuration">
+    ```bash
+    curl --fail-with-body "$HOFUND_STATUS_URL" \
+      --header 'content-type: application/json' \
+      --data '{ "jsonrpc": "2.0", "id": 1, "method": "getFastTipConfig", "params": [] }'
+    ```
+
+    The result lists `thorTipAccounts` and `thorMinTipLamports`. Add a System Program transfer of at least that many lamports from the fee payer to one of those accounts, then sign and base64-encode the transaction.
+
+  </Step>
+  <Step title="Submit on the fast lane">
+    ```bash
+    curl --fail-with-body --include "$HOFUND_URL" \
+      --header 'content-type: application/json' \
+      --data '{
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "sendTransaction",
+        "params": ["<BASE64_SIGNED_TRANSACTION>", { "encoding": "base64", "skipPreflight": true }]
+      }'
+    ```
+
+    The response carries the signature and an `X-Hofund-Submission-ID` header:
+
+    ```text
+    HTTP/1.1 200 OK
+    X-Hofund-Submission-ID: <SUBMISSION_ID>
+
+    {"jsonrpc":"2.0","id":1,"result":"<TRANSACTION_SIGNATURE>"}
+    ```
+
+  </Step>
+  <Step title="Check the status">
+    ```bash
+    curl --fail-with-body "$HOFUND_STATUS_URL" \
+      --header 'content-type: application/json' \
+      --data '{ "jsonrpc": "2.0", "id": 1, "method": "getHofundSubmissionStatus", "params": ["<SUBMISSION_ID>"] }'
+    ```
+
+    `result.status` moves from `pending` to `processed`, `confirmed`, or `finalized` as the transaction lands, or to `failed` or `expired`.
+
+  </Step>
+</Steps>
+
+An error with `"kind": "tip_too_low"` means the transfer is missing or below `thorMinTipLamports`. Add `{ "mevProtect": true }` as a third parameter to send the same request through Jito; that path also needs a Jito tip (`getThorTipConfig`).
+
+## Next steps
+
+- [`sendTransaction` options and lane routes](/api-reference/hofund/sendtransaction)
+- [Status fields and tip configuration](/api-reference/hofund/status-and-tips)
+- [Choose a lane](/products/bifrost-transaction-routes/hofund#choose-a-lane)

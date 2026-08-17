@@ -1,0 +1,164 @@
+---
+title: "getProgramAccountsV2"
+description: "Return the accounts owned by a program in pages, with cursor pagination and slot-based change filtering."
+---
+
+`getProgramAccountsV2` returns accounts owned by `programId` in ascending pubkey order, one page at a time. Use it instead of `getProgramAccounts` when a program can have more than 10,000 accounts, or when you only want accounts that changed after a known slot.
+
+Send it to the complete ThorEdge RPC URL like any other method.
+
+## Parameters
+
+<ParamField body="programId" type="string" required>
+  Program pubkey as a base-58 string.
+</ParamField>
+
+<ParamField body="config" type="object">
+  Options for the query. All fields are optional.
+  <Expandable title="properties">
+    <ParamField body="encoding" type="string" default="base64">
+      `base64`, `base58`, `base64+zstd`, or `jsonParsed`. `jsonParsed` decodes token accounts and mints; other accounts fall back to `base64`.
+    </ParamField>
+    <ParamField body="dataSlice" type="object">
+      `{ "offset": <int>, "length": <int> }`. Returns only that slice of `data`. Ignored with `jsonParsed`.
+    </ParamField>
+    <ParamField body="filters" type="array">
+      Filter objects that must all match. Each object is one of:
+
+      - `{ "dataSize": <int> }`: account data length in bytes.
+      - `{ "memcmp": { "offset": <int>, "bytes": "<string>", "encoding": "base58" | "base64" } }`: byte comparison at `offset`. `bytes` is base-58 unless `encoding` is `"base64"`.
+
+      An offset-0 `memcmp` of 32 bytes on a token program, or of 8 bytes on any other program, is served from an index and is the fastest way to narrow a large program.
+    </ParamField>
+    <ParamField body="limit" type="integer" default="1000">
+      Accounts per page, from `1` through `10000`. Values outside the range are clamped, not rejected.
+    </ParamField>
+    <ParamField body="paginationKey" type="string">
+      The `paginationKey` returned by the previous page. Omit it for the first page.
+    </ParamField>
+    <ParamField body="changedSinceSlot" type="integer">
+      Return only accounts updated after this slot.
+    </ParamField>
+    <ParamField body="commitment" type="string">
+      Accepted and ignored. Results reflect FastGate's indexed slot.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Response
+
+The result is a top-level object; there is no `context` wrapper.
+
+<ResponseField name="accounts" type="array">
+  Matching accounts for this page, ordered by pubkey.
+  <Expandable title="item">
+    <ResponseField name="pubkey" type="string">Account pubkey, base-58.</ResponseField>
+    <ResponseField name="account" type="object">
+      `lamports`, `data`, `owner`, `executable`, `rentEpoch`, `space`. `data` is `[<encoded>, <encoding>]`, or a parsed object with `jsonParsed`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="count" type="integer">
+  Number of accounts in this page. It is not the total across pages.
+</ResponseField>
+
+<ResponseField name="paginationKey" type="string | null">
+  Cursor for the next page. `null` when this page was shorter than `limit`. A page that exactly fills `limit` still returns a key; the following request then returns an empty `accounts` array and `null`.
+</ResponseField>
+
+## Paginate
+
+Repeat the same request with `paginationKey` set to the value you received, keeping `filters`, `encoding`, and `limit` unchanged, until `paginationKey` is `null`. Each page reflects the indexed state at the time it is served; accounts that change between pages can appear in a later page.
+
+## Errors
+
+| Code | Message | Cause |
+| --- | --- | --- |
+| `-32602` | `Invalid param: could not decode pubkey <value>` / `Invalid param: WrongSize` | `programId` or `paginationKey` is not a valid 32-byte base-58 key. |
+| `-32602` | `Invalid param: limit must be a number` | `limit` is not an integer. |
+| `-32602` | `Invalid param: filter must be dataSize or memcmp` | A filter object has an unknown shape. |
+| `-32602` | `Invalid param: memcmp bytes (base58)` / `(base64)` | `memcmp.bytes` failed to decode. |
+| `-32602` | `unsupported encoding: <value>` | Unknown `encoding`. |
+| `-32003` | `Query exceeded the read budget; narrow the filters or use pagination` | The scan ran past its time budget. Add a `dataSize` or offset-0 `memcmp` filter, or lower `limit`. |
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getProgramAccountsV2",
+    "params": [
+      "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+      {
+        "encoding": "base64",
+        "filters": [{ "dataSize": 82 }],
+        "dataSlice": { "offset": 0, "length": 0 },
+        "limit": 2
+      }
+    ]
+  }'
+```
+
+```javascript Node.js
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({
+    jsonrpc: "2.0",
+    id: 1,
+    method: "getProgramAccountsV2",
+    params: [
+      "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+      {
+        encoding: "base64",
+        filters: [{ dataSize: 82 }],
+        dataSlice: { offset: 0, length: 0 },
+        limit: 2,
+      },
+    ],
+  }),
+});
+const { result } = await response.json();
+console.log(result.count, result.paginationKey);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "accounts": [
+      {
+        "pubkey": "11111ZSvet4hKEYUAETZWELHgkeYjyNZovzcypyAWs",
+        "account": {
+          "lamports": 1461600,
+          "data": ["", "base64"],
+          "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+          "executable": false,
+          "rentEpoch": 18446744073709551615,
+          "space": 82
+        }
+      },
+      {
+        "pubkey": "1111iH2XXowNevv9LrNNZvBDqZHqTn78dBUWnsx6dy",
+        "account": {
+          "lamports": 1461600,
+          "data": ["", "base64"],
+          "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+          "executable": false,
+          "rentEpoch": 18446744073709551615,
+          "space": 82
+        }
+      }
+    ],
+    "count": 2,
+    "paginationKey": "1111iH2XXowNevv9LrNNZvBDqZHqTn78dBUWnsx6dz"
+  },
+  "id": 1
+}
+```
+</ResponseExample>

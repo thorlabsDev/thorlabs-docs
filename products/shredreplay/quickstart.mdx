@@ -1,0 +1,60 @@
+---
+title: "Quickstart: replay a slot range"
+sidebarTitle: "Quickstart"
+description: "Create a replay key, start a replay job for a recent slot range, and confirm packets reach your UDP receiver."
+---
+
+In about five minutes you will replay a recent slot range into a UDP receiver and watch its packet counter move.
+
+## Before you start
+
+You need:
+
+- An access with **ShredReplay** enabled
+- A UDP receiver at a globally routable public IPv4 address, listening on a port from `1024` through `65535`
+
+The [Raw Shred Stream receiver](/products/raw-shred-stream/quickstart#run-the-receiver) works unchanged; both products send raw shred datagrams.
+
+## Start the receiver
+
+```bash
+SHREDSTREAM_PORT='<udp-port>' node receiver.mjs
+```
+
+Leave it running. Open the port through the host firewall, security group, and any NAT forwarding rule.
+
+## Create the key and job
+
+<Steps>
+  <Step title="Generate a replay key">
+    Open **Endpoints → ShredReplay**, select the access, and generate a
+    ShredReplay key. Store it as a secret; it is separate from location tokens.
+  </Step>
+  <Step title="Choose a slot range">
+    Enter start and end slots inside the minimum and maximum the panel shows.
+    Refresh the range right before you submit; the window keeps moving.
+  </Step>
+  <Step title="Enter the receiver">
+    Enter the receiver's public IPv4 address and UDP port.
+  </Step>
+  <Step title="Choose pacing and start">
+    Select **Original pacing** for a first run, keep **Speed multiplier** at
+    `1`, and start the job.
+  </Step>
+</Steps>
+
+Watch the receiver:
+
+```text
+Listening for ShredStream on UDP 20000
+packets=0 bytes=0
+packets=961 bytes=1184331
+```
+
+The job worked when the panel shows it completed and the receiver printed nonzero counts while it ran. Completion means the sender finished the range; UDP delivery is not acknowledged.
+
+## Next steps
+
+- [Understand pacing and job states](/products/shredreplay#choose-pacing)
+- [Protect and rotate the replay key](/reference/security)
+- [Diagnose UDP delivery](/reference/troubleshooting#raw-shred-stream-or-replay-sends-no-udp-data)

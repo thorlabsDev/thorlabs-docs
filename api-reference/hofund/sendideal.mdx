@@ -1,0 +1,73 @@
+---
+title: "sendIdeal and getNonce"
+description: "Submit a fast/Jito pair that shares a durable nonce so only one can land, and fetch the nonce it needs."
+---
+
+An ideal pair is two versions of the same intent: one tuned for the fast rails (priority fee), one for Jito (tip). Both use the same durable nonce, so whichever lands first cancels the other. Both methods live on `/hofund`.
+
+## getNonce
+
+<ParamField body="params[0]" type="string" required>
+  Nonce account pubkey, base-58.
+</ParamField>
+
+<ResponseField name="result" type="object">
+  `{ "nonce": "<durable-nonce>", "nonceAccount": "<pubkey>", "nonceAuthority": "<pubkey>" }`
+</ResponseField>
+
+## sendIdeal
+
+<ParamField body="params[0]" type="string[]" required>
+  Exactly two fully signed transactions built on the same durable nonce: the fast-rail transaction first, the Jito transaction second. Canonical padded base64, at most 1232 bytes each. No options object.
+</ParamField>
+
+<ResponseField name="result" type="string[]">
+  `["<FAST_SIGNATURE>", "<JITO_SIGNATURE>"]`
+</ResponseField>
+
+Header: `X-Hofund-Submission-ID`. Poll [`getHofundSubmissionStatus`](/api-reference/hofund/status-and-tips) with it; an ideal status carries per-member `items` and can report `anomalous` if both members appear to have landed.
+
+## Errors
+
+| Code | Message |
+| --- | --- |
+| `-32602` | `sendIdeal requires exactly two transactions` |
+| `-32602` | `getNonce requires exactly one nonce account` |
+| `-32602` | `query route controls are not supported by getNonce` / `by sendIdeal` |
+
+<RequestExample>
+```bash getNonce
+curl --fail-with-body "$HOFUND_URL" \
+  --header 'content-type: application/json' \
+  --data '{ "jsonrpc": "2.0", "id": 1, "method": "getNonce", "params": ["<NONCE_ACCOUNT_PUBKEY>"] }'
+```
+
+```bash sendIdeal
+curl --fail-with-body "$HOFUND_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "sendIdeal",
+    "params": [["<BASE64_FAST_TRANSACTION>", "<BASE64_JITO_TRANSACTION>"]]
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json getNonce
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "nonce": "<DURABLE_NONCE>",
+    "nonceAccount": "<NONCE_ACCOUNT_PUBKEY>",
+    "nonceAuthority": "<AUTHORITY_PUBKEY>"
+  }
+}
+```
+
+```json sendIdeal
+{ "jsonrpc": "2.0", "id": 1, "result": ["<FAST_SIGNATURE>", "<JITO_SIGNATURE>"] }
+```
+</ResponseExample>

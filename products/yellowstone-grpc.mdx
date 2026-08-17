@@ -63,35 +63,7 @@ The subscription is running when it returns `SubscribeUpdate` messages whose `fi
 
 ## Test a slot subscription
 
-Install [`grpcurl`](https://github.com/fullstorydev/grpcurl), then clone the upstream protobuf definitions:
-
-```bash
-git clone --depth 1 \
-  https://github.com/rpcpool/yellowstone-grpc.git
-
-cd yellowstone-grpc/yellowstone-grpc-proto/proto
-```
-
-Copy the Yellowstone target and location token for the same dashboard location:
-
-```bash
-export THORNODE_YELLOWSTONE_TARGET='<host:port>'
-read -r -s -p 'Yellowstone token: ' THORNODE_YELLOWSTONE_TOKEN
-export THORNODE_YELLOWSTONE_TOKEN
-printf '\n'
-
-printf '%s\n' '{"slots":{"slot_updates":{}}}' \
-  | grpcurl -plaintext \
-      -expand-headers \
-      -import-path . \
-      -proto geyser.proto \
-      -H 'x-token: ${THORNODE_YELLOWSTONE_TOKEN}' \
-      -d @ \
-      "${THORNODE_YELLOWSTONE_TARGET}" \
-      geyser.Geyser/Subscribe
-```
-
-The command keeps streaming until you stop it. Each matching update includes `slot_updates` in its `filters` field.
+Follow the [Yellowstone quickstart](/products/yellowstone-grpc/quickstart) to stream slots with `grpcurl`, then narrow to a transaction filter. The [Subscribe reference](/api-reference/yellowstone/subscribe) lists every request field and what it returns on ThorNode.
 
 ## Run in production
 
@@ -113,6 +85,8 @@ The command keeps streaming until you stop it. Each matching update includes `sl
 
 ## Next steps
 
+- [Run the quickstart](/products/yellowstone-grpc/quickstart)
+- [Read the Subscribe reference](/api-reference/yellowstone/subscribe)
 - [Protect streaming credentials](/reference/security)
 - [Read current stream limits](/reference/plans-and-limits)
 - [Use ThorEdge RPC for reconciliation](/products/thoredge-rpc)
