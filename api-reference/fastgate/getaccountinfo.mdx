@@ -7,7 +7,7 @@ Returns all information associated with the account of provided Pubkey.
 
 ## On ThorNode
 
-Answered by [FastGate](/api-reference/fastgate/overview): `commitment` and `minContextSlot` are accepted and ignored, the response reflects FastGate's indexed slot (`context.slot`, no `apiVersion`), and the request times out after 30 s.
+Answered by FastGate through the ThorEdge RPC URL; no separate endpoint or key. `commitment` and `minContextSlot` are accepted and ignored: the response reflects FastGate's indexed slot, reported as `context.slot` (no `apiVersion`). The request times out after 30 s. Encodings: `base64` (default), `base58`, `base64+zstd`, `jsonParsed` (token accounts and mints; other accounts fall back to base64). The options parameter must be an object; `dataSlice` is ignored with `jsonParsed`.
 
 ## Parameters
 
@@ -16,7 +16,7 @@ Answered by [FastGate](/api-reference/fastgate/overview): `commitment` and `minC
 </ParamField>
 
 <ParamField body="commitment" type="string">
-  Commitment level for the query.
+  Commitment level for the query. Accepted and ignored by FastGate.
 
   * `finalized`
   * `confirmed`
@@ -45,7 +45,7 @@ Answered by [FastGate](/api-reference/fastgate/overview): `commitment` and `minC
 </ParamField>
 
 <ParamField body="minContextSlot" type="number">
-  The minimum slot that the request can be evaluated at.
+  The minimum slot that the request can be evaluated at. Accepted and ignored by FastGate.
 </ParamField>
 
 ## Response
@@ -53,9 +53,6 @@ Answered by [FastGate](/api-reference/fastgate/overview): `commitment` and `minC
 <ResponseField name="context" type="object">
   Context of the request.
   <Expandable title="properties">
-    <ResponseField name="apiVersion" type="string">
-      API version of the request.
-    </ResponseField>
     <ResponseField name="slot" type="integer">
       Slot number of the response.
     </ResponseField>

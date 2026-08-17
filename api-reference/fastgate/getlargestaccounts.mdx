@@ -7,12 +7,12 @@ Returns the 20 largest accounts, by lamport balance (results may be cached up to
 
 ## On ThorNode
 
-Answered by [FastGate](/api-reference/fastgate/overview): `commitment` and `minContextSlot` are accepted and ignored, the response reflects FastGate's indexed slot (`context.slot`, no `apiVersion`), and the request times out after 30 s. Always the top 20 accounts by lamports. The `filter` option is ignored.
+Answered by FastGate through the ThorEdge RPC URL; no separate endpoint or key. `commitment` and `minContextSlot` are accepted and ignored: the response reflects FastGate's indexed slot, reported as `context.slot` (no `apiVersion`). The request times out after 30 s. Always the top 20 accounts by lamports. The `filter` option is ignored.
 
 ## Parameters
 
 <ParamField body="commitment" type="string">
-  The commitment level for the request.
+  The commitment level for the request. Accepted and ignored by FastGate.
 
   * `confirmed`
   * `finalized`

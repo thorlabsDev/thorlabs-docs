@@ -4,24 +4,24 @@ sidebarTitle: "Overview"
 description: "The account-query methods FastGate answers behind the ThorEdge URL, how they differ from a validator, and their error codes."
 ---
 
-FastGate answers the methods below when you send them to the ThorEdge RPC URL. No separate endpoint or key exists. Standard methods keep the request and response shapes in the [Solana JSON-RPC reference](https://solana.com/docs/rpc/http); the differences that matter are listed on this page. The V2 methods are ThorNode additions and have their own pages.
+FastGate answers the 14 methods below when you send them to the ThorEdge RPC URL. No separate endpoint or key exists. Every method has its own page with parameters, response fields, and a response captured from ThorEdge; this page collects the behavior they share.
 
-| Method | Reference |
+| Method | Kind |
 | --- | --- |
-| `getAccountInfo` | [Solana](https://solana.com/docs/rpc/http/getaccountinfo) |
-| `getMultipleAccounts` | [Solana](https://solana.com/docs/rpc/http/getmultipleaccounts) |
-| `getBalance` | [Solana](https://solana.com/docs/rpc/http/getbalance) |
-| `getTokenAccountBalance` | [Solana](https://solana.com/docs/rpc/http/gettokenaccountbalance) |
-| `getTokenSupply` | [Solana](https://solana.com/docs/rpc/http/gettokensupply) |
-| `getLargestAccounts` | [Solana](https://solana.com/docs/rpc/http/getlargestaccounts) |
-| `getMinimumBalanceForRentExemption` | [Solana](https://solana.com/docs/rpc/http/getminimumbalanceforrentexemption) |
-| `getTokenLargestAccounts` | [Solana](https://solana.com/docs/rpc/http/gettokenlargestaccounts) |
-| `getProgramAccounts` | [Solana](https://solana.com/docs/rpc/http/getprogramaccounts) |
-| `getTokenAccountsByOwner` | [Solana](https://solana.com/docs/rpc/http/gettokenaccountsbyowner) |
-| `getTokenAccountsByDelegate` | [Solana](https://solana.com/docs/rpc/http/gettokenaccountsbydelegate) |
-| `getProgramAccountsV2` | [ThorNode](/api-reference/fastgate/getprogramaccountsv2) |
-| `getTokenAccountsByOwnerV2` | [ThorNode](/api-reference/fastgate/gettokenaccountsbyownerv2) |
-| `getTokenAccountsByDelegateV2` | [ThorNode](/api-reference/fastgate/gettokenaccountsbydelegatev2) |
+| [`getAccountInfo`](/api-reference/fastgate/getaccountinfo) | Standard Solana method |
+| [`getMultipleAccounts`](/api-reference/fastgate/getmultipleaccounts) | Standard Solana method |
+| [`getBalance`](/api-reference/fastgate/getbalance) | Standard Solana method |
+| [`getTokenAccountBalance`](/api-reference/fastgate/gettokenaccountbalance) | Standard Solana method |
+| [`getTokenSupply`](/api-reference/fastgate/gettokensupply) | Standard Solana method |
+| [`getLargestAccounts`](/api-reference/fastgate/getlargestaccounts) | Standard Solana method |
+| [`getMinimumBalanceForRentExemption`](/api-reference/fastgate/getminimumbalanceforrentexemption) | Standard Solana method |
+| [`getTokenLargestAccounts`](/api-reference/fastgate/gettokenlargestaccounts) | Standard Solana method |
+| [`getProgramAccounts`](/api-reference/fastgate/getprogramaccounts) | Standard Solana method |
+| [`getTokenAccountsByOwner`](/api-reference/fastgate/gettokenaccountsbyowner) | Standard Solana method |
+| [`getTokenAccountsByDelegate`](/api-reference/fastgate/gettokenaccountsbydelegate) | Standard Solana method |
+| [`getProgramAccountsV2`](/api-reference/fastgate/getprogramaccountsv2) | ThorNode addition: cursor pagination |
+| [`getTokenAccountsByOwnerV2`](/api-reference/fastgate/gettokenaccountsbyownerv2) | ThorNode addition: cursor pagination |
+| [`getTokenAccountsByDelegateV2`](/api-reference/fastgate/gettokenaccountsbydelegatev2) | ThorNode addition: cursor pagination |
 
 ## Shared behavior
 
@@ -63,22 +63,8 @@ FastGate errors arrive as HTTP `200` with a JSON-RPC `error` object.
 | `-32601` | `Method not found: <method>` | Method name is wrong. | Fix the name |
 | `-32603` | `database error: …` | Internal failure. | Yes, with backoff |
 
-## Example
-
-```bash
-curl --fail-with-body "$THORNODE_RPC_URL" \
-  --header 'content-type: application/json' \
-  --data '{
-    "jsonrpc": "2.0", "id": 1, "method": "getAccountInfo",
-    "params": ["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", { "encoding": "base64" }]
-  }'
-```
-
-```json
-{"jsonrpc":"2.0","result":{"context":{"slot":439745303},"value":{"lamports":519684617954,"data":["AQAAAJj+huiNm+Lqi8HMpIeLKYjCQPUrhCS/tA7Rot3LXhmbUFks8LJHGwAGAQEAAABicKqKWcWUBbRShshncubNEm6bil06OFNtN/e0FOi2Zw==","base64"],"owner":"TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA","executable":false,"rentEpoch":18446744073709551615,"space":82}},"id":1}
-```
-
 ## Next steps
 
+- [Read one account with `getAccountInfo`](/api-reference/fastgate/getaccountinfo)
 - [Page through program accounts with `getProgramAccountsV2`](/api-reference/fastgate/getprogramaccountsv2)
 - [Read ThorEdge error codes and rate limits](/api-reference/overview)

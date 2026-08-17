@@ -142,8 +142,6 @@
                 "group": "HTTP methods",
                 "root": "api-reference/thoredge-rpc/http-methods",
                 "pages": [
-                  "api-reference/thoredge-rpc/http/getaccountinfo",
-                  "api-reference/thoredge-rpc/http/getbalance",
                   "api-reference/thoredge-rpc/http/getblock",
                   "api-reference/thoredge-rpc/http/getblockcommitment",
                   "api-reference/thoredge-rpc/http/getblockheight",
@@ -163,14 +161,10 @@
                   "api-reference/thoredge-rpc/http/getinflationgovernor",
                   "api-reference/thoredge-rpc/http/getinflationrate",
                   "api-reference/thoredge-rpc/http/getinflationreward",
-                  "api-reference/thoredge-rpc/http/getlargestaccounts",
                   "api-reference/thoredge-rpc/http/getlatestblockhash",
                   "api-reference/thoredge-rpc/http/getleaderschedule",
                   "api-reference/thoredge-rpc/http/getmaxretransmitslot",
                   "api-reference/thoredge-rpc/http/getmaxshredinsertslot",
-                  "api-reference/thoredge-rpc/http/getminimumbalanceforrentexemption",
-                  "api-reference/thoredge-rpc/http/getmultipleaccounts",
-                  "api-reference/thoredge-rpc/http/getprogramaccounts",
                   "api-reference/thoredge-rpc/http/getrecentperformancesamples",
                   "api-reference/thoredge-rpc/http/getrecentprioritizationfees",
                   "api-reference/thoredge-rpc/http/getsignaturesforaddress",
@@ -180,11 +174,6 @@
                   "api-reference/thoredge-rpc/http/getslotleaders",
                   "api-reference/thoredge-rpc/http/getstakeminimumdelegation",
                   "api-reference/thoredge-rpc/http/getsupply",
-                  "api-reference/thoredge-rpc/http/gettokenaccountbalance",
-                  "api-reference/thoredge-rpc/http/gettokenaccountsbydelegate",
-                  "api-reference/thoredge-rpc/http/gettokenaccountsbyowner",
-                  "api-reference/thoredge-rpc/http/gettokenlargestaccounts",
-                  "api-reference/thoredge-rpc/http/gettokensupply",
                   "api-reference/thoredge-rpc/http/gettransaction",
                   "api-reference/thoredge-rpc/http/gettransactioncount",
                   "api-reference/thoredge-rpc/http/getversion",
@@ -227,6 +216,17 @@
             "icon": "database",
             "pages": [
               "api-reference/fastgate/overview",
+              "api-reference/fastgate/getaccountinfo",
+              "api-reference/fastgate/getmultipleaccounts",
+              "api-reference/fastgate/getbalance",
+              "api-reference/fastgate/gettokenaccountbalance",
+              "api-reference/fastgate/gettokensupply",
+              "api-reference/fastgate/getlargestaccounts",
+              "api-reference/fastgate/getminimumbalanceforrentexemption",
+              "api-reference/fastgate/gettokenlargestaccounts",
+              "api-reference/fastgate/getprogramaccounts",
+              "api-reference/fastgate/gettokenaccountsbyowner",
+              "api-reference/fastgate/gettokenaccountsbydelegate",
               "api-reference/fastgate/getprogramaccountsv2",
               "api-reference/fastgate/gettokenaccountsbyownerv2",
               "api-reference/fastgate/gettokenaccountsbydelegatev2"
@@ -487,6 +487,50 @@
     {
       "source": "/products/bifrost-transaction-routes/provider-routes",
       "destination": "/api-reference/bifrost/overview"
+    },
+    {
+      "source": "/api-reference/thoredge-rpc/http/getaccountinfo",
+      "destination": "/api-reference/fastgate/getaccountinfo"
+    },
+    {
+      "source": "/api-reference/thoredge-rpc/http/getmultipleaccounts",
+      "destination": "/api-reference/fastgate/getmultipleaccounts"
+    },
+    {
+      "source": "/api-reference/thoredge-rpc/http/getbalance",
+      "destination": "/api-reference/fastgate/getbalance"
+    },
+    {
+      "source": "/api-reference/thoredge-rpc/http/gettokenaccountbalance",
+      "destination": "/api-reference/fastgate/gettokenaccountbalance"
+    },
+    {
+      "source": "/api-reference/thoredge-rpc/http/gettokensupply",
+      "destination": "/api-reference/fastgate/gettokensupply"
+    },
+    {
+      "source": "/api-reference/thoredge-rpc/http/getlargestaccounts",
+      "destination": "/api-reference/fastgate/getlargestaccounts"
+    },
+    {
+      "source": "/api-reference/thoredge-rpc/http/getminimumbalanceforrentexemption",
+      "destination": "/api-reference/fastgate/getminimumbalanceforrentexemption"
+    },
+    {
+      "source": "/api-reference/thoredge-rpc/http/gettokenlargestaccounts",
+      "destination": "/api-reference/fastgate/gettokenlargestaccounts"
+    },
+    {
+      "source": "/api-reference/thoredge-rpc/http/getprogramaccounts",
+      "destination": "/api-reference/fastgate/getprogramaccounts"
+    },
+    {
+      "source": "/api-reference/thoredge-rpc/http/gettokenaccountsbyowner",
+      "destination": "/api-reference/fastgate/gettokenaccountsbyowner"
+    },
+    {
+      "source": "/api-reference/thoredge-rpc/http/gettokenaccountsbydelegate",
+      "destination": "/api-reference/fastgate/gettokenaccountsbydelegate"
     }
   ]
 }
