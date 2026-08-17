@@ -1,0 +1,186 @@
+---
+title: "getTokenAccountsByDelegate"
+description: "Returns all SPL Token accounts by approved Delegate."
+---
+
+Returns all SPL Token accounts by approved Delegate.
+
+## On ThorNode
+
+Answered by [FastGate](/api-reference/fastgate/overview): `commitment` and `minContextSlot` are accepted and ignored, the response reflects FastGate's indexed slot (`context.slot`, no `apiVersion`), and the request times out after 30 s. The second parameter (`{ "mint" }` or `{ "programId" }`) is required and must contain exactly one key. For very large delegates use [`getTokenAccountsByDelegateV2`](/api-reference/fastgate/gettokenaccountsbydelegatev2).
+
+## Parameters
+
+<ParamField body="address" type="string" required>
+  Solana address (public key) of the delegate that has been authorized to manage token accounts.
+</ParamField>
+
+<ParamField body="mint" type="string">
+  Specific token mint address to filter delegated accounts by a particular token type.
+</ParamField>
+
+<ParamField body="programId" type="string">
+  Specific token program ID (typically SPL Token program) to filter delegated accounts.
+</ParamField>
+
+<ParamField body="commitment" type="string">
+  The commitment level for the request.
+
+  * `confirmed`
+  * `finalized`
+  * `processed`
+</ParamField>
+
+<ParamField body="minContextSlot" type="number">
+  The minimum slot that the request can be evaluated at.
+</ParamField>
+
+<ParamField body="dataSlice" type="object">
+  Request a slice of the account's data.
+</ParamField>
+
+<ParamField body="dataSlice.length" type="number">
+  Number of bytes to return.
+</ParamField>
+
+<ParamField body="dataSlice.offset" type="number">
+  Byte offset from which to start reading.
+</ParamField>
+
+<ParamField body="encoding" type="string">
+  Encoding format for Account data.
+
+  * `base58`
+  * `base64`
+  * `base64+zstd`
+  * `jsonParsed`
+</ParamField>
+
+## Response
+
+<ResponseField name="context" type="object">
+  Context of the response.
+  <Expandable title="properties">
+    <ResponseField name="slot" type="integer">
+      Slot in which the data was fetched.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="value" type="array">
+  List of token accounts.
+  <Expandable title="item">
+    <ResponseField name="pubkey" type="string">
+      Account Pubkey as a base-58 encoded string.
+    </ResponseField>
+    <ResponseField name="account" type="object">
+      Token account details.
+      <Expandable title="properties">
+        <ResponseField name="lamports" type="integer">
+          Number of lamports assigned to the account.
+        </ResponseField>
+        <ResponseField name="owner" type="string">
+          Pubkey of the program this account has been assigned to.
+        </ResponseField>
+        <ResponseField name="data" type="object">
+          Token state data associated with the account.
+          <Expandable title="properties">
+            <ResponseField name="program" type="string">
+              Program name.
+            </ResponseField>
+            <ResponseField name="parsed" type="object">
+              Parsed token data.
+            </ResponseField>
+            <ResponseField name="space" type="integer">
+              Space allocated for the account.
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+        <ResponseField name="executable" type="boolean">
+          Indicates if the account contains a program.
+        </ResponseField>
+        <ResponseField name="rentEpoch" type="integer">
+          Epoch at which the account will next owe rent.
+        </ResponseField>
+        <ResponseField name="space" type="integer">
+          Data size of the account.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getTokenAccountsByDelegate",
+    "params": [
+      "4aR1CeodjCPyyuVDbhP1yd2xPX6H6A2fZ7bApXyVmCrY",
+      {
+        "programId": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+      },
+      {
+        "encoding": "base64"
+      }
+    ]
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getTokenAccountsByDelegate",
+  "params": [
+    "4aR1CeodjCPyyuVDbhP1yd2xPX6H6A2fZ7bApXyVmCrY",
+    {
+      "programId": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+    },
+    {
+      "encoding": "base64"
+    }
+  ]
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response (truncated to 1 account)
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "context": {
+      "slot": 439749211
+    },
+    "value": [
+      {
+        "pubkey": "11oFyVtvKJtvSb3Q3g7XYKBtTq9DQv7ACGPktrbsivq",
+        "account": {
+          "lamports": 2039280,
+          "data": [
+            "CfeYVN/YnqzUZq2UJt1Nos31imWh2fOzGmFxcwr9mLLfXzZ2PsczMKJGcWdNazIEIk1HC6wSwTtXz2ZjIfEJbS19axYAAAAAAQAAADUiXkexKrwMpHghKADZIeEf20vNonSCszjxbTPOAYFlAQAAAAAAAAAAAAAAAC19axYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "base64"
+          ],
+          "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+          "executable": false,
+          "rentEpoch": 18446744073709551615,
+          "space": 165
+        }
+      }
+    ]
+  },
+  "id": 1
+}
+```
+</ResponseExample>

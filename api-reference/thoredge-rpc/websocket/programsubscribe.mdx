@@ -1,0 +1,116 @@
+---
+title: "programSubscribe"
+description: "Subscribe to a program to receive notifications when the lamports or data for an account owned by the given program changes."
+---
+
+Subscribe to a program to receive notifications when the lamports or data for an account owned by the given program changes.
+
+## On ThorNode
+
+Send over the complete `wss://` URL copied from the dashboard. Each active subscription counts toward the per-token cap; over the cap the request is answered with `-32005 subscription limit exceeded` and not forwarded. Frames pass through unchanged.
+
+## Parameters
+
+<ParamField body="params" type="array" required>
+  <Expandable title="properties" defaultOpen>
+    <ParamField body="programId" type="string" required>
+      Pubkey of the `program_id`, as base-58 encoded string.
+    </ParamField>
+
+    <ParamField body="config" type="object">
+      Configuration object containing the following fields:
+
+      <ParamField body="commitment" type="string">
+        The commitment level for the subscription. Can be `finalized`, `confirmed`, or `processed`.
+      </ParamField>
+
+      <ParamField body="filters" type="array">
+        Array of filter objects to apply.
+      </ParamField>
+
+      <ParamField body="encoding" type="string">
+        Encoding format for account data. Can be `base58`, `base64`, `base64+zstd`, or `jsonParsed`.
+
+        * `base58` is slow
+        * `jsonParsed` encoding attempts to use program-specific state parsers to return more human-readable and explicit account state data
+        * If `jsonParsed` is requested but a parser cannot be found, the field falls back to binary encoding, detectable when the data field is type string.
+      </ParamField>
+
+      <ParamField body="notifyOn" type="string" deprecated>
+        **Deprecated — no-op as of Agave 4.2.** Setting `notifyOn` has no effect. The field will be removed at a later date.
+      </ParamField>
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Notification format
+
+The notification format is a **single** program account object as seen in the `getProgramAccounts` RPC HTTP method.
+
+## Response
+
+<ResponseField name="result" type="integer">
+  Subscription id (needed to unsubscribe)
+</ResponseField>
+
+<RequestExample>
+```json Request
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "programSubscribe",
+  "params": [
+    "Sysvar1111111111111111111111111111111111111",
+    {
+      "encoding": "base64",
+      "commitment": "processed",
+      "filters": [
+        {
+          "dataSize": 40
+        }
+      ]
+    }
+  ]
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": 3086,
+  "id": 1
+}
+```
+
+```json Notification
+{
+  "jsonrpc": "2.0",
+  "method": "programNotification",
+  "params": {
+    "result": {
+      "context": {
+        "slot": 439749551
+      },
+      "value": {
+        "pubkey": "SysvarC1ock11111111111111111111111111111111",
+        "account": {
+          "lamports": 1169280,
+          "data": [
+            "rws2GgAAAACxyX9qAAAAAPkDAAAAAAAA+gMAAAAAAABaXIJqAAAAAA==",
+            "base64"
+          ],
+          "owner": "Sysvar1111111111111111111111111111111111111",
+          "executable": false,
+          "rentEpoch": 18446744073709552000,
+          "space": 40
+        }
+      }
+    },
+    "subscription": 3086
+  }
+}
+```
+
+</ResponseExample>

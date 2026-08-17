@@ -1,0 +1,128 @@
+---
+title: "getBlockProduction"
+description: "Returns recent block production information from the current or previous epoch."
+---
+
+Returns recent block production information from the current or previous epoch.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error.
+
+## Parameters
+
+<ParamField body="commitment" type="string">
+  The commitment level for the request.
+
+  * `processed`
+  * `confirmed`
+  * `finalized`
+</ParamField>
+
+<ParamField body="identity" type="string">
+  Optional validator identity public key (base-58 encoded) to filter results for a specific validator.
+</ParamField>
+
+<ParamField body="range" type="object">
+  Optional slot range boundaries to limit the block production statistics time period.
+</ParamField>
+
+<ParamField body="range.firstSlot" type="number">
+  Starting slot number to begin analyzing block production statistics from (inclusive).
+</ParamField>
+
+<ParamField body="range.lastSlot" type="number">
+  Ending slot number to analyze block production statistics until (inclusive). If omitted, uses the current slot.
+</ParamField>
+
+## Response
+
+<ResponseField name="context" type="object">
+  <Expandable title="properties">
+    <ResponseField name="slot" type="integer">
+      The slot at the time of the response.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="value" type="object">
+  <Expandable title="properties">
+    <ResponseField name="byIdentity" type="object">
+      Map of validator identity public keys to their block production performance metrics.
+    </ResponseField>
+    <ResponseField name="range" type="object">
+      <Expandable title="properties">
+        <ResponseField name="firstSlot" type="integer">
+          Starting slot number of the analyzed block production statistics period.
+        </ResponseField>
+        <ResponseField name="lastSlot" type="integer">
+          Ending slot number of the analyzed block production statistics period.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getBlockProduction",
+    "params": [
+      {
+        "identity": "GBQ2GvTzmjXMu97dr7WUnLKYTNim1aoZsYS53KYXAAAA"
+      }
+    ]
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getBlockProduction",
+  "params": [
+    {
+      "identity": "GBQ2GvTzmjXMu97dr7WUnLKYTNim1aoZsYS53KYXAAAA"
+    }
+  ]
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "context": {
+      "apiVersion": "4.1.2",
+      "slot": 439749129
+    },
+    "value": {
+      "byIdentity": {
+        "GBQ2GvTzmjXMu97dr7WUnLKYTNim1aoZsYS53KYXAAAA": [
+          2880,
+          2880
+        ]
+      },
+      "range": {
+        "firstSlot": 439344000,
+        "lastSlot": 439749129
+      }
+    }
+  },
+  "id": 1
+}
+```
+</ResponseExample>

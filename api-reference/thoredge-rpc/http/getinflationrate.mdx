@@ -1,0 +1,72 @@
+---
+title: "getInflationRate"
+description: "Returns the specific inflation values for the current epoch."
+---
+
+Returns the specific inflation values for the current epoch.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error.
+
+## Parameters
+
+This method takes no parameters.
+
+## Response
+
+<ResponseField name="total" type="number">
+  Current total annual inflation rate across the entire network (decimal format, e.g., 0.08 = 8%).
+</ResponseField>
+<ResponseField name="validator" type="number">
+  Portion of inflation allocated to validator staking rewards distributed to validators and delegators.
+</ResponseField>
+<ResponseField name="foundation" type="number">
+  Portion of inflation allocated to the Solana Foundation for ongoing development and ecosystem growth.
+</ResponseField>
+<ResponseField name="epoch" type="integer">
+  Specific Solana epoch number for which these inflation rate metrics apply.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getInflationRate"
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getInflationRate"
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "epoch": 1017,
+    "foundation": 0.0,
+    "total": 0.036950251704028776,
+    "validator": 0.036950251704028776
+  },
+  "id": 1
+}
+```
+</ResponseExample>

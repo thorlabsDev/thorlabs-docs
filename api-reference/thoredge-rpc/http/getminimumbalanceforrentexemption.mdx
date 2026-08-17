@@ -1,0 +1,74 @@
+---
+title: "getMinimumBalanceForRentExemption"
+description: "Returns minimum balance required to make account rent exempt."
+---
+
+Returns minimum balance required to make account rent exempt.
+
+## On ThorNode
+
+Answered by [FastGate](/api-reference/fastgate/overview): `commitment` and `minContextSlot` are accepted and ignored, the response reflects FastGate's indexed slot (`context.slot`, no `apiVersion`), and the request times out after 30 s. Computed locally from the rent formula; nothing is fetched.
+
+## Parameters
+
+<ParamField body="address" type="number" required>
+  Size of account data in bytes that you need to store on the chain.
+</ParamField>
+
+<ParamField body="commitment" type="string">
+  The commitment level for the request.
+
+  * `confirmed`
+  * `finalized`
+  * `processed`
+</ParamField>
+
+## Response
+
+<ResponseField name="result" type="integer">
+  Minimum SOL balance in lamports required to make an account with this data size permanently rent-exempt.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getMinimumBalanceForRentExemption",
+    "params": [
+      165
+    ]
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getMinimumBalanceForRentExemption",
+  "params": [
+    165
+  ]
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": 2039280,
+  "id": 1
+}
+```
+</ResponseExample>

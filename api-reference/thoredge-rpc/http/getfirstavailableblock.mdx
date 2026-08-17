@@ -1,0 +1,58 @@
+---
+title: "getFirstAvailableBlock"
+description: "Returns the slot of the lowest confirmed block that has not been purged from the ledger."
+---
+
+Returns the slot of the lowest confirmed block that has not been purged from the ledger.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error. The oldest slot ThorEdge can serve for `getBlock`, `getTransaction`, `getSignaturesForAddress`, and related history methods.
+
+## Parameters
+
+This method takes no parameters.
+
+## Response
+
+<ResponseField name="result" type="integer">
+  Earliest Solana block slot number still available in this node's storage history.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getFirstAvailableBlock"
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getFirstAvailableBlock"
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": 439702525,
+  "id": 1
+}
+```
+</ResponseExample>

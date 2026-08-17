@@ -1,0 +1,111 @@
+---
+title: "getInflationReward"
+description: "Returns the inflation / staking reward for a list of addresses for an epoch."
+---
+
+Returns the inflation / staking reward for a list of addresses for an epoch.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error. Needs the first block of the requested epoch. On the current upstream that block is usually outside the retained ledger window (see `getFirstAvailableBlock`), so the call returns `-32603 upstream returned an invalid response`. Use an archival provider for historical rewards.
+
+## Parameters
+
+<ParamField body="address" type="array" required>
+  List of Solana addresses (validators or delegators) to retrieve staking rewards for, as base-58 encoded strings.
+</ParamField>
+
+<ParamField body="commitment" type="string">
+  The commitment level for the request.
+
+  * `confirmed`
+  * `finalized`
+</ParamField>
+
+<ParamField body="epoch" type="number">
+  Specific Solana epoch number to retrieve rewards for. If omitted, returns the most recently distributed rewards.
+</ParamField>
+
+<ParamField body="minContextSlot" type="number">
+  The minimum slot that the request can be evaluated at.
+</ParamField>
+
+## Response
+
+<ResponseField name="result" type="array">
+  Array of detailed staking reward information for each requested account, in the same order as requested.
+  <Expandable title="item">
+    <ResponseField name="epoch" type="integer">
+      Solana epoch number when these staking rewards were distributed.
+    </ResponseField>
+    <ResponseField name="effectiveSlot" type="integer">
+      Specific blockchain slot when these rewards were calculated and became effective.
+    </ResponseField>
+    <ResponseField name="amount" type="integer">
+      Staking reward amount in lamports earned by this account.
+    </ResponseField>
+    <ResponseField name="postBalance" type="integer">
+      Account balance in lamports after this staking reward was credited.
+    </ResponseField>
+    <ResponseField name="commission" type="integer">
+      Validator commission percentage taken from delegator rewards (null for delegator accounts, 0-100 for validators).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getInflationReward",
+    "params": [
+      [
+        "voteRnv6PBzmiGP8NicWtQiqEJTwKKq2SxtqtdLUJjd"
+      ],
+      {
+        "epoch": 1016
+      }
+    ]
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getInflationReward",
+  "params": [
+    [
+      "voteRnv6PBzmiGP8NicWtQiqEJTwKKq2SxtqtdLUJjd"
+    ],
+    {
+      "epoch": 1016
+    }
+  ]
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "error": {
+    "code": -32603,
+    "message": "upstream returned an invalid response"
+  },
+  "id": 1,
+  "jsonrpc": "2.0"
+}
+```
+</ResponseExample>

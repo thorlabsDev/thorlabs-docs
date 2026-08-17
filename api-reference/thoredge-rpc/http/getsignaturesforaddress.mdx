@@ -1,0 +1,134 @@
+---
+title: "getSignaturesForAddress"
+description: "Returns signatures for confirmed transactions that include the given address in their `accountKeys` list. Returns signatures backwards in time from the provided signature or most recent confirmed block."
+---
+
+Returns signatures for confirmed transactions that include the given address in their `accountKeys` list. Returns signatures backwards in time from the provided signature or most recent confirmed block
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error.  History is limited to the upstream's retained ledger; slots older than `getFirstAvailableBlock` return an error.
+
+## Parameters
+
+<ParamField body="address" type="string" required>
+  Solana account address to retrieve transaction history for (wallet, token, program, NFT, etc.).
+</ParamField>
+
+<ParamField body="commitment" type="string">
+  The commitment level for the request. The `processed` commitment is not supported.
+
+  * `confirmed`
+  * `finalized`
+</ParamField>
+
+<ParamField body="minContextSlot" type="number">
+  The minimum slot that the request can be evaluated at.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Maximum number of transaction signatures to return in a single request (1-1,000).
+</ParamField>
+
+<ParamField body="before" type="string">
+  Pagination parameter to get transactions before this signature (earlier in time).
+</ParamField>
+
+<ParamField body="until" type="string">
+  Get transactions until this signature is reached.
+</ParamField>
+
+## Response
+
+<ResponseField name="result" type="array">
+  List of transaction signature information.
+  <Expandable title="item">
+    <ResponseField name="signature" type="string">
+      Transaction signature as a base-58 encoded string.
+    </ResponseField>
+    <ResponseField name="slot" type="integer">
+      The slot that contains the block with the transaction.
+    </ResponseField>
+    <ResponseField name="err" type="object | null">
+      Error if the transaction failed, or null if successful.
+    </ResponseField>
+    <ResponseField name="memo" type="string | null">
+      Memo associated with the transaction, or null if none.
+    </ResponseField>
+    <ResponseField name="blockTime" type="integer | null">
+      Estimated production time as Unix timestamp (seconds since epoch), or null if not available.
+    </ResponseField>
+    <ResponseField name="confirmationStatus" type="string | null">
+      Transaction's cluster confirmation status.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getSignaturesForAddress",
+    "params": [
+      "Vote111111111111111111111111111111111111111",
+      {
+        "limit": 2
+      }
+    ]
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getSignaturesForAddress",
+  "params": [
+    "Vote111111111111111111111111111111111111111",
+    {
+      "limit": 2
+    }
+  ]
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": [
+    {
+      "blockTime": 1786928047,
+      "confirmationStatus": "finalized",
+      "err": null,
+      "memo": null,
+      "signature": "g2e31thGbotrJPE791drTuVsWPYusKiPdAnfCLw9cJbqJeuLXGcXTXVqL76kBpZoNXQs5z1pN15PfMYT1Zu4bVh",
+      "slot": 439749136,
+      "transactionIndex": 1902
+    },
+    {
+      "blockTime": 1786928047,
+      "confirmationStatus": "finalized",
+      "err": null,
+      "memo": null,
+      "signature": "48dEv857f7nBdjf8wdvHac53QYnSuaDSVwNPRwkos5uPCZHpYPq5XVj25s7XH8sMJZZkznDzdu3ngWDB45juS3NN",
+      "slot": 439749136,
+      "transactionIndex": 1854
+    }
+  ],
+  "id": 1
+}
+```
+</ResponseExample>

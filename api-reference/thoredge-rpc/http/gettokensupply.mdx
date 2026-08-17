@@ -1,0 +1,106 @@
+---
+title: "getTokenSupply"
+description: "Returns the total supply of an SPL Token type."
+---
+
+Returns the total supply of an SPL Token type.
+
+## On ThorNode
+
+Answered by [FastGate](/api-reference/fastgate/overview): `commitment` and `minContextSlot` are accepted and ignored, the response reflects FastGate's indexed slot (`context.slot`, no `apiVersion`), and the request times out after 30 s. A non-mint returns `-32602 Invalid param: not a Token mint`.
+
+## Parameters
+
+<ParamField body="address" type="string" required>
+  Solana token mint address to retrieve supply metrics for (SPL token's unique identifier).
+</ParamField>
+
+<ParamField body="commitment" type="string">
+  The commitment level for the request.
+
+  * `confirmed`
+  * `finalized`
+  * `processed`
+</ParamField>
+
+## Response
+
+<ResponseField name="context" type="object">
+  Context of the response.
+  <Expandable title="properties">
+    <ResponseField name="slot" type="integer">
+      Slot in which the data was fetched.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="value" type="object">
+  Token supply details.
+  <Expandable title="properties">
+    <ResponseField name="amount" type="string">
+      The raw total Solana token supply as a precise integer string without decimal formatting.
+    </ResponseField>
+    <ResponseField name="decimals" type="integer">
+      Number of decimal places defined by the token for accurate supply representation.
+    </ResponseField>
+    <ResponseField name="uiAmount" type="number">
+      The human-readable token supply with proper decimal formatting (deprecated).
+    </ResponseField>
+    <ResponseField name="uiAmountString" type="string">
+      The canonical string representation of the total token supply with correct decimal places.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getTokenSupply",
+    "params": [
+      "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    ]
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getTokenSupply",
+  "params": [
+    "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+  ]
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "context": {
+      "slot": 439749195
+    },
+    "value": {
+      "amount": "7678651861680189",
+      "decimals": 6,
+      "uiAmount": 7678651861.680189,
+      "uiAmountString": "7678651861.680189"
+    }
+  },
+  "id": 1
+}
+```
+</ResponseExample>

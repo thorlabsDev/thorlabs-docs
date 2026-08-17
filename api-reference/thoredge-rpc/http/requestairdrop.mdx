@@ -1,0 +1,83 @@
+---
+title: "requestAirdrop"
+description: "Requests an airdrop of lamports to a Pubkey."
+---
+
+Requests an airdrop of lamports to a Pubkey.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error. Mainnet has no faucet; the upstream rejects the call with `-32600 Invalid request`. Use a devnet endpoint for airdrops.
+
+## Parameters
+
+<ParamField body="address" type="string" required>
+  Solana wallet address (public key) to receive the airdrop of test SOL tokens.
+</ParamField>
+
+<ParamField body="value" type="number" required>
+  Amount of SOL to airdrop in lamports for testing.
+</ParamField>
+
+<ParamField body="commitment" type="string">
+  The commitment level for the request.
+
+  * `confirmed`
+  * `finalized`
+  * `processed`
+</ParamField>
+
+## Response
+
+<ResponseField name="result" type="string">
+  Solana transaction signature of the completed airdrop, can be used to verify the SOL was received.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "requestAirdrop",
+    "params": [
+      "5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9",
+      1000000000
+    ]
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "requestAirdrop",
+  "params": [
+    "5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9",
+    1000000000
+  ]
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "error": {
+    "code": -32600,
+    "message": "Invalid request"
+  },
+  "id": 1
+}
+```
+</ResponseExample>

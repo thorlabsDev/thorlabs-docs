@@ -1,0 +1,58 @@
+---
+title: "getHealth"
+description: "Returns the current health of the node. A healthy node is one that is within `HEALTH_CHECK_SLOT_DISTANCE` slots of the latest cluster confirmed slot."
+---
+
+Returns the current health of the node. A healthy node is one that is within `HEALTH_CHECK_SLOT_DISTANCE` slots of the latest cluster confirmed slot.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error. Reports the health of the upstream node, not of ThorEdge itself. ThorEdge returns `-32063` when it has no healthy upstream.
+
+## Parameters
+
+This method takes no parameters.
+
+## Response
+
+<ResponseField name="result" type="string">
+  Health status indicator confirming the node is operational and synchronized with the network.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getHealth"
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getHealth"
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": "ok",
+  "id": 1
+}
+```
+</ResponseExample>

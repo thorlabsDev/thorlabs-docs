@@ -1,0 +1,103 @@
+---
+title: "signatureSubscribe"
+description: "Subscribe to receive a notification when the transaction with the given signature reaches the specified commitment level."
+---
+
+Subscribe to receive a notification when the transaction with the given signature reaches the specified commitment level.
+
+## On ThorNode
+
+Send over the complete `wss://` URL copied from the dashboard. Each active subscription counts toward the per-token cap; over the cap the request is answered with `-32005 subscription limit exceeded` and not forwarded. Frames pass through unchanged. The subscription closes itself after the notification, so a later `signatureUnsubscribe` for the same id returns `-32602 Invalid subscription id.`
+
+## Parameters
+
+<ParamField body="params" type="array" required>
+  <Expandable title="properties" defaultOpen>
+    <ParamField body="signature" type="string" required>
+      Transaction signature, as base-58 encoded string.
+
+      The transaction signature must be the first signature from the transaction (see transaction id for more details).
+    </ParamField>
+
+    <ParamField body="config" type="object">
+      Configuration object containing the following fields:
+
+      <ParamField body="commitment" type="string">
+        The commitment level for the subscription. Can be `finalized`, `confirmed`, or `processed`.
+      </ParamField>
+
+      <ParamField body="enableReceivedNotification" type="boolean">
+        Whether to send a notification when the transaction signature is received.
+      </ParamField>
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Notification format
+
+The notification will be an RpcResponse JSON object with value containing an object with:
+
+* `slot: <u64>` - The corresponding slot.
+* `value: <object|string>` - a notification value of RpcSignatureResult, resulting in either:
+  * when `enableReceivedNotification` is `true` and the signature is received: the literal string `"receivedSignature"`, or
+  * when the signature is processed: `err: <object|null>`:
+    * `null` if the transaction succeeded in being processed at the specified commitment level, or
+    * a TransactionError, if the transaction failed
+
+## Response
+
+<ResponseField name="result" type="integer">
+  Subscription id (needed to unsubscribe)
+</ResponseField>
+
+<RequestExample>
+```json Request
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "signatureSubscribe",
+  "params": [
+    "Q7Q8rMSn9PAdJfwRPwEBrijt7bNqrD1cRqkBd8fjYnXidJUoKz5wSRY2y1emZhw3KwM44A5QSM2k6GsaXCYugez",
+    {
+      "commitment": "finalized"
+    }
+  ]
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": 3081,
+  "id": 1
+}
+```
+
+```json Notification
+{
+  "jsonrpc": "2.0",
+  "method": "signatureNotification",
+  "params": {
+    "result": {
+      "context": {
+        "slot": 439749496
+      },
+      "value": {
+        "err": {
+          "InstructionError": [
+            2,
+            {
+              "Custom": 103
+            }
+          ]
+        }
+      }
+    },
+    "subscription": 3081
+  }
+}
+```
+
+</ResponseExample>

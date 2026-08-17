@@ -1,0 +1,89 @@
+---
+title: "getEpochInfo"
+description: "Returns information about the current epoch."
+---
+
+Returns information about the current epoch.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error.
+
+## Parameters
+
+<ParamField body="commitment" type="string">
+  The commitment level for the request.
+
+  * `confirmed`
+  * `finalized`
+</ParamField>
+
+<ParamField body="minContextSlot" type="number">
+  The minimum slot that the request can be evaluated at.
+</ParamField>
+
+## Response
+
+<ResponseField name="absoluteSlot" type="integer">
+  The current absolute Solana slot number representing global blockchain progress.
+</ResponseField>
+<ResponseField name="blockHeight" type="integer">
+  Current chain height in blocks.
+</ResponseField>
+<ResponseField name="epoch" type="integer">
+  Current Solana epoch number representing the validator cycle and staking period.
+</ResponseField>
+<ResponseField name="slotIndex" type="integer">
+  Current position within the epoch, showing progression through the validator cycle.
+</ResponseField>
+<ResponseField name="slotsInEpoch" type="integer">
+  Total number of slots in the current epoch, defining epoch duration and validator schedule length.
+</ResponseField>
+<ResponseField name="transactionCount" type="integer">
+  Cumulative number of successful transactions processed on Solana since genesis.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getEpochInfo"
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getEpochInfo"
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "absoluteSlot": 439749095,
+    "blockHeight": 417799656,
+    "epoch": 1017,
+    "slotIndex": 405095,
+    "slotsInEpoch": 432000,
+    "transactionCount": 538827186291
+  },
+  "id": 1
+}
+```
+</ResponseExample>

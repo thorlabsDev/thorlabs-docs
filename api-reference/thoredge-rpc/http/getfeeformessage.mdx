@@ -1,0 +1,97 @@
+---
+title: "getFeeForMessage"
+description: "Get the fee the network will charge for a particular Message."
+---
+
+Get the fee the network will charge for a particular Message.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error.
+
+## Parameters
+
+<ParamField body="transaction" type="string" required>
+  Base-64 encoded serialized Solana transaction message to calculate the exact fee for.
+</ParamField>
+
+<ParamField body="commitment" type="string">
+  The commitment level for the request.
+
+  * `confirmed`
+  * `finalized`
+</ParamField>
+
+<ParamField body="minContextSlot" type="number">
+  The minimum slot that the request can be evaluated at.
+</ParamField>
+
+## Response
+
+<ResponseField name="context" type="object">
+  Context of the response.
+  <Expandable title="properties">
+    <ResponseField name="slot" type="integer">
+      The slot at which the fee was calculated.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="value" type="integer">
+  Exact transaction fee in lamports required to process this specific message on the network.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getFeeForMessage",
+    "params": [
+      "<BASE64_MESSAGE>",
+      {
+        "commitment": "processed"
+      }
+    ]
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getFeeForMessage",
+  "params": [
+    "<BASE64_MESSAGE>",
+    {
+      "commitment": "processed"
+    }
+  ]
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "context": {
+      "apiVersion": "4.1.2",
+      "slot": 439749235
+    },
+    "value": 5000
+  },
+  "id": 1
+}
+```
+</ResponseExample>

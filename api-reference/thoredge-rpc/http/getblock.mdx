@@ -1,0 +1,179 @@
+---
+title: "getBlock"
+description: "Returns identity and transaction information about a confirmed block in the ledger."
+---
+
+Returns identity and transaction information about a confirmed block in the ledger.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error.  History is limited to the upstream's retained ledger; slots older than `getFirstAvailableBlock` return an error.
+
+## Parameters
+
+<ParamField body="slot" type="number" required>
+  Slot number as a `u64` integer.
+</ParamField>
+
+<ParamField body="commitment" type="string" default="finalized">
+  The commitment level for the request.
+
+  * `finalized`
+</ParamField>
+
+<ParamField body="encoding" type="string" default="json">
+  The encoding format for each returned transaction.
+
+  * `json`
+  * `jsonParsed`
+  * `base58`
+  * `base64`
+</ParamField>
+
+<ParamField body="transactionDetails" type="string" default="full">
+  Level of transaction detail to return. If accounts are requested, transaction details only include signatures and an annotated list of accounts in each transaction. Transaction metadata includes only: fee, err, pre\_balances, post\_balances, pre\_token\_balances, and post\_token\_balances.
+
+  * `full`
+  * `accounts`
+  * `signatures`
+  * `none`
+</ParamField>
+
+<ParamField body="maxSupportedTransactionVersion" type="number">
+  Maximum transaction version to return in responses. If the requested block contains a transaction with a higher version, an error will be returned. If omitted, only legacy transactions will be returned.
+</ParamField>
+
+<ParamField body="rewards" type="boolean" default="true">
+  Whether to populate the rewards array.
+</ParamField>
+
+## Response
+
+<ResponseField name="blockhash" type="string">
+  The blockhash of this block (base-58 encoded string).
+</ResponseField>
+<ResponseField name="previousBlockhash" type="string">
+  The blockhash of the block's parent.
+</ResponseField>
+<ResponseField name="parentSlot" type="integer">
+  The slot index of this block's parent.
+</ResponseField>
+<ResponseField name="transactions" type="array">
+  Array of transaction details.
+  <Expandable title="item">
+    <ResponseField name="meta" type="object">
+      Metadata associated with the transaction.
+    </ResponseField>
+    <ResponseField name="transaction" type="object">
+      Transaction details.
+      <Expandable title="properties">
+        <ResponseField name="message" type="object">
+          <Expandable title="properties">
+            <ResponseField name="accountKeys" type="string[]">
+              Array of account public keys used in this transaction.
+            </ResponseField>
+            <ResponseField name="header" type="object">
+            </ResponseField>
+            <ResponseField name="instructions" type="array">
+              Array of program instructions.
+            </ResponseField>
+            <ResponseField name="recentBlockhash" type="string">
+              Recent blockhash used in this transaction.
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+        <ResponseField name="signatures" type="string[]">
+          Array of signatures for this transaction (base-58 encoded).
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="blockTime" type="integer">
+  Estimated production time as Unix timestamp.
+</ResponseField>
+<ResponseField name="blockHeight" type="integer">
+  Number of blocks beneath this block.
+</ResponseField>
+<ResponseField name="rewards" type="array">
+  Rewards for the block.
+  <Expandable title="item">
+    <ResponseField name="pubkey" type="string">
+      The public key of the account that received the reward.
+    </ResponseField>
+    <ResponseField name="lamports" type="integer">
+      Number of reward lamports credited or debited.
+    </ResponseField>
+    <ResponseField name="rewardType" type="string">
+      Type of reward (e.g., "fee", "rent").
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getBlock",
+    "params": [
+      439749081,
+      {
+        "encoding": "json",
+        "transactionDetails": "signatures",
+        "rewards": false,
+        "maxSupportedTransactionVersion": 0
+      }
+    ]
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getBlock",
+  "params": [
+    439749081,
+    {
+      "encoding": "json",
+      "transactionDetails": "signatures",
+      "rewards": false,
+      "maxSupportedTransactionVersion": 0
+    }
+  ]
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response (signatures truncated)
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "blockHeight": 417799642,
+    "blockTime": 1786928022,
+    "blockhash": "3Q5KezdAVJreiW7AMHUokyA9s1Uy81vRf6eZfdNgTVbx",
+    "parentSlot": 439749080,
+    "previousBlockhash": "WcbhwGe26avXk91j6VpM9LgQxJ2YAsqksKqdVd7yLQc",
+    "signatures": [
+      "4yEd4nELJeDu5LEJVqnTDMN33jYLEwhdV3DrzW2ujozTkg7Vob3iWg9GxDutG7AtweTS4R3e3KpcMfWPEYKfbktz",
+      "4nerjFi6tTQ3WA5uQWj23JjTTxRWDvL6Q9tY2mKwVXwh7RXLU8Cra7zV3iaDYpA5zVXXJhPrCohwuaxxqrdafrV7",
+      "3GHaLUbYSo6KKhQQzcLnoTyfMwujz4yjuJkT4hmC1MvHnz35Eerrx6ZWPLaVb2yxkYyBDhi5DS8Cwc6iqrPJ4kio",
+      "..."
+    ]
+  },
+  "id": 1
+}
+```
+</ResponseExample>

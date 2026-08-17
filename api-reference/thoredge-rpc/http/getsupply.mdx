@@ -1,0 +1,93 @@
+---
+title: "getSupply"
+description: "Returns information about the current supply."
+---
+
+Returns information about the current supply.
+
+## On ThorNode
+
+**Not served.** ThorEdge answers `getSupply` with HTTP `200` and `{"code": -32601, "message": "method not found"}`. Use `getInflationRate`, `getVoteAccounts`, or an archival provider for supply figures.
+
+## Parameters
+
+<ParamField body="commitment" type="string">
+  The commitment level for the request.
+
+  * `confirmed`
+  * `finalized`
+  * `processed`
+</ParamField>
+
+<ParamField body="excludeNonCirculatingAccountsList" type="boolean">
+  Option to exclude the detailed list of non-circulating SOL reserve accounts for faster response.
+</ParamField>
+
+## Response
+
+<ResponseField name="context" type="object">
+  Context of the response.
+  <Expandable title="properties">
+    <ResponseField name="slot" type="integer">
+      Slot in which the data was fetched.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="value" type="object">
+  Supply details.
+  <Expandable title="properties">
+    <ResponseField name="total" type="integer">
+      Total SOL supply in existence (in lamports), including both circulating and locked tokens.
+    </ResponseField>
+    <ResponseField name="circulating" type="integer">
+      Amount of SOL (in lamports) currently in circulation and available for public use.
+    </ResponseField>
+    <ResponseField name="nonCirculating" type="integer">
+      Amount of SOL (in lamports) held in reserve accounts and not currently available in circulation.
+    </ResponseField>
+    <ResponseField name="nonCirculatingAccounts" type="string[]">
+      List of Solana wallet addresses that hold non-circulating SOL tokens in reserve.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getSupply"
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getSupply"
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "id": 1,
+  "jsonrpc": "2.0",
+  "error": {
+    "message": "method not found",
+    "code": -32601
+  }
+}
+```
+</ResponseExample>

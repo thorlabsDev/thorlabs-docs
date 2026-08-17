@@ -1,0 +1,76 @@
+---
+title: "getBlockCommitment"
+description: "Returns the cluster commitment and stake-weighted vote distribution for a specific Solana block."
+---
+
+Returns the cluster commitment and stake-weighted vote distribution for a specific Solana block.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error.  History is limited to the upstream's retained ledger; slots older than `getFirstAvailableBlock` return an error.
+
+## Parameters
+
+<ParamField body="slot" type="integer" required>
+  Block number identified by Slot (as `u64` integer).
+</ParamField>
+
+## Response
+
+<ResponseField name="commitment" type="null | integer[]">
+</ResponseField>
+<ResponseField name="totalStake" type="integer">
+  Total active stake, in lamports, of the current epoch.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getBlockCommitment",
+    "params": [
+      439749081
+    ]
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getBlockCommitment",
+  "params": [
+    439749081
+  ]
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response (commitment array truncated)
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "commitment": [
+      0,
+      327979390618683,
+      0,
+      "..."
+    ],
+    "totalStake": 435491340086071094
+  },
+  "id": 1
+}
+```
+</ResponseExample>

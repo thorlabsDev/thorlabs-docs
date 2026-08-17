@@ -1,0 +1,76 @@
+---
+title: "getInflationGovernor"
+description: "Returns Solana's current inflation governor, the initial rate, terminal rate, foundation share, and taper schedule that determine how SOL issuance decays over time."
+---
+
+Returns Solana's current inflation governor, the initial rate, terminal rate, foundation share, and taper schedule that determine how SOL issuance decays over time.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error.
+
+## Parameters
+
+This method takes no parameters.
+
+## Response
+
+<ResponseField name="initial" type="number">
+  Starting annual inflation rate at the beginning of Solana's mainnet (decimal format, e.g., 0.08 = 8%).
+</ResponseField>
+<ResponseField name="terminal" type="number">
+  Long-term sustainable inflation rate that the system will eventually reach and maintain indefinitely.
+</ResponseField>
+<ResponseField name="taper" type="number">
+  Annual rate at which inflation decreases from initial to terminal rate (disinflationary schedule speed).
+</ResponseField>
+<ResponseField name="foundation" type="number">
+  Percentage of total inflation allocated to the Solana Foundation for ecosystem development.
+</ResponseField>
+<ResponseField name="foundationTerm" type="number">
+  Duration in years for which the foundation receives an allocation from inflation.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getInflationGovernor"
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getInflationGovernor"
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "foundation": 0.0,
+    "foundationTerm": 0.0,
+    "initial": 0.08,
+    "taper": 0.15,
+    "terminal": 0.015
+  },
+  "id": 1
+}
+```
+</ResponseExample>

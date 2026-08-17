@@ -1,0 +1,64 @@
+---
+title: "getHighestSnapshotSlot"
+description: "Returns the highest slot information that the node has snapshots for."
+---
+
+Returns the highest slot information that the node has snapshots for.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error.
+
+## Parameters
+
+This method takes no parameters.
+
+## Response
+
+<ResponseField name="full" type="integer">
+  Highest Solana slot for which a complete blockchain state snapshot is available on this node.
+</ResponseField>
+<ResponseField name="incremental" type="integer">
+  Highest Solana slot for which an incremental state delta snapshot is available, built on top of the full snapshot.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getHighestSnapshotSlot"
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getHighestSnapshotSlot"
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "full": 439724426,
+    "incremental": 439748439
+  },
+  "id": 1
+}
+```
+</ResponseExample>

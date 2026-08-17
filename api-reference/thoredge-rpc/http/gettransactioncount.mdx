@@ -1,0 +1,68 @@
+---
+title: "getTransactionCount"
+description: "Returns the current Transaction count from the ledger."
+---
+
+Returns the current Transaction count from the ledger.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error.
+
+## Parameters
+
+<ParamField body="commitment" type="string">
+  The finality level at which to measure the transaction count (processed = recent, finalized = confirmed).
+
+  * `confirmed`
+  * `finalized`
+  * `processed`
+</ParamField>
+
+<ParamField body="minContextSlot" type="number">
+  The minimum slot that the request can be evaluated at.
+</ParamField>
+
+## Response
+
+<ResponseField name="result" type="integer">
+  Total number of transactions processed by the chain since network inception.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getTransactionCount"
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getTransactionCount"
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": 538827209277,
+  "id": 1
+}
+```
+</ResponseExample>

@@ -1,0 +1,94 @@
+---
+title: "blockSubscribe"
+description: "Subscribe to receive notification anytime a new block is `confirmed` or `finalized`."
+---
+
+Subscribe to receive notification anytime a new block is `confirmed` or `finalized`.
+
+## On ThorNode
+
+The upstream node does not enable block subscriptions; the request returns `-32601 Method not found`. Use [Yellowstone gRPC](/api-reference/yellowstone/subscribe) or poll `getBlock`.
+
+## Parameters
+
+<ParamField body="params" type="array" required>
+  <Expandable title="properties" defaultOpen>
+    <ParamField body="filter" type="string | object" required>
+      Filter criteria for the logs to receive results by account type; currently supported:
+
+      * `all` - include all transactions in block
+      * A JSON object with the following field:
+        * `mentionsAccountOrProgram: <string>` - return only transactions that mention the provided public key (as base-58 encoded string). If no mentions in a given block, then no notification will be sent.
+    </ParamField>
+
+    <ParamField body="config" type="object">
+      Configuration object containing the following fields:
+
+      <ParamField body="commitment" type="string">
+        The commitment level for the subscription. Can be `finalized`, `confirmed`, or `processed`.
+      </ParamField>
+
+      <ParamField body="encoding" type="string">
+        Encoding format for the transaction data.
+      </ParamField>
+
+      <ParamField body="transactionDetails" type="string">
+        Level of transaction detail to return.
+      </ParamField>
+
+      <ParamField body="maxSupportedTransactionVersion" type="number">
+        The max transaction version to return in responses.
+      </ParamField>
+
+      <ParamField body="showRewards" type="boolean">
+        Whether to show rewards in the response.
+      </ParamField>
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Notification format
+
+The notification will be an object with the following fields:
+
+* `slot: <u64>` - The corresponding slot.
+* `err: <object|null>` - Error if something went wrong publishing the notification otherwise null.
+* `block: <object|null>` - A block object as seen in the `getBlock` RPC HTTP method.
+
+## Response
+
+<ResponseField name="result" type="integer">
+  Subscription id (needed to unsubscribe)
+</ResponseField>
+
+<RequestExample>
+```json Request
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "blockSubscribe",
+  "params": [
+    "all",
+    {
+      "commitment": "confirmed",
+      "transactionDetails": "none",
+      "showRewards": false
+    }
+  ]
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "error": {
+    "code": -32601,
+    "message": "Method not found"
+  },
+  "id": 1
+}
+```
+
+</ResponseExample>

@@ -1,0 +1,115 @@
+---
+title: "getSignatureStatuses"
+description: "Returns the statuses of a list of signatures. Each signature must be a txid, the first signature of a transaction."
+---
+
+Returns the statuses of a list of signatures. Each signature must be a txid, the first signature of a transaction.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error.  History is limited to the upstream's retained ledger; slots older than `getFirstAvailableBlock` return an error.`searchTransactionHistory: true` looks back only as far as the retained ledger window (`getFirstAvailableBlock`).
+
+## Parameters
+
+<ParamField body="transaction" type="array" required>
+  Array of transaction signatures (up to 256), as base-58 encoded strings.
+</ParamField>
+
+<ParamField body="searchTransactionHistory" type="boolean">
+  Enable searching beyond recent status cache to find older historical transactions.
+</ParamField>
+
+## Response
+
+<ResponseField name="context" type="object">
+  <Expandable title="properties">
+    <ResponseField name="slot" type="integer">
+      Slot in which the data was fetched.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="value" type="array">
+  List of transaction signature statuses.
+  <Expandable title="item">
+    <ResponseField name="slot" type="integer">
+      Slot number where this transaction was included in a block.
+    </ResponseField>
+    <ResponseField name="confirmations" type="integer | null">
+    </ResponseField>
+    <ResponseField name="err" type="object | null">
+    </ResponseField>
+    <ResponseField name="confirmationStatus" type="string">
+      Current finality status of the transaction (processed → confirmed → finalized). One of: `processed`, `confirmed`, `finalized`.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getSignatureStatuses",
+    "params": [
+      [
+        "g2e31thGbotrJPE791drTuVsWPYusKiPdAnfCLw9cJbqJeuLXGcXTXVqL76kBpZoNXQs5z1pN15PfMYT1Zu4bVh"
+      ],
+      {
+        "searchTransactionHistory": true
+      }
+    ]
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getSignatureStatuses",
+  "params": [
+    [
+      "g2e31thGbotrJPE791drTuVsWPYusKiPdAnfCLw9cJbqJeuLXGcXTXVqL76kBpZoNXQs5z1pN15PfMYT1Zu4bVh"
+    ],
+    {
+      "searchTransactionHistory": true
+    }
+  ]
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "context": {
+      "apiVersion": "4.1.2",
+      "slot": 439749170
+    },
+    "value": [
+      {
+        "confirmationStatus": "finalized",
+        "confirmations": null,
+        "err": null,
+        "slot": 439749136,
+        "status": {
+          "Ok": null
+        }
+      }
+    ]
+  },
+  "id": 1
+}
+```
+</ResponseExample>

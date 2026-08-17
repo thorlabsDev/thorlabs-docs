@@ -1,0 +1,170 @@
+---
+title: "getMultipleAccounts"
+description: "Returns the account information for a list of Pubkeys."
+---
+
+Returns the account information for a list of Pubkeys.
+
+## On ThorNode
+
+Answered by [FastGate](/api-reference/fastgate/overview): `commitment` and `minContextSlot` are accepted and ignored, the response reflects FastGate's indexed slot (`context.slot`, no `apiVersion`), and the request times out after 30 s. No cap on the number of pubkeys per request. Missing accounts are `null` in position.
+
+## Parameters
+
+<ParamField body="address" type="array" required>
+  Array of Solana account addresses (up to 100) to fetch in a single optimized batch request.
+</ParamField>
+
+<ParamField body="commitment" type="string">
+  The commitment level for the request.
+
+  * `confirmed`
+  * `finalized`
+  * `processed`
+</ParamField>
+
+<ParamField body="minContextSlot" type="number">
+  The minimum slot that the request can be evaluated at.
+</ParamField>
+
+<ParamField body="dataSlice" type="object">
+  Request a slice of the account's data.
+</ParamField>
+
+<ParamField body="dataSlice.length" type="number">
+  Number of bytes to return.
+</ParamField>
+
+<ParamField body="dataSlice.offset" type="number">
+  Byte offset from which to start reading.
+</ParamField>
+
+<ParamField body="encoding" type="string">
+  Encoding format for the returned account data.
+
+  * `jsonParsed`
+  * `base58`
+  * `base64`
+  * `base64+zstd`
+</ParamField>
+
+## Response
+
+<ResponseField name="context" type="object">
+  Context of the response.
+  <Expandable title="properties">
+    <ResponseField name="apiVersion" type="string">
+      API version of the response.
+    </ResponseField>
+    <ResponseField name="slot" type="integer">
+      The slot at which the data was fetched.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="value" type="array">
+  Array of account details.
+  <Expandable title="item">
+    <ResponseField name="lamports" type="integer">
+      Number of lamports assigned to the account.
+    </ResponseField>
+    <ResponseField name="owner" type="string">
+      Base-58 encoded Pubkey of the program the account is assigned to.
+    </ResponseField>
+    <ResponseField name="data" type="string[]">
+      Account data as encoded binary or JSON format.
+    </ResponseField>
+    <ResponseField name="executable" type="boolean">
+      Indicates if the account contains a program.
+    </ResponseField>
+    <ResponseField name="rentEpoch" type="integer">
+      Epoch at which this account will next owe rent.
+    </ResponseField>
+    <ResponseField name="space" type="integer">
+      Data size of the account.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getMultipleAccounts",
+    "params": [
+      [
+        "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "So11111111111111111111111111111111111111112"
+      ],
+      {
+        "encoding": "base64"
+      }
+    ]
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getMultipleAccounts",
+  "params": [
+    [
+      "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      "So11111111111111111111111111111111111111112"
+    ],
+    {
+      "encoding": "base64"
+    }
+  ]
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "context": {
+      "slot": 439749192
+    },
+    "value": [
+      {
+        "lamports": 519684617954,
+        "data": [
+          "AQAAAJj+huiNm+Lqi8HMpIeLKYjCQPUrhCS/tA7Rot3LXhmbPcCRdLFHGwAGAQEAAABicKqKWcWUBbRShshncubNEm6bil06OFNtN/e0FOi2Zw==",
+          "base64"
+        ],
+        "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+        "executable": false,
+        "rentEpoch": 18446744073709551615,
+        "space": 82
+      },
+      {
+        "lamports": 1695478507405,
+        "data": [
+          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+          "base64"
+        ],
+        "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+        "executable": false,
+        "rentEpoch": 18446744073709551615,
+        "space": 82
+      }
+    ]
+  },
+  "id": 1
+}
+```
+</ResponseExample>

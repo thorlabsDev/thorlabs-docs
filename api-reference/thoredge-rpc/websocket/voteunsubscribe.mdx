@@ -1,0 +1,53 @@
+---
+title: "voteUnsubscribe"
+description: "Unsubscribe from vote notifications."
+---
+
+Unsubscribe from vote notifications.
+
+## On ThorNode
+
+The upstream node does not enable vote subscriptions; subscribing returns `-32601 Method not found`. There is nothing to unsubscribe.
+
+## Parameters
+
+<ParamField body="params" type="array" required>
+  <Expandable title="properties" defaultOpen>
+    <ParamField body="subscriptionId" type="integer" required>
+      Subscription id to cancel.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Response
+
+<ResponseField name="result" type="boolean">
+  Unsubscribe success message.
+</ResponseField>
+
+<RequestExample>
+```json Request
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "voteUnsubscribe",
+  "params": [
+    0
+  ]
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response (method not enabled)
+{
+  "jsonrpc": "2.0",
+  "error": {
+    "code": -32601,
+    "message": "Method not found"
+  },
+  "id": 2
+}
+```
+
+</ResponseExample>

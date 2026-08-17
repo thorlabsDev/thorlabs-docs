@@ -1,0 +1,103 @@
+---
+title: "sendTransaction"
+description: "Submits a signed transaction to the cluster for processing."
+---
+
+Submits a signed transaction to the cluster for processing.
+
+## On ThorNode
+
+Forwarded once to the transaction gateway with an **8 s** timeout and never resubmitted by ThorEdge; on a `502` you decide whether to rebuild and resend. Counts against the TPS cap as well as the RPS cap. Parameters are forwarded unchanged. The result is the transaction signature; a result of `"OK"` means the gateway accepted the request but no upstream returned a signature. Treat `"OK"` as not confirmed: check `getSignatureStatuses` with the signature you computed locally and resend if it does not appear.
+
+## Parameters
+
+<ParamField body="transaction" type="string" required>
+  The fully-signed Solana transaction encoded as a base-58 string for blockchain submission.
+</ParamField>
+
+<ParamField body="encoding" type="string">
+  Data encoding format used for the Solana transaction payload.
+
+  * `base58`
+  * `base64`
+</ParamField>
+
+<ParamField body="skipPreflight" type="boolean">
+  When true, bypasses Solana's preflight transaction validation for faster submission.
+</ParamField>
+
+<ParamField body="preflightCommitment" type="string">
+  Network commitment level for transaction validation checks.
+
+  * `confirmed`
+  * `finalized`
+  * `processed`
+</ParamField>
+
+<ParamField body="maxRetries" type="number">
+  Maximum number of automatic retry attempts for failed Solana transaction submissions.
+</ParamField>
+
+<ParamField body="minContextSlot" type="number">
+  Minimum slot required for transaction processing.
+</ParamField>
+
+## Response
+
+<ResponseField name="result" type="string">
+  The unique Solana transaction signature for tracking confirmation status and transaction history.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "sendTransaction",
+    "params": [
+      "<BASE64_SIGNED_TRANSACTION>",
+      {
+        "encoding": "base64",
+        "skipPreflight": true,
+        "maxRetries": 0
+      }
+    ]
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "sendTransaction",
+  "params": [
+    "<BASE64_SIGNED_TRANSACTION>",
+    {
+      "encoding": "base64",
+      "skipPreflight": true,
+      "maxRetries": 0
+    }
+  ]
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": "<TRANSACTION_SIGNATURE>",
+  "id": 1
+}
+```
+</ResponseExample>

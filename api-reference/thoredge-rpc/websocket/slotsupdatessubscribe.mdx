@@ -1,0 +1,100 @@
+---
+title: "slotsUpdatesSubscribe"
+description: "Subscribe to receive a notification from the validator on a variety of updates on every slot."
+---
+
+Subscribe to receive a notification from the validator on a variety of updates on every slot.
+
+## On ThorNode
+
+Send over the complete `wss://` URL copied from the dashboard. Each active subscription counts toward the per-token cap; over the cap the request is answered with `-32005 subscription limit exceeded` and not forwarded. Frames pass through unchanged.
+
+## Parameters
+
+<ParamField body="params" type="array">
+  <Expandable title="properties" defaultOpen>
+    <ParamField body="none" type="null">
+      No parameters required.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Notification format
+
+The notification will be an object with the following fields:
+
+* `err: <string|undefined>` - The error message. Only present if the update is of type "dead".
+* `parent: <u64|undefined>` - The parent slot. Only present if the update is of type "createdBank".
+* `slot: <u64>` - The newly updated slot
+* `stats: <object|undefined>` - Only present if the update is of type "frozen". An object with the following fields:
+  * `maxTransactionsPerEntry: <u64>`
+  * `numFailedTransactions: <u64>`
+  * `numSuccessfulTransactions: <u64>`
+  * `numTransactionEntries: <u64>`
+* `timestamp: <i64>` - The Unix timestamp of the update in milliseconds
+* `type: <string>` - The update type, one of:
+  * "firstShredReceived"
+  * "completed"
+  * "createdBank"
+  * "frozen"
+  * "dead"
+  * "optimisticConfirmation"
+  * "root"
+
+## Response
+
+<ResponseField name="result" type="integer">
+  Subscription id (needed to unsubscribe)
+</ResponseField>
+
+<RequestExample>
+```json Request
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "slotsUpdatesSubscribe",
+  "params": []
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": 3084,
+  "id": 1
+}
+```
+
+```json Notification 1
+{
+  "jsonrpc": "2.0",
+  "method": "slotsUpdatesNotification",
+  "params": {
+    "result": {
+      "type": "optimisticConfirmation",
+      "slot": 439749542,
+      "timestamp": 1786928215391
+    },
+    "subscription": 3084
+  }
+}
+```
+
+```json Notification 2
+{
+  "jsonrpc": "2.0",
+  "method": "slotsUpdatesNotification",
+  "params": {
+    "result": {
+      "type": "completed",
+      "slot": 439749543,
+      "timestamp": 1786928215654
+    },
+    "subscription": 3084
+  }
+}
+```
+
+</ResponseExample>
