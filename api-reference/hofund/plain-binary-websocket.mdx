@@ -49,6 +49,12 @@ Errors use the full JSON-RPC envelope with `"id": null` and the [same codes as J
 
 ## WebSocket `/hofund/ws` and `/hofund/ws/mev-protect`
 
+<Warning>
+  The WebSocket ingress is not enabled on any location yet. The routes below
+  describe the interface as it will ship; calling them today returns an error.
+  Use `/hofund/plain` or `/hofund/binary` for non-JSON submission.
+</Warning>
+
 `GET` upgrade with no query string, no body, and no subprotocol. `/hofund/ws` is the fast lane; `/hofund/ws/mev-protect` is the protected lane. Neither falls back to the other.
 
 - Every application message is one **binary** frame containing one raw, fully signed transaction, at most 1232 bytes. Text frames close the socket with `1003`.

@@ -3,6 +3,12 @@ title: "sendIdeal and getNonce"
 description: "Submit a fast/Jito pair that shares a durable nonce so only one can land, and fetch the nonce it needs."
 ---
 
+<Note>
+  `sendIdeal` and `getNonce` require both the fast and the Jito lane; both are
+  live, but ThorNode has not yet run this pair end to end in production. Treat
+  this page as the interface contract and expect it to be verified shortly.
+</Note>
+
 An ideal pair is two versions of the same intent: one tuned for the fast rails (priority fee), one for Jito (tip). Both use the same durable nonce, so whichever lands first cancels the other. Both methods live on `/hofund`.
 
 ## getNonce

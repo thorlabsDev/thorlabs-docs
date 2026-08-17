@@ -13,8 +13,6 @@ Hofund is ThorNode's own submission surface, reached through Bifrost route URLs.
 | `POST /hofund` | JSON-RPC | `sendTransaction`, `sendBatch`, `sendBundle`, `sendIdeal`, `getNonce`, `getHealth` | per method |
 | `POST /hofund/plain` | base64 text | `method=` query: `sendTransaction`, `sendBatch`, `getHealth` | [Plain, binary, WebSocket](/api-reference/hofund/plain-binary-websocket) |
 | `POST /hofund/binary` | raw bytes | same as plain | [Plain, binary, WebSocket](/api-reference/hofund/plain-binary-websocket) |
-| `GET /hofund/ws` | binary WebSocket messages | fast lane, fire-and-forget | [Plain, binary, WebSocket](/api-reference/hofund/plain-binary-websocket) |
-| `GET /hofund/ws/mev-protect` | binary WebSocket messages | protected lane, fire-and-forget | [Plain, binary, WebSocket](/api-reference/hofund/plain-binary-websocket) |
 | `POST /hofund-fast` | JSON-RPC | `sendTransaction` on both fast rails | [sendTransaction](/api-reference/hofund/sendtransaction) |
 | `POST /hofund-direct-tpu` | JSON-RPC | `sendTransaction`, direct TPU only | [sendTransaction](/api-reference/hofund/sendtransaction) |
 | `POST /hofund-swqos` | JSON-RPC | `sendTransaction`, SWQoS only | [sendTransaction](/api-reference/hofund/sendtransaction) |
