@@ -14,7 +14,7 @@ Wallet private keys and seed phrases are never ThorNode support credentials. Nev
 | ThorEdge RPC and WebSocket | Selected access, network, and location                                               | Use the complete URL copied from that location's dashboard view. The URL carries or resolves to the token. |
 | Yellowstone gRPC           | Selected access and location                                                         | Attach the token as `x-token` request metadata; never append it to the dial target.                        |
 | Pulse Decoded Shreds       | Selected access and location                                                         | Send the token in the first Pulse client control message; never append it to the target.                   |
-| Bifrost Transaction Routes | The dashboard issues one Private TX key per access for its enabled Bifrost locations | Use the complete HTTPS route URL copied for the selected location and operation.                           |
+| Bifrost Transaction Routes | The dashboard issues one Bifrost key per access for its enabled Bifrost locations | Use the complete HTTPS route URL copied for the selected location and operation.                           |
 | Replay                     | Selected access                                                                      | Use the dedicated replay key for ShredReplay jobs only.                                                    |
 | Raw Shred Stream           | Dashboard registration                                                               | UDP packets do not carry a customer credential; the dashboard authorizes the receiver registration.        |
 
@@ -44,7 +44,7 @@ Exclude real `.env` files, secret-manager exports, wallet files, and generated p
 
 ## Keep complete URLs private
 
-ThorEdge supplies complete URLs containing authentication material. A copied Bifrost route URL also contains the Private TX key. Use these values exactly as provided, but redact the **entire URL** anywhere an untrusted party could see it, including:
+ThorEdge supplies complete URLs containing authentication material. A copied Bifrost route URL also contains the Bifrost key. Use these values exactly as provided, but redact the **entire URL** anywhere an untrusted party could see it, including:
 
 - Browser and mobile application bundles
 - Repositories, issues, CI output, and build artifacts
@@ -60,7 +60,7 @@ For diagnostics, keep only the product, location, time, status code, and hostnam
 - Prefer the `https://` and `wss://` targets supplied by the dashboard.
 - Yellowstone currently uses plaintext gRPC. Keep the token in `x-token` metadata and carry the connection through a trusted private network, VPN, or encrypted tunnel.
 - Official Pulse clients validate the certificate chain and target hostname by default. Keep verification enabled, use the dashboard hostname, and add a private CA explicitly when your environment requires one.
-- Bifrost route URLs must use `https://` and reject requests with a missing or invalid Private TX key. ThorNode manages the upstream provider credential; do not add or expose a provider API key.
+- Bifrost route URLs must use `https://` and reject requests with a missing or invalid Bifrost key. ThorNode manages the upstream provider credential; do not add or expose a provider API key.
 - Keep public hostnames intact; substituting a resolved IP can break TLS validation and routing.
 - Restrict a ThorEdge location token to a stable public egress IPv4 address when the dashboard offers that control.
 - Restrict inbound Raw Shred Stream and Replay UDP traffic with host firewalls, cloud security groups, and trusted source ranges.
@@ -84,7 +84,7 @@ Plan for an immediate cutover. Old and new values may not overlap, and a previou
   </Step>
   <Step title="Regenerate or revoke">
     Use the credential-specific dashboard control. For Bifrost, revoke the
-    Private TX key and generate a replacement, then verify the old URL is
+    Bifrost key and generate a replacement, then verify the old URL is
     rejected before treating rotation as complete. For Replay, use its dedicated
     key control. Contact support when the applicable safe control is not
     available.

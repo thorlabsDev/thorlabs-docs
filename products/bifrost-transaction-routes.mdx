@@ -1,9 +1,9 @@
 ---
 title: "Bifrost Transaction Routes"
-description: "Call bloXroute, Astralane, BlockRazor, and LunarLander transaction routes through one ThorNode Private TX key."
+description: "Call bloXroute, Astralane, BlockRazor, and LunarLander transaction routes through one ThorNode Bifrost key."
 ---
 
-Bifrost puts several Solana transaction providers behind one ThorNode credential. The dashboard labels this product **Private TX**. Select a pass or rental, generate a Private TX key, then copy the complete route URL for the provider operation you want to call.
+Bifrost puts several Solana transaction providers behind one ThorNode credential. In the dashboard it is the **Bifrost** tab under Endpoints; ThorNode's own sender, Hofund, has its own tab and uses the same key. Select a pass or rental, generate a Bifrost key, then copy the complete route URL for the provider operation you want to call.
 
 You do not need a separate upstream-provider account, subscription, API key, or commercial agreement.
 
@@ -41,11 +41,11 @@ Bifrost does not choose a provider for you, retry through a different provider, 
 
 | Item                 | Value                                                                             |
 | -------------------- | --------------------------------------------------------------------------------- |
-| Dashboard path       | **Endpoints → Private TX**                                                        |
+| Dashboard path       | **Endpoints → Bifrost**                                                        |
 | Access               | An eligible pass or rental with at least one Bifrost location                     |
-| Private TX key       | The dashboard generates one per access and reuses it in each enabled location URL |
-| Route URL            | `https://<location-base>/<private-tx-key>/<route>`, copied from the dashboard     |
-| Authentication       | The Private TX key sits in the URL path; do not add a provider API key            |
+| Bifrost key       | The dashboard generates one per access and reuses it in each enabled location URL |
+| Route URL            | `https://<location-base>/<bifrost-key>/<route>`, copied from the dashboard     |
+| Authentication       | The Bifrost key sits in the URL path; do not add a provider API key            |
 | Provider credentials | Managed by ThorNode                                                               |
 | Route selection      | Explicit: your application chooses the provider and operation                     |
 | Health check         | `GET` or `HEAD /healthz` on the location base URL, no key                         |
@@ -56,17 +56,17 @@ Bifrost does not choose a provider for you, retry through a different provider, 
 
 <Steps>
   <Step title="Select access and location">
-    Open **Endpoints → Private TX**, select the pass or rental your application
+    Open **Endpoints → Bifrost**, select the pass or rental your application
     will use, then choose an available location.
   </Step>
-  <Step title="Generate a Private TX key">
+  <Step title="Generate a Bifrost key">
     Generate the key if the selected access does not have one. The dashboard
     reuses that key in the route URLs for the access's enabled Bifrost
     locations.
   </Step>
   <Step title="Choose a provider operation">
     Select the provider and operation you want to call. The dashboard builds the
-    complete route URL with your Private TX key.
+    complete route URL with your Bifrost key.
   </Step>
   <Step title="Send the route-specific request">
     Copy the complete URL and send the request body that operation requires.
@@ -84,7 +84,7 @@ Bifrost does not choose a provider for you, retry through a different provider, 
 Follow the [Bifrost quickstart](/products/bifrost-transaction-routes/quickstart) to submit one transaction through **LunarLander → Submit** and confirm the signature. Every route's body, bounds, and tip addresses are in the [route reference](/api-reference/bifrost/overview).
 
 <Warning>
-  A copied Bifrost route URL contains your Private TX key. Keep the complete URL
+  A copied Bifrost route URL contains your Bifrost key. Keep the complete URL
   in server-side secret storage and redact it from repositories, logs, traces,
   screenshots, and support messages. Never send a signed transaction over an
   `http://` route. Stop and contact support if a route accepts a missing or
