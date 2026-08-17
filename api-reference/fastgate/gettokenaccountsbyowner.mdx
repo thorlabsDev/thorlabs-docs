@@ -1,30 +1,30 @@
 ---
-title: "getTokenAccountsByDelegate"
-description: "Returns all SPL Token accounts by approved Delegate."
+title: "getTokenAccountsByOwner"
+description: "Returns all SPL Token accounts by token owner."
 ---
 
-Returns all SPL Token accounts by approved Delegate.
+Returns all SPL Token accounts by token owner.
 
 ## On ThorNode
 
-Answered by [FastGate](/api-reference/fastgate/overview): `commitment` and `minContextSlot` are accepted and ignored, the response reflects FastGate's indexed slot (`context.slot`, no `apiVersion`), and the request times out after 30 s. The second parameter (`{ "mint" }` or `{ "programId" }`) is required and must contain exactly one key. For very large delegates use [`getTokenAccountsByDelegateV2`](/api-reference/fastgate/gettokenaccountsbydelegatev2).
+Answered by FastGate through the ThorEdge RPC URL; no separate endpoint or key. `commitment` and `minContextSlot` are accepted and ignored: the response reflects FastGate's indexed slot, reported as `context.slot` (no `apiVersion`). The request times out after 30 s. Encodings: `base64` (default), `base58`, `base64+zstd`, `jsonParsed` (token accounts and mints; other accounts fall back to base64). The options parameter must be an object; `dataSlice` is ignored with `jsonParsed`. The second parameter (`{ "mint" }` or `{ "programId" }`) is required and must contain exactly one key. For very large owners use [`getTokenAccountsByOwnerV2`](/api-reference/fastgate/gettokenaccountsbyownerv2).
 
 ## Parameters
 
 <ParamField body="address" type="string" required>
-  Solana address (public key) of the delegate that has been authorized to manage token accounts.
+  Solana wallet address (pubkey) of the account owner to query token holdings for, as a base-58 encoded string.
 </ParamField>
 
 <ParamField body="mint" type="string">
-  Specific token mint address to filter delegated accounts by a particular token type.
+  Specific Solana token mint address to retrieve only accounts for a particular token or NFT.
 </ParamField>
 
 <ParamField body="programId" type="string">
-  Specific token program ID (typically SPL Token program) to filter delegated accounts.
+  Specific Solana token program ID (typically SPL Token program) that created the token accounts.
 </ParamField>
 
 <ParamField body="commitment" type="string">
-  The commitment level for the request.
+  The commitment level for the request. Accepted and ignored by FastGate.
 
   * `confirmed`
   * `finalized`
@@ -32,7 +32,7 @@ Answered by [FastGate](/api-reference/fastgate/overview): `commitment` and `minC
 </ParamField>
 
 <ParamField body="minContextSlot" type="number">
-  The minimum slot that the request can be evaluated at.
+  The minimum slot that the request can be evaluated at. Accepted and ignored by FastGate.
 </ParamField>
 
 <ParamField body="dataSlice" type="object">
@@ -116,14 +116,14 @@ curl --fail-with-body "$THORNODE_RPC_URL" \
   --data '{
     "jsonrpc": "2.0",
     "id": 1,
-    "method": "getTokenAccountsByDelegate",
+    "method": "getTokenAccountsByOwner",
     "params": [
-      "4aR1CeodjCPyyuVDbhP1yd2xPX6H6A2fZ7bApXyVmCrY",
+      "BghNaiR8KfW3Qt2hTaS6hqperaXvfumWhpP4EEMksXxX",
       {
-        "programId": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
       },
       {
-        "encoding": "base64"
+        "encoding": "jsonParsed"
       }
     ]
   }'
@@ -133,14 +133,14 @@ curl --fail-with-body "$THORNODE_RPC_URL" \
 const body = {
   "jsonrpc": "2.0",
   "id": 1,
-  "method": "getTokenAccountsByDelegate",
+  "method": "getTokenAccountsByOwner",
   "params": [
-    "4aR1CeodjCPyyuVDbhP1yd2xPX6H6A2fZ7bApXyVmCrY",
+    "BghNaiR8KfW3Qt2hTaS6hqperaXvfumWhpP4EEMksXxX",
     {
-      "programId": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+      "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
     },
     {
-      "encoding": "base64"
+      "encoding": "jsonParsed"
     }
   ]
 };
@@ -156,22 +156,37 @@ console.log(result ?? error);
 </RequestExample>
 
 <ResponseExample>
-```json Response (truncated to 1 account)
+```json Response
 {
   "jsonrpc": "2.0",
   "result": {
     "context": {
-      "slot": 439749211
+      "slot": 439749210
     },
     "value": [
       {
-        "pubkey": "11oFyVtvKJtvSb3Q3g7XYKBtTq9DQv7ACGPktrbsivq",
+        "pubkey": "BCVfzZWUYiFQGQ4rCh9ycUoXZcu8aTLW5aiqsjhj7YAf",
         "account": {
           "lamports": 2039280,
-          "data": [
-            "CfeYVN/YnqzUZq2UJt1Nos31imWh2fOzGmFxcwr9mLLfXzZ2PsczMKJGcWdNazIEIk1HC6wSwTtXz2ZjIfEJbS19axYAAAAAAQAAADUiXkexKrwMpHghKADZIeEf20vNonSCszjxbTPOAYFlAQAAAAAAAAAAAAAAAC19axYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-            "base64"
-          ],
+          "data": {
+            "program": "spl-token",
+            "parsed": {
+              "info": {
+                "isNative": false,
+                "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                "owner": "BghNaiR8KfW3Qt2hTaS6hqperaXvfumWhpP4EEMksXxX",
+                "state": "initialized",
+                "tokenAmount": {
+                  "amount": "4192",
+                  "decimals": 6,
+                  "uiAmount": 0.004192,
+                  "uiAmountString": "0.004192"
+                }
+              },
+              "type": "account"
+            },
+            "space": 165
+          },
           "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
           "executable": false,
           "rentEpoch": 18446744073709551615,

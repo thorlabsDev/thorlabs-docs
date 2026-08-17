@@ -7,7 +7,7 @@ Returns the total supply of an SPL Token type.
 
 ## On ThorNode
 
-Answered by [FastGate](/api-reference/fastgate/overview): `commitment` and `minContextSlot` are accepted and ignored, the response reflects FastGate's indexed slot (`context.slot`, no `apiVersion`), and the request times out after 30 s. A non-mint returns `-32602 Invalid param: not a Token mint`.
+Answered by FastGate through the ThorEdge RPC URL; no separate endpoint or key. `commitment` and `minContextSlot` are accepted and ignored: the response reflects FastGate's indexed slot, reported as `context.slot` (no `apiVersion`). The request times out after 30 s. A non-mint returns `-32602 Invalid param: not a Token mint`.
 
 ## Parameters
 
@@ -16,7 +16,7 @@ Answered by [FastGate](/api-reference/fastgate/overview): `commitment` and `minC
 </ParamField>
 
 <ParamField body="commitment" type="string">
-  The commitment level for the request.
+  The commitment level for the request. Accepted and ignored by FastGate.
 
   * `confirmed`
   * `finalized`

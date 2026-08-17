@@ -7,7 +7,7 @@ Returns all accounts owned by the provided program Pubkey.
 
 ## On ThorNode
 
-Answered by [FastGate](/api-reference/fastgate/overview): `commitment` and `minContextSlot` are accepted and ignored, the response reflects FastGate's indexed slot (`context.slot`, no `apiVersion`), and the request times out after 30 s. `filters` are optional. Accepts `changedSinceSlot` in addition to the standard options. At most 10,000 accounts; a larger result returns `-32600` and asks you to use [`getProgramAccountsV2`](/api-reference/fastgate/getprogramaccountsv2). Standard `dataSize` and `memcmp` filters apply; `memcmp.bytes` is base-58 unless `encoding` is `"base64"`.
+Answered by FastGate through the ThorEdge RPC URL; no separate endpoint or key. `commitment` and `minContextSlot` are accepted and ignored: the response reflects FastGate's indexed slot, reported as `context.slot` (no `apiVersion`). The request times out after 30 s. Encodings: `base64` (default), `base58`, `base64+zstd`, `jsonParsed` (token accounts and mints; other accounts fall back to base64). The options parameter must be an object; `dataSlice` is ignored with `jsonParsed`. `filters` are optional. Accepts `changedSinceSlot` in addition to the standard options. At most 10,000 accounts; a larger result returns `-32600` and asks you to use [`getProgramAccountsV2`](/api-reference/fastgate/getprogramaccountsv2). Standard `dataSize` and `memcmp` filters apply; `memcmp.bytes` is base-58 unless `encoding` is `"base64"`.
 
 ## Parameters
 
@@ -16,7 +16,7 @@ Answered by [FastGate](/api-reference/fastgate/overview): `commitment` and `minC
 </ParamField>
 
 <ParamField body="commitment" type="string">
-  The commitment level for the request.
+  The commitment level for the request. Accepted and ignored by FastGate.
 
   * `confirmed`
   * `finalized`
@@ -24,7 +24,7 @@ Answered by [FastGate](/api-reference/fastgate/overview): `commitment` and `minC
 </ParamField>
 
 <ParamField body="minContextSlot" type="number">
-  The minimum slot that the request can be evaluated at.
+  The minimum slot that the request can be evaluated at. Accepted and ignored by FastGate.
 </ParamField>
 
 <ParamField body="withContext" type="boolean">
