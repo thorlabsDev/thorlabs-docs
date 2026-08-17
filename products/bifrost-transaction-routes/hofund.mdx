@@ -1,111 +1,75 @@
 ---
-title: "Hofund direct submission"
-description: "The capability-gated Hofund submission surface, its HTTP and WebSocket routes, and its native QUIC ingress."
+title: "Hofund"
+description: "Submit Solana transactions through ThorNode's own fast and protected lanes."
 ---
 
-Hofund is a ThorNode submission surface with its own lanes and delivery semantics. It is not one of the aggregated upstream providers.
+Hofund is ThorNode's own submission surface. The aggregated Bifrost routes forward your request to an upstream provider; Hofund submits through ThorNode infrastructure directly.
 
-<Note>
-  Hofund is gated per location and per capability. It is not part of the
-  standard Bifrost provider catalog, and it is currently not enabled on the
-  public catalog. If **Endpoints → Private TX** does not list Hofund for your
-  selected access and location, it is not available to you. Build against the
-  [aggregated provider routes](/products/bifrost-transaction-routes/provider-routes)
-  instead.
-</Note>
+It gives you two kinds of lane:
 
-## Capabilities
+- **Fast** sends a single transaction out as quickly as the rails allow, through direct TPU, SWQoS, or both at once.
+- **Protected** delivers through Jito, either as one bundle-only submission or as an atomic bundle that lands together or not at all.
 
-Every Hofund route requires a capability the dashboard attaches to your access.
+Hofund routes appear under **Endpoints → Private TX** for the locations where they are available to your access. Copy the complete route URL there, the same way you would for any other Bifrost route.
 
-| Capability  | What it enables                                                     |
-| ----------- | --------------------------------------------------------------------- |
-| `thor_fast` | Fast lanes: direct TPU, SWQoS, and the combined best-effort race     |
-| `thor_jito` | Jito lanes: bundle-only submission and atomic bundles                |
+## Choose a lane
 
-The dashboard only shows routes whose capability is enabled for the selected access and location, so the catalog you see can be a subset of the table below. Every submission route caps a transaction at 1232 bytes.
+| Route                      | Lane      | Use it when                                                                 |
+| -------------------------- | --------- | ----------------------------------------------------------------------------- |
+| `/hofund-fast`             | Fast      | You want the transaction on both rails at once and will take whichever wins  |
+| `/hofund-direct-tpu`       | Fast      | You want direct TPU delivery and nothing else                                |
+| `/hofund-swqos`            | Fast      | You want SWQoS delivery and nothing else                                     |
+| `/hofund-jito-bundle-only` | Protected | You want Jito delivery for a single transaction                              |
+| `/hofund-bundle`           | Protected | You are sending up to 5 transactions that must land as one unit              |
 
-## HTTP and WebSocket routes
+Each lane does exactly what its name says. A Fast route never falls back to Jito, and a Protected route never falls back to a Fast rail, so the lane you pick is the lane your transaction travels.
 
-| Route                       | Label             | Method | Capability                | Delivery                    |
-| --------------------------- | ----------------- | ------ | ------------------------- | --------------------------- |
-| `/hofund`                   | Unified JSON-RPC  | `POST` | Per operation             | Method-scoped               |
-| `/hofund-fast`              | Fast              | `POST` | `thor_fast`               | Best-effort multi-rail      |
-| `/hofund-direct-tpu`        | Direct TPU        | `POST` | `thor_fast`               | Direct TPU only             |
-| `/hofund-swqos`             | SWQoS             | `POST` | `thor_fast`               | SWQoS only                  |
-| `/hofund/plain`             | Plain HTTP        | `POST` | Per operation             | Method-scoped               |
-| `/hofund/binary`            | Binary HTTP       | `POST` | Per operation             | Method-scoped               |
-| `/hofund/ws`                | WebSocket         | `GET`  | `thor_fast`               | Durable fast queue          |
-| `/hofund-jito-bundle-only`  | Jito bundle-only  | `POST` | `thor_jito`               | Jito bundle-only            |
-| `/hofund-bundle`            | Atomic bundle     | `POST` | `thor_jito`               | Jito only                   |
-| `/hofund/ws/mev-protect`    | Protected WebSocket | `GET` | `thor_jito`              | Durable Jito bundle-only queue |
-| `/hofund-status`            | Status            | `POST` | `thor_fast` or `thor_jito` | Status                      |
+Every route takes `POST` with a JSON-RPC 2.0 body, and every transaction is capped at 1232 bytes.
 
-`/hofund-fast`, `/hofund-direct-tpu`, and `/hofund-swqos` never fall back to a Jito lane. `/hofund-jito-bundle-only` and `/hofund-bundle` never fall back to a non-Jito lane. No route is MEV protection or revert protection, and no route guarantees landing.
+## Send everything through one endpoint
 
-### Content types
+If you would rather select the operation per request than pick a route per lane, `/hofund` accepts them all:
 
-| Route            | Protocol                   | Content type               |
-| ---------------- | -------------------------- | -------------------------- |
-| `/hofund`        | JSON-RPC 2.0               | `application/json`         |
-| `/hofund/plain`  | Plain Base64               | `text/plain`               |
-| `/hofund/binary` | Raw or length-framed binary | `application/octet-stream` |
-| `/hofund/ws`, `/hofund/ws/mev-protect` | Raw transaction | Binary WebSocket messages |
+| Method                     | What it does                                | Bounds                    |
+| -------------------------- | ------------------------------------------- | ------------------------- |
+| `sendTransaction`          | Submits one transaction                     | 1 transaction             |
+| `sendBatch`                | Submits independent transactions together   | 1–25 transactions         |
+| `sendBundle`               | Submits an atomic Jito bundle               | 1–4 transactions          |
+| `sendIdeal`                | Submits a priority-fee and tip pair         | Exactly 2 transactions    |
+| `getNonce`                 | Returns nonce details for a pair you manage | —                         |
+| `getHealth`                | Reports whether the surface is serving      | —                         |
 
-On `/hofund/plain` and `/hofund/binary` the operation is selected by exact query parameters, such as `?method=sendTransaction` or `?method=sendBatch&mev-protect=true`.
+Add `mev-protect=true` as a query parameter, or `mevProtect` in the params object, to route a `sendTransaction` or `sendBatch` call through Jito instead of the fast rails.
 
-## Operations
+Protected `sendBatch` is the one operation whose limit is not what the protocol allows. Each member goes out as its own Jito bundle, and the effective ceiling defaults to a single transaction rather than 25. Call `getThorTipConfig` on `/hofund-bundle` and read `maxProtectedBatchTransactions` and `protectedBatchTimeoutMs` before you size the request.
 
-| Method                       | Route                                                | Capability                 | Bounds                                     |
-| ---------------------------- | ---------------------------------------------------- | -------------------------- | ------------------------------------------ |
-| `sendTransaction`            | `/hofund`, `/hofund/plain`, `/hofund/binary`, lane routes | `thor_fast` or `thor_jito` | One transaction                            |
-| `sendBatch`                  | `/hofund`, `/hofund/plain`, `/hofund/binary`         | `thor_fast`                | 1–25 transactions, non-atomic              |
-| `sendBatch` with MEV protect | `/hofund`, `/hofund/plain`, `/hofund/binary`         | `thor_jito`                | 1–25 by protocol, runtime-limited, non-atomic |
-| `sendBundle`                 | `/hofund`                                            | `thor_jito`                | 1–4 transactions                           |
-| `sendBundle`                 | `/hofund-bundle`                                     | `thor_jito`                | 1–5 transactions, atomic                   |
-| `sendIdeal`                  | `/hofund`                                            | `thor_fast` and `thor_jito` | Exactly 2 transactions                    |
-| `getNonce`                   | `/hofund`                                            | `thor_fast` and `thor_jito` | Nonce is not managed for you              |
-| `getThorTipConfig`           | `/hofund-bundle`                                     | `thor_jito`                | Returns the live protected-batch limits    |
-| `getFastTipConfig`           | `/hofund-status`                                     | `thor_fast`                | —                                          |
-| `getHofundSubmissionStatus`  | `/hofund-status`                                     | `thor_fast` or `thor_jito` | Tenant-scoped reconciliation               |
-| `getHealth`                  | `/hofund`, `/hofund/plain`, `/hofund/binary`         | `thor_fast` or `thor_jito` | —                                          |
+## Other request formats
 
-Protected `sendBatch` is not atomic and has no fallback: each member is delivered as its own Jito bundle. Its effective maximum defaults to 1 transaction, not the protocol maximum of 25. Read the live ceiling before you build the request by calling `getThorTipConfig` on `/hofund-bundle` and using its `maxProtectedBatchTransactions` and `protectedBatchTimeoutMs` fields.
+`/hofund` speaks JSON-RPC. Three more surfaces take the same operations in a different shape, for clients that would rather not build JSON:
 
-## Connect directly over QUIC
+| Route                    | Body                                | Selecting the operation                            |
+| ------------------------ | ----------------------------------- | -------------------------------------------------- |
+| `/hofund/plain`          | Base64 text                         | Query parameters, such as `?method=sendTransaction` |
+| `/hofund/binary`         | Raw or length-framed binary         | Query parameters                                    |
+| `/hofund/ws`             | Raw binary over a WebSocket         | The socket is the fast lane                         |
+| `/hofund/ws/mev-protect` | Raw binary over a WebSocket         | The socket is the protected lane                    |
 
-Native Hofund QUIC ingress sends a signed raw transaction directly to Hofund. It does not pass through the Bifrost HTTP edge and does not use a copied Bifrost route URL.
+The WebSocket surfaces are one-way. They accept transactions and send nothing back, so use `/hofund-status` when you need to know what happened to a submission.
 
-The intended public listeners are separate UDP endpoints:
+## Connect over QUIC
 
-| Lane      | Intended listener |
-| --------- | ----------------- |
-| Standard  | `7000/UDP`        |
-| Protected | `9000/UDP`        |
+Hofund also accepts a signed raw transaction over QUIC, without going through the Bifrost HTTP edge or a copied route URL. Each lane has its own listener, one for standard and one for protected.
 
-Use either listener only after ThorNode confirms that it has been deployed and onboards your customer mTLS certificate and certificate-public-key (SPKI) fingerprint. The port assignments do not by themselves indicate that a production listener is enabled or that your certificate is authorized.
+QUIC access is issued per customer. Contact ThorNode to have your mTLS certificate and its public-key (SPKI) fingerprint onboarded; you receive the host and port for your location at the same time.
 
-Persistent Hofund QUIC server and client connections use a 25-second transport keepalive period and a 30-second maximum idle timeout by default. This is QUIC transport keepalive, not an application ping or acknowledgement. A keepalive packet says nothing about Hofund accepting a transaction or the transaction landing on chain.
+Persistent connections use a 25-second keepalive and a 30-second idle timeout. Keepalive holds the connection open and says nothing about any individual transaction.
 
-The one-shot `hofund-quic-client` behaves differently from a persistent client: after it hands the transaction bytes and stream FIN to QUIC, it waits 100 milliseconds by default for a post-FIN transport drain and then intentionally closes the connection. A successful handoff, including completion of that drain, means only that the bytes and FIN reached the QUIC transport. It is not Hofund application acceptance or evidence of chain landing.
+## Check what happened
 
-## Interpret an acknowledgement
-
-| Surface                     | Acknowledgement                            | What it proves                                  |
-| --------------------------- | ------------------------------------------ | ----------------------------------------------- |
-| HTTP submission routes      | Accepted, not landed                       | Hofund took the submission                      |
-| WebSocket ingress           | Fire and forget, no application ACK        | The socket write left your process              |
-| QUIC ingress                | Transport handoff only                     | The bytes and FIN reached the QUIC transport    |
-| `/hofund-status`            | Current submission state for your tenant   | The state Hofund recorded, not chain finality   |
-
-<Warning>
-  No Hofund surface confirms that a transaction landed. Reconcile every
-  transaction signature through Solana RPC until it reaches your required
-  commitment or its blockhash expires.
-</Warning>
+`POST /hofund-status` with `getHofundSubmissionStatus` returns the current state of your submissions. `getFastTipConfig` on the same route returns the tip configuration for the fast lanes.
 
 ## Next steps
 
 - [Return to the Bifrost overview](/products/bifrost-transaction-routes)
-- [Use the aggregated provider routes](/products/bifrost-transaction-routes/provider-routes)
+- [Compare the aggregated provider routes](/products/bifrost-transaction-routes/provider-routes)
 - [Confirm signatures through ThorEdge RPC](/products/thoredge-rpc)
