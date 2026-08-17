@@ -1,6 +1,6 @@
 ---
 title: "Hofund"
-description: "Send Solana transactions through ThorNode's own sender on the fast, direct-TPU, or SWQoS lane, with a Thor tip, at any Bifrost location."
+description: "Send Solana transactions through ThorNode's own sender — fast, direct-TPU, and SWQoS lanes, plus Jito-protected single transactions and atomic bundles — with a Thor tip, at any Bifrost location."
 ---
 
 Hofund is ThorNode's own submission surface. The aggregated Bifrost routes forward your request to an upstream provider; Hofund submits through ThorNode's own transaction sender at the location you call.
@@ -9,13 +9,17 @@ Hofund routes appear under **Endpoints → Private TX** next to the other provid
 
 ## Pick a lane
 
-| Route                | Delivery                                                        |
-| -------------------- | --------------------------------------------------------------- |
-| `/hofund-fast`       | Direct TPU and SWQoS in parallel; the transaction lands once    |
-| `/hofund-direct-tpu` | Direct TPU only                                                 |
-| `/hofund-swqos`      | SWQoS only                                                      |
+| Route                      | Delivery                                                                 |
+| -------------------------- | ------------------------------------------------------------------------ |
+| `/hofund-fast`             | Direct TPU and SWQoS in parallel; the transaction lands once             |
+| `/hofund-direct-tpu`       | Direct TPU only                                                          |
+| `/hofund-swqos`            | SWQoS only                                                               |
+| `/hofund-jito-bundle-only` | One transaction, delivered only as a Jito bundle — no fast-rail fallback |
+| `/hofund-bundle`           | Up to 5 transactions as one atomic Jito bundle: all land, or none        |
 
-Every lane submits through the transaction sender at the location you call. Singapore is the designated stake-weighted location; it becomes stake-weighted once its sender identity is staked. Until then, `swqos` and `swqos-only` requests are accepted at every location and delivered through that location's own sender.
+The fast lanes submit through the transaction sender at the location you call. Singapore is the designated stake-weighted location; it becomes stake-weighted once its sender identity is staked. Until then, `swqos` and `swqos-only` requests are accepted at every location and delivered through that location's own sender.
+
+The Jito lanes go to the Jito block engine nearest the location you call over ThorNode's own gRPC access; you need no Jito account or key. A Jito lane never falls back to a fast rail, and a fast lane never falls back to Jito.
 
 ## Send a transaction
 
@@ -51,7 +55,7 @@ A transaction is capped at 1232 bytes.
 
 ## Include a Thor tip
 
-Every transaction includes a System transfer of at least **1000 lamports** to one of these ten addresses:
+Every transaction on a fast lane includes a System transfer of at least **1000 lamports** to one of these ten addresses:
 
 ```
 ThoRfwj4Kh9DA6xyaVbEGcb5mE7CyhfjLXRYqNDb41B
@@ -68,9 +72,46 @@ thoropX2tBrF6kJMiLxwQaGi5XEPBZgGWuPAjpbEhoV
 
 Pick any one per transaction. The same ten addresses are valid at every location. Read the live list and minimum from the status route (`getFastTipConfig`) rather than hard-coding them.
 
+## Send a Jito bundle
+
+`/hofund-bundle` takes `sendBundle` with 1 to 5 base64 transactions. One member of the bundle — usually the last — must carry both tips: at least **1000 lamports** to a Thor tip address above **and** at least **1000 lamports** to one of Jito's tip accounts, and that same transaction must include a real application instruction (a program other than System, Compute Budget, or Memo, touching a writable account). A bundle made only of transfers and tips is rejected before it is sent.
+
+```bash
+export HOFUND_BUNDLE_URL='<HOFUND_BUNDLE_URL_COPIED_FROM_DASHBOARD>'
+
+curl --fail-with-body --silent --show-error --include "$HOFUND_BUNDLE_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "sendBundle",
+    "params": [
+      ["<BASE64_SIGNED_TRANSACTION_1>", "<BASE64_SIGNED_TRANSACTION_2>"],
+      { "encoding": "base64" }
+    ]
+  }'
+```
+
+```text
+HTTP/1.1 200 OK
+X-Bundle-Id: <BUNDLE_ID>
+
+{"jsonrpc":"2.0","result":"<BUNDLE_ID>","id":1}
+```
+
+The bundle ID is the SHA-256 of the comma-joined transaction signatures, so you can compute it yourself before you send. Query Jito's own view of the bundle with `getBundleStatuses` on the same route:
+
+```json
+{ "jsonrpc": "2.0", "id": 1, "method": "getBundleStatuses", "params": [["<BUNDLE_ID>"]] }
+```
+
+`/hofund-jito-bundle-only` takes a single `sendTransaction` (with the same tip and application-instruction rules) and returns the transaction signature, with the bundle ID in `X-Bundle-Id`.
+
+Jito's current tip accounts and its minimum tip are published in [Jito's documentation](https://docs.jito.wtf/lowlatencytxnsend/).
+
 ## Send everything through one endpoint
 
-`/hofund` accepts the same `sendTransaction` body and defaults to the fast lane. Select the SWQoS-only lane per request with the query parameter `?swqos-only=true`. It also answers `getHealth`.
+`/hofund` accepts the same `sendTransaction` body and defaults to the fast lane. Select the SWQoS-only lane with the query parameter `?swqos-only=true`, or the Jito lane with `?mev-protect=true`. It also answers `getHealth`.
 
 `/hofund/plain` takes the Base64 transaction as `text/plain`, and `/hofund/binary` takes raw bytes as `application/octet-stream`; both select the operation with `?method=sendTransaction` (or `?method=getHealth`).
 
