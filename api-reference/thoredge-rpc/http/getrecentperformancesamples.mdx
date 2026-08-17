@@ -1,0 +1,98 @@
+---
+title: "getRecentPerformanceSamples"
+description: "Returns a list of recent performance samples, in reverse slot order. Performance samples are taken every 60 seconds and include the number of transactions and slots that occur in a given time window."
+---
+
+Returns a list of recent performance samples, in reverse slot order. Performance samples are taken every 60 seconds and include the number of transactions and slots that occur in a given time window.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error.
+
+## Parameters
+
+<ParamField body="limit" type="integer" required>
+  Number of historical performance sample intervals to retrieve (maximum 720, representing up to 12 hours).
+</ParamField>
+
+## Response
+
+<ResponseField name="result" type="array">
+  List of performance samples.
+  <Expandable title="item">
+    <ResponseField name="slot" type="integer">
+      Slot at the end of this performance sampling period.
+    </ResponseField>
+    <ResponseField name="numTransactions" type="integer">
+      Total number of transactions processed during this sampling window, including both user transactions and validator votes.
+    </ResponseField>
+    <ResponseField name="numNonVoteTransactions" type="integer">
+      Number of actual user transactions (excluding validator consensus votes) processed in this period.
+    </ResponseField>
+    <ResponseField name="samplePeriodSecs" type="integer">
+      Duration of this performance measurement window in seconds, typically 60-second intervals.
+    </ResponseField>
+    <ResponseField name="numSlots" type="integer">
+      Number of Solana slots successfully produced during this sampling period.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getRecentPerformanceSamples",
+    "params": [
+      2
+    ]
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getRecentPerformanceSamples",
+  "params": [
+    2
+  ]
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": [
+    {
+      "numNonVoteTransactions": 137783,
+      "numSlots": 147,
+      "numTransactions": 238624,
+      "samplePeriodSecs": 60,
+      "slot": 439749059
+    },
+    {
+      "numNonVoteTransactions": 141693,
+      "numSlots": 145,
+      "numTransactions": 241030,
+      "samplePeriodSecs": 60,
+      "slot": 439748912
+    }
+  ],
+  "id": 1
+}
+```
+</ResponseExample>

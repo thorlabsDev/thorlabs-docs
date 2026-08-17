@@ -1,0 +1,106 @@
+---
+title: "getTokenAccountBalance"
+description: "Returns the token balance of an SPL Token account."
+---
+
+Returns the token balance of an SPL Token account.
+
+## On ThorNode
+
+Answered by [FastGate](/api-reference/fastgate/overview): `commitment` and `minContextSlot` are accepted and ignored, the response reflects FastGate's indexed slot (`context.slot`, no `apiVersion`), and the request times out after 30 s. A non-token account returns `-32602 Invalid param: not a Token account`; a missing account returns `-32602 Invalid param: could not find account`.
+
+## Parameters
+
+<ParamField body="address" type="string" required>
+  Solana SPL token account address to query for balance information, as a base-58 encoded string.
+</ParamField>
+
+<ParamField body="commitment" type="string">
+  The commitment level for the request.
+
+  * `confirmed`
+  * `finalized`
+  * `processed`
+</ParamField>
+
+## Response
+
+<ResponseField name="context" type="object">
+  Context of the response.
+  <Expandable title="properties">
+    <ResponseField name="slot" type="integer">
+      Slot in which the data was fetched.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="value" type="object">
+  Token account balance details.
+  <Expandable title="properties">
+    <ResponseField name="amount" type="string">
+      The raw Solana token balance as a string integer without decimal formatting.
+    </ResponseField>
+    <ResponseField name="decimals" type="integer">
+      Number of decimal places defined by the token's mint for proper display formatting.
+    </ResponseField>
+    <ResponseField name="uiAmount" type="number">
+      The human-readable Solana token balance with proper decimal formatting (deprecated).
+    </ResponseField>
+    <ResponseField name="uiAmountString" type="string">
+      The canonical string representation of the token balance with proper decimal places.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getTokenAccountBalance",
+    "params": [
+      "BCVfzZWUYiFQGQ4rCh9ycUoXZcu8aTLW5aiqsjhj7YAf"
+    ]
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getTokenAccountBalance",
+  "params": [
+    "BCVfzZWUYiFQGQ4rCh9ycUoXZcu8aTLW5aiqsjhj7YAf"
+  ]
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "context": {
+      "slot": 439749193
+    },
+    "value": {
+      "amount": "4192",
+      "decimals": 6,
+      "uiAmount": 0.004192,
+      "uiAmountString": "0.004192"
+    }
+  },
+  "id": 1
+}
+```
+</ResponseExample>

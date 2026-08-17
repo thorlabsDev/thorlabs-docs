@@ -1,0 +1,220 @@
+---
+title: "getTransaction"
+description: "Returns transaction details for a confirmed transaction."
+---
+
+Returns transaction details for a confirmed transaction.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error.  History is limited to the upstream's retained ledger; slots older than `getFirstAvailableBlock` return an error.
+
+## Parameters
+
+<ParamField body="transaction" type="string" required>
+  Solana transaction signature as a base-58 encoded string for lookup.
+</ParamField>
+
+<ParamField body="transaction" type="string" required>
+  Encoding format for the returned Solana transaction data.
+
+  * `json`
+  * `jsonParsed`
+  * `base64`
+  * `base58`
+</ParamField>
+
+<ParamField body="commitment" type="string">
+  Blockchain commitment level for transaction finality verification.
+
+  * `confirmed`
+  * `finalized`
+</ParamField>
+
+<ParamField body="maxSupportedTransactionVersion" type="number">
+  Maximum Solana transaction version to return in responses (for versioned transaction support).
+</ParamField>
+
+## Response
+
+<ResponseField name="slot" type="integer">
+  Slot number when this transaction was processed.
+</ResponseField>
+<ResponseField name="transaction" type="object">
+  Solana transaction object with all transaction details.
+  <Expandable title="properties">
+    <ResponseField name="message" type="object">
+      Solana transaction message containing detailed execution instructions.
+      <Expandable title="properties">
+        <ResponseField name="accountKeys" type="string[]">
+          List of Solana account public keys involved in the transaction.
+        </ResponseField>
+        <ResponseField name="header" type="object">
+          Solana transaction header metadata with access control information.
+          <Expandable title="properties">
+            <ResponseField name="numReadonlySignedAccounts" type="integer">
+              Number of read-only signed Solana accounts in the transaction.
+            </ResponseField>
+            <ResponseField name="numReadonlyUnsignedAccounts" type="integer">
+              Number of read-only unsigned Solana accounts in the transaction.
+            </ResponseField>
+            <ResponseField name="numRequiredSignatures" type="integer">
+              Number of required signatures for Solana transaction validation.
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+        <ResponseField name="instructions" type="array">
+          List of program instructions executed within the Solana transaction.
+          <Expandable title="item">
+            <ResponseField name="accounts" type="integer[]">
+              Indexed list of Solana accounts accessed by this instruction.
+            </ResponseField>
+            <ResponseField name="data" type="string">
+              Encoded instruction data passed to the Solana program.
+            </ResponseField>
+            <ResponseField name="programIdIndex" type="integer">
+              Index of the Solana program that processes this instruction.
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+        <ResponseField name="recentBlockhash" type="string">
+          Recent Solana blockhash used for transaction validity window.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="signatures" type="string[]">
+      List of cryptographic signatures validating the Solana transaction.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="meta" type="object">
+  Solana transaction execution metadata and results.
+  <Expandable title="properties">
+    <ResponseField name="err" type="object | null">
+      Error information if Solana transaction failed; null if successful.
+    </ResponseField>
+    <ResponseField name="fee" type="integer">
+      Transaction fee paid in Solana lamports .
+    </ResponseField>
+    <ResponseField name="innerInstructions" type="array">
+      List of inner instructions generated during Solana transaction execution.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getTransaction",
+    "params": [
+      "g2e31thGbotrJPE791drTuVsWPYusKiPdAnfCLw9cJbqJeuLXGcXTXVqL76kBpZoNXQs5z1pN15PfMYT1Zu4bVh",
+      {
+        "encoding": "json",
+        "maxSupportedTransactionVersion": 0
+      }
+    ]
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getTransaction",
+  "params": [
+    "g2e31thGbotrJPE791drTuVsWPYusKiPdAnfCLw9cJbqJeuLXGcXTXVqL76kBpZoNXQs5z1pN15PfMYT1Zu4bVh",
+    {
+      "encoding": "json",
+      "maxSupportedTransactionVersion": 0
+    }
+  ]
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "blockTime": 1786928047,
+    "meta": {
+      "computeUnitsConsumed": 2100,
+      "costUnits": 3465,
+      "err": null,
+      "fee": 5000,
+      "innerInstructions": [],
+      "loadedAddresses": {
+        "readonly": [],
+        "writable": []
+      },
+      "logMessages": [
+        "Program Vote111111111111111111111111111111111111111 invoke [1]",
+        "Program Vote111111111111111111111111111111111111111 success"
+      ],
+      "postBalances": [
+        55182145470,
+        175694851,
+        1
+      ],
+      "postTokenBalances": [],
+      "preBalances": [
+        55182150470,
+        175694851,
+        1
+      ],
+      "preTokenBalances": [],
+      "rewards": [],
+      "status": {
+        "Ok": null
+      }
+    },
+    "slot": 439749136,
+    "transaction": {
+      "message": {
+        "accountKeys": [
+          "BXAxLMMMUNYfC1z166VjWHR3WjTmqzLxB837o5ghmRtH",
+          "J21SMPFJEY9ExCDPiSJQXN23PVSeoQe3LnKD7QcP3bgP",
+          "Vote111111111111111111111111111111111111111"
+        ],
+        "header": {
+          "numReadonlySignedAccounts": 0,
+          "numReadonlyUnsignedAccounts": 1,
+          "numRequiredSignatures": 1
+        },
+        "instructions": [
+          {
+            "accounts": [
+              1,
+              0
+            ],
+            "data": "67MGnDYU6AKJVjWSq1jBwuhndD63ygbiSGop6dEwCPFcxuVg1s7ihUs6vS36eirdGdNUM1fLp7RVgW65JfULD7gbJHUVi77dQUEC3ZPFeyYJv6bUf56iTbJNGWcbVxREYusoveyjLEfEM5tMv87F5hm3ZaL96Wwc7DgifZpNiz8GbV2VALiAj5qCKdWmyyfymapYi1zGYA",
+            "programIdIndex": 2,
+            "stackHeight": 1
+          }
+        ],
+        "recentBlockhash": "87udm8cCW349a3RGpSjXtABay7F9Fn12cX5YSFW5c691"
+      },
+      "signatures": [
+        "g2e31thGbotrJPE791drTuVsWPYusKiPdAnfCLw9cJbqJeuLXGcXTXVqL76kBpZoNXQs5z1pN15PfMYT1Zu4bVh"
+      ]
+    },
+    "transactionIndex": 1902,
+    "version": "legacy"
+  },
+  "id": 1
+}
+```
+</ResponseExample>

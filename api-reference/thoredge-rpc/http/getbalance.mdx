@@ -1,0 +1,90 @@
+---
+title: "getBalance"
+description: "Returns the lamport balance of the account of provided Pubkey."
+---
+
+Returns the lamport balance of the account of provided Pubkey.
+
+## On ThorNode
+
+Answered by [FastGate](/api-reference/fastgate/overview): `commitment` and `minContextSlot` are accepted and ignored, the response reflects FastGate's indexed slot (`context.slot`, no `apiVersion`), and the request times out after 30 s. An account that does not exist returns `value: 0`, not `null`.
+
+## Parameters
+
+<ParamField body="address" type="string" required>
+  The Pubkey of the account to query (base-58 encoded string).
+</ParamField>
+
+<ParamField body="commitment" type="string">
+  The commitment level for the request.
+
+  * `processed`
+  * `confirmed`
+  * `finalized`
+</ParamField>
+
+<ParamField body="minContextSlot" type="number">
+  The minimum slot at which the request can be evaluated.
+</ParamField>
+
+## Response
+
+<ResponseField name="context" type="object">
+  <Expandable title="properties">
+    <ResponseField name="slot" type="integer">
+      The slot of the returned information.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="value" type="integer">
+  The account balance in lamports.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getBalance",
+    "params": [
+      "5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9"
+    ]
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getBalance",
+  "params": [
+    "5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9"
+  ]
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "context": {
+      "slot": 439749191
+    },
+    "value": 777131893039520
+  },
+  "id": 1
+}
+```
+</ResponseExample>

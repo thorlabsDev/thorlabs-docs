@@ -1,0 +1,116 @@
+---
+title: "getClusterNodes"
+description: "Returns information about all the nodes participating in the cluster."
+---
+
+Returns information about all the nodes participating in the cluster.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error. Returns the upstream node's gossip view of the cluster.
+
+## Parameters
+
+This method takes no parameters.
+
+## Response
+
+<ResponseField name="result" type="array">
+  List of all discoverable Solana validator nodes currently participating in the network.
+  <Expandable title="item">
+    <ResponseField name="pubkey" type="string">
+      Unique validator identity public key (base-58 encoded) that identifies this node.
+    </ResponseField>
+    <ResponseField name="gossip" type="string">
+      IP address and port for connecting to this validator's gossip protocol endpoint for peer discovery.
+    </ResponseField>
+    <ResponseField name="tpu" type="string">
+      Transaction Processing Unit address where clients can directly submit transactions to this validator.
+    </ResponseField>
+    <ResponseField name="rpc" type="string">
+      JSON-RPC API endpoint address if this validator offers public RPC services, or null if not publicly available.
+    </ResponseField>
+    <ResponseField name="version" type="string">
+      Solana software version and build identifier running on this validator node.
+    </ResponseField>
+    <ResponseField name="featureSet" type="integer">
+      Numeric identifier of the feature set enabled on this validator, used to track protocol compatibility.
+    </ResponseField>
+    <ResponseField name="shredVersion" type="integer">
+      Network compatibility version number used for shred processing and routing between validator nodes.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getClusterNodes"
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getClusterNodes"
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response (truncated to 2 nodes)
+{
+  "jsonrpc": "2.0",
+  "result": [
+    {
+      "clientId": "Frankendancer",
+      "featureSet": 565236538,
+      "gossip": "86.54.153.246:8001",
+      "pubkey": "JD549HsbJHeEKKUrKgg4Fj2iyv2RGjsV7NTZjZUrHybB",
+      "pubsub": null,
+      "rpc": null,
+      "serveRepair": "86.54.153.246:8045",
+      "shredVersion": 50093,
+      "tpu": null,
+      "tpuForwards": null,
+      "tpuForwardsQuic": "86.54.153.246:8037",
+      "tpuQuic": "86.54.153.246:8037",
+      "tpuVote": "86.54.153.246:8031",
+      "tvu": "86.54.153.246:8003",
+      "version": "0.1105.40200"
+    },
+    {
+      "clientId": "JitoLabs",
+      "featureSet": 4119855713,
+      "gossip": "64.34.87.167:8000",
+      "pubkey": "BCJN2vZFAHDYmufBDcbD5UAQHSyerXfc6UQkgX3mSWuh",
+      "pubsub": null,
+      "rpc": null,
+      "serveRepair": "64.34.87.167:8008",
+      "shredVersion": 50093,
+      "tpu": null,
+      "tpuForwards": null,
+      "tpuForwardsQuic": "64.34.87.167:8003",
+      "tpuQuic": "64.34.87.167:8002",
+      "tpuVote": "64.34.87.167:8004",
+      "tvu": "64.34.87.167:8001",
+      "version": "4.2.0-rc.1"
+    }
+  ],
+  "id": 1
+}
+```
+</ResponseExample>

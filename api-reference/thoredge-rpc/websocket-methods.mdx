@@ -4,23 +4,23 @@ sidebarTitle: "WebSocket methods"
 description: "Solana subscription methods over the ThorEdge WSS URL, the per-token subscription cap, and what a rejected subscribe looks like."
 ---
 
-Connect a Solana WebSocket client to the complete `wss://` URL copied from the dashboard. The location token is the first path segment, exactly as in the HTTPS URL. Subscription requests and notifications keep the shapes in the [Solana WebSocket reference](https://solana.com/docs/rpc/websocket).
+Connect a Solana WebSocket client to the complete `wss://` URL copied from the dashboard. The location token is the first path segment, exactly as in the HTTPS URL.
 
 ## Methods
 
-Every method whose name ends in `Subscribe` or `Unsubscribe` is forwarded. The upstream node decides whether an individual method is enabled.
+Every method whose name ends in `Subscribe` or `Unsubscribe` is forwarded. Each has its own page with parameters, notification format, and a real exchange captured from ThorEdge. `blockSubscribe` and `voteSubscribe` are not enabled on the upstream node and return `-32601 Method not found`.
 
-| Subscribe | Unsubscribe | Shape |
-| --- | --- | --- |
-| `accountSubscribe` | `accountUnsubscribe` | [Solana](https://solana.com/docs/rpc/websocket/accountsubscribe) |
-| `blockSubscribe` | `blockUnsubscribe` | [Solana](https://solana.com/docs/rpc/websocket/blocksubscribe) |
-| `logsSubscribe` | `logsUnsubscribe` | [Solana](https://solana.com/docs/rpc/websocket/logssubscribe) |
-| `programSubscribe` | `programUnsubscribe` | [Solana](https://solana.com/docs/rpc/websocket/programsubscribe) |
-| `rootSubscribe` | `rootUnsubscribe` | [Solana](https://solana.com/docs/rpc/websocket/rootsubscribe) |
-| `signatureSubscribe` | `signatureUnsubscribe` | [Solana](https://solana.com/docs/rpc/websocket/signaturesubscribe) |
-| `slotSubscribe` | `slotUnsubscribe` | [Solana](https://solana.com/docs/rpc/websocket/slotsubscribe) |
-| `slotsUpdatesSubscribe` | `slotsUpdatesUnsubscribe` | [Solana](https://solana.com/docs/rpc/websocket/slotsupdatessubscribe) |
-| `voteSubscribe` | `voteUnsubscribe` | [Solana](https://solana.com/docs/rpc/websocket/votesubscribe) |
+| Subscribe | Unsubscribe |
+| --- | --- |
+| [`accountSubscribe`](/api-reference/thoredge-rpc/websocket/accountsubscribe) | [`accountUnsubscribe`](/api-reference/thoredge-rpc/websocket/accountunsubscribe) |
+| [`blockSubscribe`](/api-reference/thoredge-rpc/websocket/blocksubscribe) | [`blockUnsubscribe`](/api-reference/thoredge-rpc/websocket/blockunsubscribe) |
+| [`logsSubscribe`](/api-reference/thoredge-rpc/websocket/logssubscribe) | [`logsUnsubscribe`](/api-reference/thoredge-rpc/websocket/logsunsubscribe) |
+| [`programSubscribe`](/api-reference/thoredge-rpc/websocket/programsubscribe) | [`programUnsubscribe`](/api-reference/thoredge-rpc/websocket/programunsubscribe) |
+| [`rootSubscribe`](/api-reference/thoredge-rpc/websocket/rootsubscribe) | [`rootUnsubscribe`](/api-reference/thoredge-rpc/websocket/rootunsubscribe) |
+| [`signatureSubscribe`](/api-reference/thoredge-rpc/websocket/signaturesubscribe) | [`signatureUnsubscribe`](/api-reference/thoredge-rpc/websocket/signatureunsubscribe) |
+| [`slotSubscribe`](/api-reference/thoredge-rpc/websocket/slotsubscribe) | [`slotUnsubscribe`](/api-reference/thoredge-rpc/websocket/slotunsubscribe) |
+| [`slotsUpdatesSubscribe`](/api-reference/thoredge-rpc/websocket/slotsupdatessubscribe) | [`slotsUpdatesUnsubscribe`](/api-reference/thoredge-rpc/websocket/slotsupdatesunsubscribe) |
+| [`voteSubscribe`](/api-reference/thoredge-rpc/websocket/votesubscribe) | [`voteUnsubscribe`](/api-reference/thoredge-rpc/websocket/voteunsubscribe) |
 
 ## Example
 

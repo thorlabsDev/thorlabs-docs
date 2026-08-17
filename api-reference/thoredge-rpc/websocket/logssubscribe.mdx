@@ -1,0 +1,130 @@
+---
+title: "logsSubscribe"
+description: "Subscribe to transaction logging."
+---
+
+Subscribe to transaction logging.
+
+## On ThorNode
+
+Send over the complete `wss://` URL copied from the dashboard. Each active subscription counts toward the per-token cap; over the cap the request is answered with `-32005 subscription limit exceeded` and not forwarded. Frames pass through unchanged.
+
+## Parameters
+
+<ParamField body="params" type="array" required>
+  <Expandable title="properties" defaultOpen>
+    <ParamField body="filter" type="string | object" required>
+      Filter criteria for the logs to receive results by account type. The following filters types are currently supported:
+
+      * `all` - subscribe to all transactions except for simple vote transactions
+      * `allWithVotes` - subscribe to all transactions, including simple vote transactions
+      * A JSON object with the following field:
+        * `mentions: [ <string> ]` - array containing a single Pubkey (as base-58 encoded string); if present, subscribe to only transactions mentioning this address
+
+      Note: The `mentions` field currently only supports one Pubkey string per method call. Listing additional addresses will result in an error.
+    </ParamField>
+
+    <ParamField body="config" type="object">
+      Configuration object containing the following fields:
+
+      <ParamField body="commitment" type="string">
+        The commitment level for the subscription. Can be `finalized`, `confirmed`, or `processed`.
+      </ParamField>
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Notification format
+
+The notification will be an RpcResponse JSON object with value equal to:
+
+* `signature: <string>` - The transaction signature base58 encoded.
+* `err: <object|null>` - Error if transaction failed, null if transaction succeeded. See TransactionError definitions.
+* `logs: <array[string]>` - Array of log messages the transaction instructions output during execution.
+
+## Response
+
+<ResponseField name="result" type="integer">
+  Subscription id (needed to unsubscribe)
+</ResponseField>
+
+<RequestExample>
+```json Request
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "logsSubscribe",
+  "params": [
+    {
+      "mentions": [
+        "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P"
+      ]
+    },
+    {
+      "commitment": "processed"
+    }
+  ]
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": 3087,
+  "id": 1
+}
+```
+
+```json Notification
+{
+  "jsonrpc": "2.0",
+  "method": "logsNotification",
+  "params": {
+    "result": {
+      "context": {
+        "slot": 439749555
+      },
+      "value": {
+        "signature": "4uvdjC31EsuuXoqWqgBcjcye6mybgm3eXTQ1c9uNqtKgZzSPV2zpr1BqrnqW7TVDgmxmkeLGDJjUWwis3xuEZTFa",
+        "err": null,
+        "logs": [
+          "Program ComputeBudget111111111111111111111111111111 invoke [1]",
+          "Program ComputeBudget111111111111111111111111111111 success",
+          "Program ComputeBudget111111111111111111111111111111 invoke [1]",
+          "Program ComputeBudget111111111111111111111111111111 success",
+          "Program 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P invoke [1]",
+          "Program log: Instruction: Buy",
+          "Program pfeeUxB6jkeY1Hxd7CsFCAjcbHA9rWtchMGdZ6VojVZ invoke [2]",
+          "Program log: Instruction: GetFees",
+          "Program pfeeUxB6jkeY1Hxd7CsFCAjcbHA9rWtchMGdZ6VojVZ consumed 3302 of 258300 compute units",
+          "Program return: pfeeUxB6jkeY1Hxd7CsFCAjcbHA9rWtchMGdZ6VojVZ AAAAAAAAAABfAAAAAAAAAB4AAAAAAAAA",
+          "Program pfeeUxB6jkeY1Hxd7CsFCAjcbHA9rWtchMGdZ6VojVZ success",
+          "Program TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb invoke [2]",
+          "Program log: Instruction: TransferChecked",
+          "Program TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb consumed 2562 of 251522 compute units",
+          "Program TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb success",
+          "Program 11111111111111111111111111111111 invoke [2]",
+          "Program 11111111111111111111111111111111 success",
+          "Program 11111111111111111111111111111111 invoke [2]",
+          "Program 11111111111111111111111111111111 success",
+          "Program 11111111111111111111111111111111 invoke [2]",
+          "Program 11111111111111111111111111111111 success",
+          "Program 11111111111111111111111111111111 invoke [2]",
+          "Program 11111111111111111111111111111111 success",
+          "Program data: vdt/007mYe6Nn/pUyhYIT1ydYP4oV8X7+MFDoQWD191RBraz/Qxob+gDAAAAAAAAQUDDAAAAAAABDNaP3w9f1dlTlJsJE5KCDAostHpzVZnc0kr9Jn/GpGFbXIJqAAAAAAugia0LAAAAAPCgzrVHAgAL9GWxBAAAAABYjoIkSQEArRHmpPwpRKT6glG++BVCbhv7KMa2ZGZ3YHxq2fVmpkZfAAAAAAAAAAoAAAAAAAAAlQTYmRAXjEDYruKylO/gN+fHyoUJDyx9OQVfvb65nSseAAAAAAAAAAMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwAAAGJ1eQAAAAAAAAAAAAAAAAAAAAAAiBMAAAAAAAAFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOgDAAAAAAAAC6CJrQsAAAAL9GWxBAAAAA==",
+          "Program 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P invoke [2]",
+          "Program 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P consumed 2125 of 230679 compute units",
+          "Program 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P success",
+          "Program 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P consumed 73027 of 299700 compute units",
+          "Program 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P success"
+        ]
+      }
+    },
+    "subscription": 3087
+  }
+}
+```
+
+</ResponseExample>

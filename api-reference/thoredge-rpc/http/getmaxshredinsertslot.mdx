@@ -1,0 +1,58 @@
+---
+title: "getMaxShredInsertSlot"
+description: "Get the highest slot seen from after shred insert on a given validator."
+---
+
+Get the highest slot seen from after shred insert on a given validator
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error.
+
+## Parameters
+
+This method takes no parameters.
+
+## Response
+
+<ResponseField name="result" type="integer">
+  Highest Solana slot number where this validator is currently accepting incoming data shreds (blockchain fragments).
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getMaxShredInsertSlot"
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getMaxShredInsertSlot"
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": 439749138,
+  "id": 1
+}
+```
+</ResponseExample>

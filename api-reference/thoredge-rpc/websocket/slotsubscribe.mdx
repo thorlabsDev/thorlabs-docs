@@ -1,0 +1,86 @@
+---
+title: "slotSubscribe"
+description: "Subscribe to receive notification anytime a slot is processed by the validator."
+---
+
+Subscribe to receive notification anytime a slot is processed by the validator.
+
+## On ThorNode
+
+Send over the complete `wss://` URL copied from the dashboard. Each active subscription counts toward the per-token cap; over the cap the request is answered with `-32005 subscription limit exceeded` and not forwarded. Frames pass through unchanged.
+
+## Parameters
+
+<ParamField body="params" type="array">
+  <Expandable title="properties" defaultOpen>
+    <ParamField body="none" type="null">
+      No parameters required.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Notification format
+
+The notification will be an object with the following fields:
+
+* `parent: <u64>` - The parent slot
+* `root: <u64>` - The current root slot
+* `slot: <u64>` - The newly set slot value
+
+## Response
+
+<ResponseField name="result" type="integer">
+  Subscription id (needed to unsubscribe)
+</ResponseField>
+
+<RequestExample>
+```json Request
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "slotSubscribe",
+  "params": []
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": 3082,
+  "id": 1
+}
+```
+
+```json Notification 1
+{
+  "jsonrpc": "2.0",
+  "method": "slotNotification",
+  "params": {
+    "result": {
+      "slot": 439749534,
+      "parent": 439749533,
+      "root": 439749502
+    },
+    "subscription": 3082
+  }
+}
+```
+
+```json Notification 2
+{
+  "jsonrpc": "2.0",
+  "method": "slotNotification",
+  "params": {
+    "result": {
+      "slot": 439749535,
+      "parent": 439749534,
+      "root": 439749503
+    },
+    "subscription": 3082
+  }
+}
+```
+
+</ResponseExample>

@@ -1,0 +1,182 @@
+---
+title: "getVoteAccounts"
+description: "Returns the account info and associated stake for all the voting accounts in the current bank."
+---
+
+Returns the account info and associated stake for all the voting accounts in the current bank.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error.
+
+## Parameters
+
+<ParamField body="commitment" type="string">
+  The commitment level for the request.
+
+  * `confirmed`
+  * `finalized`
+  * `processed`
+</ParamField>
+
+<ParamField body="votePubkey" type="string">
+  Specific validator vote account address to filter results (base-58 encoded).
+</ParamField>
+
+<ParamField body="keepUnstakedDelinquents" type="boolean">
+  Include validators that have fallen behind but have no stake delegated to them.
+</ParamField>
+
+<ParamField body="delinquentSlotDistance" type="number">
+  Custom threshold of slots behind to mark validators as delinquent or underperforming.
+</ParamField>
+
+## Response
+
+<ResponseField name="current" type="array">
+  Active validators participating properly in network consensus.
+  <Expandable title="item">
+    <ResponseField name="votePubkey" type="string">
+      Unique Solana vote account address associated with this validator.
+    </ResponseField>
+    <ResponseField name="nodePubkey" type="string">
+      Validator identity address that controls the vote account.
+    </ResponseField>
+    <ResponseField name="activatedStake" type="integer">
+      Total SOL delegated to this validator in lamports.
+    </ResponseField>
+    <ResponseField name="epochVoteAccount" type="boolean">
+      Whether this validator is eligible for rewards in the current epoch.
+    </ResponseField>
+    <ResponseField name="commission" type="integer">
+      Validator commission percentage (0-100) taken from staking rewards.
+    </ResponseField>
+    <ResponseField name="lastVote" type="integer">
+      Most recent Solana slot this validator voted on.
+    </ResponseField>
+    <ResponseField name="epochCredits" type="array[]">
+      Latest history of earned credits for up to five epochs.
+    </ResponseField>
+    <ResponseField name="rootSlot" type="integer">
+      Current root slot for this vote account.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="delinquent" type="array">
+  Underperforming validators that have fallen behind in consensus participation.
+  <Expandable title="item">
+    <ResponseField name="votePubkey" type="string">
+      Vote account address.
+    </ResponseField>
+    <ResponseField name="nodePubkey" type="string">
+      Validator identity.
+    </ResponseField>
+    <ResponseField name="activatedStake" type="integer">
+      Stake delegated to this vote account (lamports).
+    </ResponseField>
+    <ResponseField name="epochVoteAccount" type="boolean">
+      Whether the vote account is staked for this epoch.
+    </ResponseField>
+    <ResponseField name="commission" type="integer">
+      Percentage (0-100) of rewards payout owed to the vote account.
+    </ResponseField>
+    <ResponseField name="lastVote" type="integer">
+      Most recent slot voted on by this vote account.
+    </ResponseField>
+    <ResponseField name="epochCredits" type="array[]">
+      Latest history of earned credits for up to five epochs.
+    </ResponseField>
+    <ResponseField name="rootSlot" type="integer">
+      Current root slot for this vote account.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getVoteAccounts",
+    "params": [
+      {
+        "votePubkey": "voteRnv6PBzmiGP8NicWtQiqEJTwKKq2SxtqtdLUJjd"
+      }
+    ]
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getVoteAccounts",
+  "params": [
+    {
+      "votePubkey": "voteRnv6PBzmiGP8NicWtQiqEJTwKKq2SxtqtdLUJjd"
+    }
+  ]
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "current": [
+      {
+        "activatedStake": 351192245566822,
+        "commission": 0,
+        "epochCredits": [
+          [
+            1013,
+            2364183921,
+            2357279421
+          ],
+          [
+            1014,
+            2371091343,
+            2364183921
+          ],
+          [
+            1015,
+            2377959529,
+            2371091343
+          ],
+          [
+            1016,
+            2384857170,
+            2377959529
+          ],
+          [
+            1017,
+            2391322594,
+            2384857170
+          ]
+        ],
+        "epochVoteAccount": true,
+        "inflationRewardsCommissionBps": 0,
+        "lastVote": 439749154,
+        "nodePubkey": "Diman2GphWLwECE3swjrAEAJniezpYLxK1edUydiDZau",
+        "rootSlot": 439749123,
+        "votePubkey": "voteRnv6PBzmiGP8NicWtQiqEJTwKKq2SxtqtdLUJjd"
+      }
+    ],
+    "delinquent": []
+  },
+  "id": 1
+}
+```
+</ResponseExample>

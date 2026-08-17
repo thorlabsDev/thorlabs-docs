@@ -1,0 +1,85 @@
+---
+title: "getBlocks"
+description: "Returns a list of confirmed blocks between two slots."
+---
+
+Returns a list of confirmed blocks between two slots.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error.  History is limited to the upstream's retained ledger; slots older than `getFirstAvailableBlock` return an error.
+
+## Parameters
+
+<ParamField body="slot" type="number" required>
+  Start slot (required).
+</ParamField>
+
+<ParamField body="slot" type="number" required>
+  End slot (optional, must be ≤ 500,000 blocks from start slot).
+</ParamField>
+
+<ParamField body="commitment" type="string" default="finalized">
+  The commitment level for the request.
+
+  * `confirmed`
+  * `finalized`
+</ParamField>
+
+## Response
+
+<ResponseField name="result" type="integer[]">
+  List of confirmed blocks between start_slot and end_slot.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getBlocks",
+    "params": [
+      439749081,
+      439749085
+    ]
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getBlocks",
+  "params": [
+    439749081,
+    439749085
+  ]
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": [
+    439749081,
+    439749082,
+    439749083,
+    439749084,
+    439749085
+  ],
+  "id": 1
+}
+```
+</ResponseExample>

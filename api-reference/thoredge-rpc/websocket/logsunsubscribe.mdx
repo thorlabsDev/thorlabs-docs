@@ -1,0 +1,50 @@
+---
+title: "logsUnsubscribe"
+description: "Unsubscribe from transaction logging."
+---
+
+Unsubscribe from transaction logging.
+
+## On ThorNode
+
+Send over the complete `wss://` URL copied from the dashboard. Unsubscribing releases the subscription's slot in the per-token cap.
+
+## Parameters
+
+<ParamField body="params" type="array" required>
+  <Expandable title="properties" defaultOpen>
+    <ParamField body="subscriptionId" type="integer" required>
+      Subscription id to cancel.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Response
+
+<ResponseField name="result" type="boolean">
+  Unsubscribe success message.
+</ResponseField>
+
+<RequestExample>
+```json Request
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "logsUnsubscribe",
+  "params": [
+    3087
+  ]
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": true,
+  "id": 2
+}
+```
+
+</ResponseExample>

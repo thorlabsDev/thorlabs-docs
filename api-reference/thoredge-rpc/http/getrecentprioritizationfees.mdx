@@ -1,0 +1,91 @@
+---
+title: "getRecentPrioritizationFees"
+description: "Returns a list of prioritization fees from recent blocks."
+---
+
+Returns a list of prioritization fees from recent blocks.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error.
+
+## Parameters
+
+<ParamField body="addresses" type="string[]" required>
+  An array of account addresses (maximum 128), as base-58 encoded strings.
+</ParamField>
+
+## Response
+
+<ResponseField name="result" type="array">
+  List of recent prioritization fees.
+  <Expandable title="item">
+    <ResponseField name="slot" type="integer">
+      Slot number where these priority fee levels were observed.
+    </ResponseField>
+    <ResponseField name="prioritizationFee" type="integer">
+      Priority fee rate in micro-lamports per compute unit paid by transactions in this slot.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getRecentPrioritizationFees",
+    "params": [
+      [
+        "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+      ]
+    ]
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getRecentPrioritizationFees",
+  "params": [
+    [
+      "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    ]
+  ]
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response (truncated to 3 samples)
+{
+  "jsonrpc": "2.0",
+  "result": [
+    {
+      "prioritizationFee": 0,
+      "slot": 439749018
+    },
+    {
+      "prioritizationFee": 0,
+      "slot": 439749019
+    },
+    {
+      "prioritizationFee": 0,
+      "slot": 439749020
+    }
+  ],
+  "id": 1
+}
+```
+</ResponseExample>

@@ -1,0 +1,61 @@
+---
+title: "voteSubscribe"
+description: "Subscribe to receive notification anytime a new vote is observed in gossip. These votes are pre-consensus therefore there is no guarantee these votes will enter the ledger."
+---
+
+Subscribe to receive notification anytime a new vote is observed in gossip. These votes are pre-consensus therefore there is no guarantee these votes will enter the ledger.
+
+## On ThorNode
+
+The upstream node does not enable vote subscriptions; the request returns `-32601 Method not found`.
+
+## Parameters
+
+<ParamField body="params" type="array">
+  <Expandable title="properties" defaultOpen>
+    <ParamField body="none" type="null">
+      No parameters required.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Notification format
+
+The notification will be an object with the following fields:
+
+* `hash: <string>` - The vote hash
+* `slots: <array>` - The slots covered by the vote, as an array of u64 integers
+* `timestamp: <i64|null>` - The timestamp of the vote
+* `signature: <string>` - The signature of the transaction that contained this vote
+* `votePubkey: <string>` - The public key of the vote account, as base-58 encoded string
+
+## Response
+
+<ResponseField name="result" type="integer">
+  Subscription id (needed to unsubscribe)
+</ResponseField>
+
+<RequestExample>
+```json Request
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "voteSubscribe",
+  "params": []
+}
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "error": {
+    "code": -32601,
+    "message": "Method not found"
+  },
+  "id": 1
+}
+```
+
+</ResponseExample>

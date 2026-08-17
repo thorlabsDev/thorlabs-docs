@@ -1,0 +1,68 @@
+---
+title: "getSlot"
+description: "Returns the slot that has reached the given or default commitment level."
+---
+
+Returns the slot that has reached the given or default commitment level.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error.
+
+## Parameters
+
+<ParamField body="commitment" type="string">
+  The finality level to retrieve the slot for (processed = fastest, finalized = fully confirmed).
+
+  * `confirmed`
+  * `finalized`
+  * `processed`
+</ParamField>
+
+<ParamField body="minContextSlot" type="number">
+  Minimum slot that must be reached before processing this request.
+</ParamField>
+
+## Response
+
+<ResponseField name="result" type="integer">
+  Current slot number representing the network's height and progress.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getSlot"
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getSlot"
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": 439749085,
+  "id": 1
+}
+```
+</ResponseExample>

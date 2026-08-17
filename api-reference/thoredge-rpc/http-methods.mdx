@@ -4,7 +4,7 @@ sidebarTitle: "HTTP methods"
 description: "Every JSON-RPC method ThorEdge serves over HTTPS, which service answers it, and where its request and response shape is defined."
 ---
 
-Send any method below as a JSON-RPC 2.0 `POST` to the complete ThorEdge URL. Standard methods keep the request and response shapes defined in the [Solana JSON-RPC reference](https://solana.com/docs/rpc/http); ThorEdge adds the [error codes, rate-limit headers, and limits](/api-reference/overview) described in the overview.
+Send any method below as a JSON-RPC 2.0 `POST` to the complete ThorEdge URL. Every method has its own page with parameters, response fields, a runnable request, and a real response captured from ThorEdge. The [overview](/api-reference/overview) covers the error codes, rate-limit headers, and limits shared by all of them.
 
 Method names are matched exactly and case-sensitively. A method not listed here is forwarded to the upstream node, which decides whether it exists.
 
@@ -22,83 +22,83 @@ curl --fail-with-body "$THORNODE_RPC_URL" \
 
 ## Account queries
 
-These methods are answered by [FastGate](/products/fastgate-account-api) through the same URL. Standard shapes apply; the V2 methods add cursor pagination and are documented per method.
+These methods are answered by [FastGate](/products/fastgate-account-api) through the same URL. The V2 methods add cursor pagination.
 
-| Method | Shape |
+| Method | Answered by |
 | --- | --- |
-| `getAccountInfo` | [Solana](https://solana.com/docs/rpc/http/getaccountinfo) · [ThorNode notes](/api-reference/fastgate/overview) |
-| `getBalance` | [Solana](https://solana.com/docs/rpc/http/getbalance) · [ThorNode notes](/api-reference/fastgate/overview) |
-| `getLargestAccounts` | [Solana](https://solana.com/docs/rpc/http/getlargestaccounts) · [ThorNode notes](/api-reference/fastgate/overview) |
-| `getMinimumBalanceForRentExemption` | [Solana](https://solana.com/docs/rpc/http/getminimumbalanceforrentexemption) · [ThorNode notes](/api-reference/fastgate/overview) |
-| `getMultipleAccounts` | [Solana](https://solana.com/docs/rpc/http/getmultipleaccounts) · [ThorNode notes](/api-reference/fastgate/overview) |
-| `getProgramAccounts` | [Solana](https://solana.com/docs/rpc/http/getprogramaccounts) · [ThorNode notes](/api-reference/fastgate/overview) |
-| `getTokenAccountBalance` | [Solana](https://solana.com/docs/rpc/http/gettokenaccountbalance) · [ThorNode notes](/api-reference/fastgate/overview) |
-| `getTokenAccountsByDelegate` | [Solana](https://solana.com/docs/rpc/http/gettokenaccountsbydelegate) · [ThorNode notes](/api-reference/fastgate/overview) |
-| `getTokenAccountsByOwner` | [Solana](https://solana.com/docs/rpc/http/gettokenaccountsbyowner) · [ThorNode notes](/api-reference/fastgate/overview) |
-| `getTokenLargestAccounts` | [Solana](https://solana.com/docs/rpc/http/gettokenlargestaccounts) · [ThorNode notes](/api-reference/fastgate/overview) |
-| `getTokenSupply` | [Solana](https://solana.com/docs/rpc/http/gettokensupply) · [ThorNode notes](/api-reference/fastgate/overview) |
-| `getProgramAccountsV2` | [ThorNode reference](/api-reference/fastgate/getprogramaccountsv2) |
-| `getTokenAccountsByOwnerV2` | [ThorNode reference](/api-reference/fastgate/gettokenaccountsbyownerv2) |
-| `getTokenAccountsByDelegateV2` | [ThorNode reference](/api-reference/fastgate/gettokenaccountsbydelegatev2) |
+| [`getAccountInfo`](/api-reference/thoredge-rpc/http/getaccountinfo) | FastGate |
+| [`getBalance`](/api-reference/thoredge-rpc/http/getbalance) | FastGate |
+| [`getLargestAccounts`](/api-reference/thoredge-rpc/http/getlargestaccounts) | FastGate |
+| [`getMinimumBalanceForRentExemption`](/api-reference/thoredge-rpc/http/getminimumbalanceforrentexemption) | FastGate |
+| [`getMultipleAccounts`](/api-reference/thoredge-rpc/http/getmultipleaccounts) | FastGate |
+| [`getProgramAccounts`](/api-reference/thoredge-rpc/http/getprogramaccounts) | FastGate |
+| [`getTokenAccountBalance`](/api-reference/thoredge-rpc/http/gettokenaccountbalance) | FastGate |
+| [`getTokenAccountsByDelegate`](/api-reference/thoredge-rpc/http/gettokenaccountsbydelegate) | FastGate |
+| [`getTokenAccountsByOwner`](/api-reference/thoredge-rpc/http/gettokenaccountsbyowner) | FastGate |
+| [`getTokenLargestAccounts`](/api-reference/thoredge-rpc/http/gettokenlargestaccounts) | FastGate |
+| [`getTokenSupply`](/api-reference/thoredge-rpc/http/gettokensupply) | FastGate |
+| [`getProgramAccountsV2`](/api-reference/fastgate/getprogramaccountsv2) | FastGate |
+| [`getTokenAccountsByOwnerV2`](/api-reference/fastgate/gettokenaccountsbyownerv2) | FastGate |
+| [`getTokenAccountsByDelegateV2`](/api-reference/fastgate/gettokenaccountsbydelegatev2) | FastGate |
 
 ## Transactions
 
-| Method | Shape | ThorEdge behavior |
+| Method | Answered by | ThorEdge behavior |
 | --- | --- | --- |
-| `sendTransaction` | [Solana](https://solana.com/docs/rpc/http/sendtransaction) | Forwarded once, unchanged, with an 8 s timeout. ThorEdge never resubmits; a `502` means you decide whether to rebuild and resend. Counts against the TPS cap. |
-| `simulateTransaction` | [Solana](https://solana.com/docs/rpc/http/simulatetransaction) | Standard read; 10 s timeout. |
+| [`sendTransaction`](/api-reference/thoredge-rpc/http/sendtransaction) | Upstream node | Forwarded once, unchanged, with an 8 s timeout. ThorEdge never resubmits; a `502` means you decide whether to rebuild and resend. Counts against the TPS cap. |
+| [`simulateTransaction`](/api-reference/thoredge-rpc/http/simulatetransaction) | Upstream node | Standard read; 10 s timeout. |
 
 ## Other methods
 
-Standard behavior, 10 s timeout, one retry on a transport error.
+Forwarded to the upstream node; 10 s timeout, one retry on a transport error. History methods (`getBlock`, `getTransaction`, `getSignaturesForAddress`, and related) serve slots from `getFirstAvailableBlock` onward.
 
-| Method | Shape |
+| Method | Answered by |
 | --- | --- |
-| `getBlock` | [Solana](https://solana.com/docs/rpc/http/getblock) |
-| `getBlockCommitment` | [Solana](https://solana.com/docs/rpc/http/getblockcommitment) |
-| `getBlockHeight` | [Solana](https://solana.com/docs/rpc/http/getblockheight) |
-| `getBlockProduction` | [Solana](https://solana.com/docs/rpc/http/getblockproduction) |
-| `getBlockTime` | [Solana](https://solana.com/docs/rpc/http/getblocktime) |
-| `getBlocks` | [Solana](https://solana.com/docs/rpc/http/getblocks) |
-| `getBlocksWithLimit` | [Solana](https://solana.com/docs/rpc/http/getblockswithlimit) |
-| `getClusterNodes` | [Solana](https://solana.com/docs/rpc/http/getclusternodes) |
-| `getEpochInfo` | [Solana](https://solana.com/docs/rpc/http/getepochinfo) |
-| `getEpochSchedule` | [Solana](https://solana.com/docs/rpc/http/getepochschedule) |
-| `getFeeForMessage` | [Solana](https://solana.com/docs/rpc/http/getfeeformessage) |
-| `getFirstAvailableBlock` | [Solana](https://solana.com/docs/rpc/http/getfirstavailableblock) |
-| `getGenesisHash` | [Solana](https://solana.com/docs/rpc/http/getgenesishash) |
-| `getHealth` | [Solana](https://solana.com/docs/rpc/http/gethealth) |
-| `getHighestSnapshotSlot` | [Solana](https://solana.com/docs/rpc/http/gethighestsnapshotslot) |
-| `getIdentity` | [Solana](https://solana.com/docs/rpc/http/getidentity) |
-| `getInflationGovernor` | [Solana](https://solana.com/docs/rpc/http/getinflationgovernor) |
-| `getInflationRate` | [Solana](https://solana.com/docs/rpc/http/getinflationrate) |
-| `getInflationReward` | [Solana](https://solana.com/docs/rpc/http/getinflationreward) |
-| `getLatestBlockhash` | [Solana](https://solana.com/docs/rpc/http/getlatestblockhash) |
-| `getLeaderSchedule` | [Solana](https://solana.com/docs/rpc/http/getleaderschedule) |
-| `getMaxRetransmitSlot` | [Solana](https://solana.com/docs/rpc/http/getmaxretransmitslot) |
-| `getMaxShredInsertSlot` | [Solana](https://solana.com/docs/rpc/http/getmaxshredinsertslot) |
-| `getRecentPerformanceSamples` | [Solana](https://solana.com/docs/rpc/http/getrecentperformancesamples) |
-| `getRecentPrioritizationFees` | [Solana](https://solana.com/docs/rpc/http/getrecentprioritizationfees) |
-| `getSignatureStatuses` | [Solana](https://solana.com/docs/rpc/http/getsignaturestatuses) |
-| `getSignaturesForAddress` | [Solana](https://solana.com/docs/rpc/http/getsignaturesforaddress) |
-| `getSlot` | [Solana](https://solana.com/docs/rpc/http/getslot) |
-| `getSlotLeader` | [Solana](https://solana.com/docs/rpc/http/getslotleader) |
-| `getSlotLeaders` | [Solana](https://solana.com/docs/rpc/http/getslotleaders) |
-| `getStakeMinimumDelegation` | [Solana](https://solana.com/docs/rpc/http/getstakeminimumdelegation) |
-| `getTransaction` | [Solana](https://solana.com/docs/rpc/http/gettransaction) |
-| `getTransactionCount` | [Solana](https://solana.com/docs/rpc/http/gettransactioncount) |
-| `getVersion` | [Solana](https://solana.com/docs/rpc/http/getversion) |
-| `getVoteAccounts` | [Solana](https://solana.com/docs/rpc/http/getvoteaccounts) |
-| `isBlockhashValid` | [Solana](https://solana.com/docs/rpc/http/isblockhashvalid) |
-| `minimumLedgerSlot` | [Solana](https://solana.com/docs/rpc/http/minimumledgerslot) |
-| `requestAirdrop` | [Solana](https://solana.com/docs/rpc/http/requestairdrop) |
-| `simulateTransaction` | [Solana](https://solana.com/docs/rpc/http/simulatetransaction) |
+| [`getBlock`](/api-reference/thoredge-rpc/http/getblock) | Upstream node |
+| [`getBlockCommitment`](/api-reference/thoredge-rpc/http/getblockcommitment) | Upstream node |
+| [`getBlockHeight`](/api-reference/thoredge-rpc/http/getblockheight) | Upstream node |
+| [`getBlockProduction`](/api-reference/thoredge-rpc/http/getblockproduction) | Upstream node |
+| [`getBlockTime`](/api-reference/thoredge-rpc/http/getblocktime) | Upstream node |
+| [`getBlocks`](/api-reference/thoredge-rpc/http/getblocks) | Upstream node |
+| [`getBlocksWithLimit`](/api-reference/thoredge-rpc/http/getblockswithlimit) | Upstream node |
+| [`getClusterNodes`](/api-reference/thoredge-rpc/http/getclusternodes) | Upstream node |
+| [`getEpochInfo`](/api-reference/thoredge-rpc/http/getepochinfo) | Upstream node |
+| [`getEpochSchedule`](/api-reference/thoredge-rpc/http/getepochschedule) | Upstream node |
+| [`getFeeForMessage`](/api-reference/thoredge-rpc/http/getfeeformessage) | Upstream node |
+| [`getFirstAvailableBlock`](/api-reference/thoredge-rpc/http/getfirstavailableblock) | Upstream node |
+| [`getGenesisHash`](/api-reference/thoredge-rpc/http/getgenesishash) | Upstream node |
+| [`getHealth`](/api-reference/thoredge-rpc/http/gethealth) | Upstream node |
+| [`getHighestSnapshotSlot`](/api-reference/thoredge-rpc/http/gethighestsnapshotslot) | Upstream node |
+| [`getIdentity`](/api-reference/thoredge-rpc/http/getidentity) | Upstream node |
+| [`getInflationGovernor`](/api-reference/thoredge-rpc/http/getinflationgovernor) | Upstream node |
+| [`getInflationRate`](/api-reference/thoredge-rpc/http/getinflationrate) | Upstream node |
+| [`getInflationReward`](/api-reference/thoredge-rpc/http/getinflationreward) | Upstream node |
+| [`getLatestBlockhash`](/api-reference/thoredge-rpc/http/getlatestblockhash) | Upstream node |
+| [`getLeaderSchedule`](/api-reference/thoredge-rpc/http/getleaderschedule) | Upstream node |
+| [`getMaxRetransmitSlot`](/api-reference/thoredge-rpc/http/getmaxretransmitslot) | Upstream node |
+| [`getMaxShredInsertSlot`](/api-reference/thoredge-rpc/http/getmaxshredinsertslot) | Upstream node |
+| [`getRecentPerformanceSamples`](/api-reference/thoredge-rpc/http/getrecentperformancesamples) | Upstream node |
+| [`getRecentPrioritizationFees`](/api-reference/thoredge-rpc/http/getrecentprioritizationfees) | Upstream node |
+| [`getSignatureStatuses`](/api-reference/thoredge-rpc/http/getsignaturestatuses) | Upstream node |
+| [`getSignaturesForAddress`](/api-reference/thoredge-rpc/http/getsignaturesforaddress) | Upstream node |
+| [`getSlot`](/api-reference/thoredge-rpc/http/getslot) | Upstream node |
+| [`getSlotLeader`](/api-reference/thoredge-rpc/http/getslotleader) | Upstream node |
+| [`getSlotLeaders`](/api-reference/thoredge-rpc/http/getslotleaders) | Upstream node |
+| [`getStakeMinimumDelegation`](/api-reference/thoredge-rpc/http/getstakeminimumdelegation) | Upstream node |
+| [`getTransaction`](/api-reference/thoredge-rpc/http/gettransaction) | Upstream node |
+| [`getTransactionCount`](/api-reference/thoredge-rpc/http/gettransactioncount) | Upstream node |
+| [`getVersion`](/api-reference/thoredge-rpc/http/getversion) | Upstream node |
+| [`getVoteAccounts`](/api-reference/thoredge-rpc/http/getvoteaccounts) | Upstream node |
+| [`isBlockhashValid`](/api-reference/thoredge-rpc/http/isblockhashvalid) | Upstream node |
+| [`minimumLedgerSlot`](/api-reference/thoredge-rpc/http/minimumledgerslot) | Upstream node |
+| [`requestAirdrop`](/api-reference/thoredge-rpc/http/requestairdrop) | Upstream node |
+| [`simulateTransaction`](/api-reference/thoredge-rpc/http/simulatetransaction) | Upstream node |
 
 ## Not served
 
 | Method | Response |
 | --- | --- |
-| `getSupply` | HTTP `200`, `{"code": -32601, "message": "method not found"}` |
+| [`getSupply`](/api-reference/thoredge-rpc/http/getsupply) | HTTP `200`, `{"code": -32601, "message": "method not found"}` |
 
 ## Next steps
 

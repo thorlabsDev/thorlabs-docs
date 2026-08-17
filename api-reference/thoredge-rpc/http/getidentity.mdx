@@ -1,0 +1,60 @@
+---
+title: "getIdentity"
+description: "Returns the identity pubkey for the current node."
+---
+
+Returns the identity pubkey for the current node.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error. Returns the identity of the upstream node ThorEdge is routing to at that moment.
+
+## Parameters
+
+This method takes no parameters.
+
+## Response
+
+<ResponseField name="identity" type="string">
+  Unique validator public key (base-58 encoded) of this Solana node, serving as its network identifier.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getIdentity"
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getIdentity"
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "identity": "U6Yigc574tGvnaFmzjX55W1h4cCjfYSamb41ge59G7Q"
+  },
+  "id": 1
+}
+```
+</ResponseExample>

@@ -1,0 +1,83 @@
+---
+title: "getBlocksWithLimit"
+description: "Returns a list of confirmed blocks starting at the given slot."
+---
+
+Returns a list of confirmed blocks starting at the given slot.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error.  History is limited to the upstream's retained ledger; slots older than `getFirstAvailableBlock` return an error.
+
+## Parameters
+
+<ParamField body="start_slot" type="number">
+  Starting Solana slot number from which to begin retrieving the sequential block list.
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Maximum number of sequential blocks to return (up to 500,000 blocks per request).
+</ParamField>
+
+<ParamField body="commitment" type="string">
+  Finality level to query blocks at - either confirmed (optimistic confirmation) or finalized (full confirmation).
+
+  * `confirmed`
+  * `finalized`
+</ParamField>
+
+## Response
+
+<ResponseField name="result" type="integer[]">
+  Ordered list of confirmed Solana block slot numbers in ascending sequence starting from the requested slot.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getBlocksWithLimit",
+    "params": [
+      439749081,
+      3
+    ]
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getBlocksWithLimit",
+  "params": [
+    439749081,
+    3
+  ]
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": [
+    439749081,
+    439749082,
+    439749083
+  ],
+  "id": 1
+}
+```
+</ResponseExample>

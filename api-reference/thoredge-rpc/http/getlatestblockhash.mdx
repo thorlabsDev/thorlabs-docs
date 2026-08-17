@@ -1,0 +1,103 @@
+---
+title: "getLatestBlockhash"
+description: "Returns the latest Solana blockhash required for constructing fresh transactions. Blockhashes expire after ~150 slots. Fetch one just before signing to maximize the inclusion window."
+---
+
+Returns the latest Solana blockhash required for constructing fresh transactions. Blockhashes expire after ~150 slots. Fetch one just before signing to maximize the inclusion window.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error.
+
+## Parameters
+
+<ParamField body="commitment" type="string">
+  The commitment level for the request.
+
+  * `confirmed`
+  * `finalized`
+  * `processed`
+</ParamField>
+
+<ParamField body="minContextSlot" type="number">
+  The minimum slot that the request can be evaluated at.
+</ParamField>
+
+## Response
+
+<ResponseField name="context" type="object">
+  Context of the response.
+  <Expandable title="properties">
+    <ResponseField name="slot" type="integer">
+      The slot at which the data was fetched.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="value" type="object">
+  Blockhash and its validity details.
+  <Expandable title="properties">
+    <ResponseField name="blockhash" type="string">
+      The latest Solana blockhash encoded as a base-58 string, required for transaction creation.
+    </ResponseField>
+    <ResponseField name="lastValidBlockHeight" type="integer">
+      The last Solana block height at which this blockhash will be accepted in transactions.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getLatestBlockhash",
+    "params": [
+      {
+        "commitment": "processed"
+      }
+    ]
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getLatestBlockhash",
+  "params": [
+    {
+      "commitment": "processed"
+    }
+  ]
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "context": {
+      "apiVersion": "4.1.2",
+      "slot": 439749118
+    },
+    "value": {
+      "blockhash": "DoLUbTY3nUpNK9YvxzYBjvpg6BdmDvqhjCfnzY5yeWU",
+      "lastValidBlockHeight": 417799829
+    }
+  },
+  "id": 1
+}
+```
+</ResponseExample>

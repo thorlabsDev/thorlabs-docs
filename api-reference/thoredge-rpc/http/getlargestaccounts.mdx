@@ -1,0 +1,100 @@
+---
+title: "getLargestAccounts"
+description: "Returns the 20 largest accounts, by lamport balance (results may be cached up to two hours)."
+---
+
+Returns the 20 largest accounts, by lamport balance (results may be cached up to two hours).
+
+## On ThorNode
+
+Answered by [FastGate](/api-reference/fastgate/overview): `commitment` and `minContextSlot` are accepted and ignored, the response reflects FastGate's indexed slot (`context.slot`, no `apiVersion`), and the request times out after 30 s. Always the top 20 accounts by lamports. The `filter` option is ignored.
+
+## Parameters
+
+<ParamField body="commitment" type="string">
+  The commitment level for the request.
+
+  * `confirmed`
+  * `finalized`
+</ParamField>
+
+<ParamField body="filter" type="string">
+  Filter results by account type - either all circulating SOL accounts or only special non-circulating reserve accounts.
+
+  * `circulating`
+  * `nonCirculating`
+</ParamField>
+
+## Response
+
+<ResponseField name="context" type="object">
+  Context of the response.
+  <Expandable title="properties">
+    <ResponseField name="slot" type="integer">
+      The slot at which the data was fetched.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="value" type="array">
+  Top 20 largest Solana accounts ranked by SOL balance, from highest to lowest.
+  <Expandable title="item">
+    <ResponseField name="lamports" type="integer">
+      SOL balance of this account in lamports .
+    </ResponseField>
+    <ResponseField name="address" type="string">
+      Unique Solana wallet address of this major account holder.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getLargestAccounts"
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getLargestAccounts"
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response (truncated to 2 of 20)
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "context": {
+      "slot": 439749196
+    },
+    "value": [
+      {
+        "address": "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
+        "lamports": 10750010549040241
+      },
+      {
+        "address": "CbrKVVDv6irzm4SYv8YnhJkN6wCTnYw9S7SqdwavCrRt",
+        "lamports": 8049931767811794
+      }
+    ]
+  },
+  "id": 1
+}
+```
+</ResponseExample>

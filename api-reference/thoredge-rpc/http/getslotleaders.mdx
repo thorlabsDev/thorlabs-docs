@@ -1,0 +1,76 @@
+---
+title: "getSlotLeaders"
+description: "Returns the slot leaders for a given slot range."
+---
+
+Returns the slot leaders for a given slot range.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error.
+
+## Parameters
+
+<ParamField body="slot" type="number" required>
+  Starting Solana slot number to begin retrieving the validator schedule from.
+</ParamField>
+
+<ParamField body="slot" type="number" required>
+  Number of consecutive slots to retrieve the scheduled validator identities for (1-5,000).
+</ParamField>
+
+## Response
+
+<ResponseField name="result" type="string[]">
+  Ordered sequence of Solana validator identities scheduled for upcoming block production.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getSlotLeaders",
+    "params": [
+      439749085,
+      3
+    ]
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getSlotLeaders",
+  "params": [
+    439749085,
+    3
+  ]
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": [
+    "84gC25fbFKYueR9WEfreUysk1n3ZFxLFDDjbyqeqGpoW",
+    "84gC25fbFKYueR9WEfreUysk1n3ZFxLFDDjbyqeqGpoW",
+    "84gC25fbFKYueR9WEfreUysk1n3ZFxLFDDjbyqeqGpoW"
+  ],
+  "id": 1
+}
+```
+</ResponseExample>

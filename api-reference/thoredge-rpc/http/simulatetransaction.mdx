@@ -1,0 +1,212 @@
+---
+title: "simulateTransaction"
+description: "Simulate a Solana transaction to preview logs, compute-unit usage, and account changes without submitting it to the network."
+---
+
+Simulate a Solana transaction to preview logs, compute-unit usage, and account changes without submitting it to the network.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error. Runs on the upstream node's current state. Use `sigVerify: false` and `replaceRecentBlockhash: true` to simulate an unsigned or stale transaction, as in the example.
+
+## Parameters
+
+<ParamField body="transaction" type="string" required>
+  The signed transaction, as an encoded string (base58 or base64).
+</ParamField>
+
+<ParamField body="encoding" type="string">
+  Encoding used for the transaction data.
+
+  * `base58`
+  * `base64`
+</ParamField>
+
+<ParamField body="skipPreflight" type="boolean">
+  Skip the preflight transaction checks.
+</ParamField>
+
+<ParamField body="preflightCommitment" type="string">
+  Commitment level to use for preflight.
+
+  * `confirmed`
+  * `finalized`
+  * `processed`
+</ParamField>
+
+<ParamField body="sigVerify" type="boolean">
+  If true, verify the transaction signatures.
+</ParamField>
+
+<ParamField body="replaceRecentBlockhash" type="boolean">
+  If true, replace the transaction recent blockhash with the most recent one.
+</ParamField>
+
+<ParamField body="minContextSlot" type="number">
+  Minimum slot at which to perform preflight transaction checks.
+</ParamField>
+
+<ParamField body="innerInstructions" type="boolean">
+  If true, include inner instructions in the response.
+</ParamField>
+
+<ParamField body="accounts" type="object" />
+
+<ParamField body="accounts.addresses" type="array">
+  Array of accounts to return, as base-58 encoded strings.
+</ParamField>
+
+<ParamField body="accounts.encoding" type="string">
+  Encoding format for returned account data.
+
+  * `base64`
+  * `base58`
+  * `base64+zstd`
+  * `jsonParsed`
+</ParamField>
+
+## Response
+
+<ResponseField name="context" type="object">
+  Context of the simulation response.
+  <Expandable title="properties">
+    <ResponseField name="apiVersion" type="string">
+      The API version of the RPC node.
+    </ResponseField>
+    <ResponseField name="slot" type="integer">
+      Slot in which the data was fetched.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="value" type="object">
+  Details of the simulated transaction result.
+  <Expandable title="properties">
+    <ResponseField name="accounts" type="array | null">
+    </ResponseField>
+    <ResponseField name="err" type="object | null">
+      Error if the transaction failed, null if successful.
+    </ResponseField>
+    <ResponseField name="innerInstructions" type="array | null">
+      Inner instructions executed during the transaction.
+    </ResponseField>
+    <ResponseField name="loadedAccountsDataSize" type="integer | null">
+      Total size in bytes of all account data loaded during simulation.
+    </ResponseField>
+    <ResponseField name="logs" type="array | null">
+      Program execution logs from the transaction simulation.
+    </ResponseField>
+    <ResponseField name="replacementBlockhash" type="object | null">
+      Replacement blockhash information when replaceRecentBlockhash is enabled.
+      <Expandable title="properties">
+        <ResponseField name="blockhash" type="string">
+          The replacement blockhash.
+        </ResponseField>
+        <ResponseField name="lastValidBlockHeight" type="integer">
+          The last valid block height for the replacement blockhash.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="returnData" type="object | null">
+      Data returned by the transaction if any.
+      <Expandable title="properties">
+        <ResponseField name="programId" type="string">
+        </ResponseField>
+        <ResponseField name="data" type="string[]">
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="unitsConsumed" type="integer | null">
+      Total compute units consumed during the simulation.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "simulateTransaction",
+    "params": [
+      "<BASE64_TRANSACTION>",
+      {
+        "encoding": "base64",
+        "sigVerify": false,
+        "replaceRecentBlockhash": true
+      }
+    ]
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "simulateTransaction",
+  "params": [
+    "<BASE64_TRANSACTION>",
+    {
+      "encoding": "base64",
+      "sigVerify": false,
+      "replaceRecentBlockhash": true
+    }
+  ]
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "context": {
+      "apiVersion": "4.1.2",
+      "slot": 439749205
+    },
+    "value": {
+      "accounts": null,
+      "err": null,
+      "fee": 5000,
+      "innerInstructions": null,
+      "loadedAccountsDataSize": 149,
+      "loadedAddresses": {
+        "readonly": [],
+        "writable": []
+      },
+      "logs": [
+        "Program 11111111111111111111111111111111 invoke [1]",
+        "Program 11111111111111111111111111111111 success"
+      ],
+      "postBalances": [
+        777131893034520,
+        1
+      ],
+      "postTokenBalances": [],
+      "preBalances": [
+        777131893039520,
+        1
+      ],
+      "preTokenBalances": [],
+      "replacementBlockhash": {
+        "blockhash": "7T6Zk3mmgYodW6HNGYemPFYGAUNdyN25NgSefiRfCASH",
+        "lastValidBlockHeight": 417799916
+      },
+      "returnData": null,
+      "unitsConsumed": 150
+    }
+  },
+  "id": 1
+}
+```
+</ResponseExample>

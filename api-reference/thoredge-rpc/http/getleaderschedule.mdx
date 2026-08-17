@@ -1,0 +1,92 @@
+---
+title: "getLeaderSchedule"
+description: "Returns the Solana leader schedule for the requested epoch, the validator assigned to produce blocks in each slot."
+---
+
+Returns the Solana leader schedule for the requested epoch, the validator assigned to produce blocks in each slot.
+
+## On ThorNode
+
+Forwarded to the upstream node with a 10 s timeout and one retry on a transport error.
+
+## Parameters
+
+<ParamField body="slot" type="number" required>
+  Epoch or slot number to retrieve the leader schedule for. If omitted, returns the schedule for the current epoch.
+</ParamField>
+
+<ParamField body="commitment" type="string">
+  The commitment level for the request.
+
+  * `confirmed`
+  * `finalized`
+  * `processed`
+</ParamField>
+
+<ParamField body="identity" type="string">
+  Optional validator identity public key to filter results for a specific validator's schedule only.
+</ParamField>
+
+## Response
+
+<ResponseField name="result" type="null | object">
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "getLeaderSchedule",
+    "params": [
+      null,
+      {
+        "identity": "GBQ2GvTzmjXMu97dr7WUnLKYTNim1aoZsYS53KYXAAAA"
+      }
+    ]
+  }'
+```
+
+```javascript Node.js
+const body = {
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "getLeaderSchedule",
+  "params": [
+    null,
+    {
+      "identity": "GBQ2GvTzmjXMu97dr7WUnLKYTNim1aoZsYS53KYXAAAA"
+    }
+  ]
+};
+
+const response = await fetch(process.env.THORNODE_RPC_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify(body),
+});
+const { result, error } = await response.json();
+console.log(result ?? error);
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response (slot list truncated)
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "GBQ2GvTzmjXMu97dr7WUnLKYTNim1aoZsYS53KYXAAAA": [
+      576,
+      577,
+      578,
+      579,
+      1472,
+      "..."
+    ]
+  },
+  "id": 1
+}
+```
+</ResponseExample>
