@@ -64,7 +64,8 @@
             "pages": [
               "products/pulse/quickstart",
               "products/pulse/protocol",
-              "products/pulse/production"
+              "products/pulse/production",
+              "products/pulse/llm-guide"
             ]
           },
           {

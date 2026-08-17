@@ -1,0 +1,611 @@
+---
+title: "LLM guide"
+description: "One self-contained document you can paste into an LLM or coding agent so it can write, debug, or explain a Pulse Decoded Shreds client without fetching anything else."
+---
+
+Copy this whole page (use the copy control at the top) and paste it into your LLM or coding agent as context. It contains the complete wire-v2 contract, the SDK APIs, runnable programs, the close codes, and the mistakes to avoid. Where anything here disagrees with the [wire protocol specification](https://github.com/thorlabsDev/pulse-sdk/blob/main/docs/PROTOCOL.md), the specification wins.
+
+```text
+=== PULSE DECODED SHREDS — CLIENT CONTRACT (wire v2) ===
+Audience: an LLM or coding agent writing, debugging, or explaining a client.
+Everything needed is inline. Do not invent fields, methods, or guarantees that
+are not stated here.
+```
+
+## 0. What Pulse is
+
+Pulse turns decoded Solana shreds into a live transaction feed over QUIC. You subscribe with account or program filters and receive either transaction signatures (sig-first) or decoded transaction bodies (full-tx). It is a ThorNode product; the target and token come from the ThorNode dashboard.
+
+- Pulse does **not** send raw shred bytes (that is Raw Shred Stream) and does **not** send execution status or metadata (shreds carry none).
+- The feed is **live only**: no history, backfill, cursor, resume, or retransmit.
+- A transaction is emitted mid-slot the moment its FEC-set prefix decodes; delivery is not slot-batched.
+- Receiving a transaction proves it was observed in shreds, not that it landed or was confirmed. Confirm through Solana RPC when that matters.
+
+## 1. Facts to assert
+
+- Transport: **QUIC over UDP**, **TLS 1.3**, **ALPN exactly `pulse`** (wrong or missing ALPN → handshake rejected).
+- Validate the server certificate and DNS hostname. Never disable verification for a public endpoint or when sending a token.
+- Enable **QUIC datagrams** on the client; sig-first delivers nothing without them.
+- Two **tiers**, one per connection, chosen by the control message's `full` flag: `false`/omitted → **sig-first** (QUIC datagrams); `true` → **full-tx** (one server-initiated unidirectional stream).
+- **Wire version is negotiated on the first control message.** Send `"v": 2`. Absent → treated as v1 → connection closed with code 4.
+- The server **answers every control message** with a length-prefixed JSON ack on the same bidirectional stream. Read it, bound the read (10 s), treat end-of-stream before a complete envelope as an error.
+- Sig-first datagrams are **typed and variable-length**: 1-byte type tag at offset 0; each type declares a **minimum** length. Never check `len == N`.
+- The full-tx stream opens with a **6-byte preamble** `50 4C 53 32 02 00` before any frame; each frame body starts with `msg_type | flags`.
+- Unknown datagram type tags, unknown frame `msg_type` values, and unknown TLV types **must be skipped**, never treated as errors. A **duplicate** TLV type must be rejected.
+- Endianness: the ack envelope length prefix and the full-tx frame length prefix are **big-endian**; **everything else** (datagram fields, frame bodies, TLV lengths and values) is **little-endian**.
+- Numeric ranges and limits below are protocol constants. Per-access capacity (concurrent subscriptions, accounts across filters, whether an unfiltered feed is allowed) is dynamic and shown under **Limits** in the dashboard.
+
+## 2. Get the target and token
+
+In the ThorNode dashboard: **Endpoints → Endpoints tab → select the pass or rental, network, and location → Token & Endpoints → Streaming → Pulse**. Copy two values from the **same location**:
+
+- the Pulse target as `host:port` (a hostname, so TLS SNI and certificate validation work);
+- the location token (the same token used for that location's RPC/Yellowstone).
+
+```bash
+export PULSE_TARGET='<HOST:PORT_FROM_DASHBOARD>'
+export PULSE_TOKEN='<TOKEN_FROM_THE_SAME_LOCATION>'
+export PULSE_ACCOUNT='<ACCOUNT_OR_PROGRAM_PUBKEY>'
+```
+
+Keep the token out of the target, source code, logs, and shell history. Outbound UDP to the target port must be allowed; `ssh -L`, HTTP proxies, and TCP-only tunnels cannot carry QUIC.
+
+## 3. Connect
+
+1. Open a QUIC connection to `host:port` (UDP).
+2. ALPN list exactly `["pulse"]`.
+3. TLS 1.3 client with certificate chain and hostname verification enabled. Set the server name to the dashboard hostname; do not dial a resolved IP without SNI.
+4. Enable QUIC datagram support.
+
+Nothing is delivered until a control message is accepted (§4).
+
+## 4. Control message
+
+Open **one client-initiated bidirectional stream**, write **one JSON object**, then close (FIN) your write side. Open the first control stream within about 300 ms of connecting and complete its JSON within another ~300 ms; the server closes idle connections that never subscribe.
+
+```json
+{
+  "v": 2,
+  "token": "<PULSE_TOKEN>",
+  "full": false,
+  "account_include": ["<ACCOUNT_OR_PROGRAM_PUBKEY>"],
+  "account_exclude": [],
+  "account_required": [],
+  "vote": false,
+  "fields": []
+}
+```
+
+| Field | Type | Default | Meaning |
+| --- | --- | --- | --- |
+| `v` | u32 | `1` (fails) | Client's **maximum** supported wire version. Server picks `min(v, 2)`; below 2 fails with code 4. **Always send `2`.** Read on the first message only. |
+| `token` | string | `""` | Location token. Required on the **first** message when the server enforces auth (public ThorNode targets do). Ignored on later messages. |
+| `full` | bool | `false` | Tier. `false`/omitted = sig-first, `true` = full-tx. Read on the **first** message only; the tier cannot change on a connection. |
+| `account_include` | string[] | `[]` | Match a transaction touching **any** listed key. Empty = no include constraint. |
+| `account_exclude` | string[] | `[]` | Drop a transaction touching **any** listed key. |
+| `account_required` | string[] | `[]` | Match only a transaction touching **all** listed keys. |
+| `vote` | bool | omitted | Omitted/`false` = non-vote transactions only; `true` = vote transactions only. |
+| `fields` | string[] | `[]` | Full-tx enrichment groups. Only `"alt"` is defined (adds TLV types 1–2). Unknown names ignored. Never affects sig-first. |
+
+Rules:
+
+- Every key must base58-decode to exactly 32 bytes; otherwise the whole message is rejected (first message → close code 1; update → `ok:false`).
+- Unknown JSON fields are ignored.
+- **Tier is locked by the first message.** To switch tier, open a new connection.
+- **Filters can be updated live** on the same tier: open another bidirectional stream, send another complete control object, read its ack. `token`, `full`, `v` are ignored on updates.
+- A control message is a **complete selection, not a patch**: an update replaces `account_include`, `account_exclude`, `account_required`, `vote`, and `fields`; anything omitted resets to its default (omit `fields` → enrichment turns off).
+- **Sending nothing is not a mode.** No control stream at all → close code 4 (or 2 if auth is enforced). A stream opened but left empty → code 2 (auth) or 1. Malformed JSON → code 1.
+
+### 4.1 The ack envelope
+
+The server replies on the **same** bidirectional stream with one length-prefixed JSON object:
+
+```text
+[ u32 length, big-endian ][ JSON body, length bytes ]
+```
+
+Reject a declared length above 16,384 before reading the body. Shapes:
+
+```json
+{ "type": "ack",   "ok": true,  "v": 2 }
+{ "type": "ack",   "ok": false, "reason": "filter limit exceeded" }
+{ "type": "error", "code": 4,   "reason": "unsupported protocol version; this server speaks wire v2" }
+```
+
+- `type` is mandatory: `"ack"` or `"error"`. Anything else is malformed.
+- The **first** message's success ack carries `"v"`; require it to be `2`. A successful first ack without `"v"` is malformed. On sig-first this ack is the only place the negotiated version is visible.
+- A later update's success ack may omit `"v"`; if present it must be `2`.
+- `ok: false` → not subscribed. On the first message the connection then closes; on an update the connection **keeps streaming under the previous filter**. Surface `reason`.
+- The `error` envelope has **no `ok` field**: default `ok` to `false` when decoding, or you will discard the reason.
+- **Bound the read to 10 s.** End-of-stream (including a clean 0-byte FIN) before a complete envelope is an **error**, not "keep waiting": a pre-v2 server FINs the control stream while data keeps flowing.
+
+## 5. Filter semantics
+
+Predicates are ANDed. A program id is just an account key.
+
+- `account_include`: any listed key touched. Empty = unconstrained.
+- `account_exclude`: any listed key touched → dropped.
+- `account_required`: every listed key touched.
+- `vote`: vote classification = a transaction with a single instruction invoking `Vote111111111111111111111111111111111111111` (Yellowstone `is_simple_vote_transaction` parity). `true` selects votes only; omitted/`false` selects non-votes only. There is no "both"; open two subscriptions to get both.
+- Matching runs against static account keys **plus** ALT-resolved loaded addresses when the server resolved them.
+
+Edge cases:
+
+- `vote: true` with no account filter → vote transactions only, not "votes in addition".
+- `account_include: ["Vote111…"]` with `vote: false` → empty set.
+- **v0 ALT gap:** when a transaction's address-table resolution is incomplete (`alt_incomplete`) and the subscription has any `account_exclude`, the server **drops** that transaction conservatively. `account_include`/`account_required` are unaffected.
+- No `failed`/success filter exists; never fabricate one.
+- An unfiltered feed (`account_include` and `account_required` both empty) is rejected on any access with an account cap (close code 5).
+
+## 6. Authentication, quotas, close codes
+
+- Token: first control message `token`. Missing, invalid, or revoked → close code 2. Deactivating a token also closes its live connections with code 2 within about 30 s.
+- Per-token quotas: concurrent live subscriptions, and total accounts across filters (`account_include` + `account_required`; `account_exclude` does not count). Read the values under **Limits** in the dashboard.
+
+QUIC application close codes:
+
+| Code | Meaning | Retry unchanged? |
+| ---: | --- | --- |
+| `0` | Normal close | Application decision |
+| `1` | Invalid control message (bad JSON, bad pubkey, oversized, empty stream) | No; fix the request |
+| `2` | Unauthenticated (missing, invalid, or revoked token) | No; recopy target and token from the same location |
+| `3` | Quota or capacity currently exhausted (transient) | Yes, bounded backoff with jitter |
+| `4` | Unsupported wire version (no `v >= 2`, or no control message at all) | No; use a wire-v2 client |
+| `5` | Tier or filter shape not entitled for this access (permanent) | **Never**; add a permitted filter or change access |
+
+- Codes 1–5 fire on the first message; code 2 also fires mid-connection on revocation.
+- Code 4 is the only close that first writes a JSON `error` envelope on the control stream (only if a control stream was opened). Codes 1, 2, 3, 5 put a **plain UTF-8 string** in the QUIC CONNECTION_CLOSE reason, not JSON.
+- The close reason never contains the token.
+- Unknown close code → stop and surface it; do not guess it is retryable.
+
+## 7. `seq` and heartbeats
+
+- `seq` is a per-connection, per-subscriber counter over **transactions only** (heartbeats never consume one). First delivery on a connection is `seq == 0`; it restarts at 0 on reconnect.
+- Assigned **before** the droppable send, so a transaction shed under backpressure leaves a visible hole. There is no retransmit; treat gaps as a metric and reconcile independently when completeness matters.
+- Sig-first can drop, reorder, or duplicate. A scalar high-watermark gap counter over-reports under reordering: a nonzero count means "loss or reordering happened", not an exact loss count. Deduplicate by signature.
+- Heartbeats: sig-first sends datagram type 2; full-tx sends frame `msg_type` 2. Cadence: after **10 s of stream idleness** (timer resets on every real send), not a metronome. A heartbeat is itself a signal the stream was quiet.
+- Heartbeat `highest_seq` = the highest `seq` assigned so far (0-indexed: after N deliveries it reads N-1). Sentinel **`u64::MAX` (0xFFFFFFFFFFFFFFFF) = nothing assigned yet**; ignore it for gap tracking, never adopt it as a baseline. If you have no baseline, adopt a real value without alleging a gap; if it exceeds your last received `seq`, the difference is trailing loss.
+- On full-tx there is no per-frame `seq`; `highest_seq` is a raw signal to compare with your own frame count.
+
+## 8. Sig-first datagrams
+
+Every datagram starts with a 1-byte type tag. Integers little-endian.
+
+| Type | Meaning | Layout | Minimum length |
+| ---: | --- | --- | ---: |
+| `1` | Matched transaction | `u8 type=1 \| u64 slot \| u64 seq \| 64-byte signature` | 81 |
+| `2` | Heartbeat | `u8 type=2 \| u64 server_ts_ms \| u64 highest_seq` | 17 |
+
+```text
+type 1
+offset size field
+0      1    type = 1
+1      8    slot          u64 LE
+9      8    seq           u64 LE
+17     64   signature     raw bytes (primary signature; base58-encode for display)
+
+type 2
+0      1    type = 2
+1      8    server_ts_ms  u64 LE
+9      8    highest_seq   u64 LE  (u64::MAX = none yet)
+```
+
+- **Minimum, not exact**: a known type at least that long parses; **ignore trailing bytes**. Shorter than the minimum → malformed, reject (no partial parse). Unknown type → skip silently.
+- Fire-and-forget, unordered, may be lost or duplicated. Enrichment never reaches this tier.
+
+## 9. Full-tx stream
+
+After the first control message with `full: true` is acked `ok: true`, the server opens **one unidirectional stream**. Frames enqueued on it are ordered and reliable at the transport layer, but a bounded server queue can shed transactions **before** enqueue: no end-to-end lossless, at-least-once, landed, or completeness guarantee.
+
+### 9.1 Preamble (once, before any frame)
+
+```text
+offset size field
+0      4    magic   "PLS2"  (50 4C 53 32)
+4      1    version u8 = 2
+5      1    flags   u8, reserved, must be 0
+```
+
+Exactly `50 4C 53 32 02 00`. Read and verify it before parsing any frame; a mismatch is a protocol error (fail loudly, do not skip). An incomplete preamble is its own error.
+
+### 9.2 Frame envelope
+
+```text
+[ u32 length, big-endian ][ frame body, length bytes ]   … repeats …
+
+frame body:
+u8  msg_type
+u8  flags
+    <positional transaction body — msg_type 1 only>
+    <TLV trailer — repeats to the end of the frame>
+```
+
+- `msg_type`: `1` = transaction, `2` = heartbeat (TLV trailer only), `3` = reserved, never emitted. **Skip any unrecognized `msg_type` using the length prefix.**
+- `flags` on `msg_type` 1: bit 0 = `alt_incomplete`; bits 1–7 reserved and must be 0 (reject if set). On `msg_type` 2 every bit is reserved; nonzero → malformed.
+- Size limits: reject an outer length above **196,614** before allocating; for a transaction frame reject when body + trailer after `msg_type|flags` exceeds **65,536**.
+- End of stream is clean **only on a frame boundary**. Any partial length prefix or partial body at end-of-stream is a **truncated frame → error**, not a normal end. If a QUIC application close arrives with it, keep both facts (framing error + close code/reason).
+
+### 9.3 Positional transaction body (msg_type 1)
+
+All integers little-endian. Bounds-check every count before allocating.
+
+```text
+offset size    field
+0      8       slot                              u64
+8      1       num_required_signatures           u8
+9      1       num_readonly_signed_accounts      u8
+10     1       num_readonly_unsigned_accounts    u8
+11     1       versioned                         u8 (0 = legacy, 1 = v0)
+12     32      recent_blockhash
+44     2       signature_count = S               u16
+…      64×S    signatures                        64 bytes each
+…      2       account_key_count = K             u16
+…      32×K    account_keys                      32 bytes each
+…      2       instruction_count = I             u16
+  per instruction:
+       1       program_id_index                  u8
+       2       accounts_len                      u16
+       …       accounts                          accounts_len × u8 index
+       2       data_len                          u16
+       …       data                              data_len bytes
+…      2       address_table_lookup_count = A    u16
+  per lookup:
+       32      account_key
+       2       writable_indexes_len              u16
+       …       writable_indexes                  u8 each
+       2       readonly_indexes_len              u16
+       …       readonly_indexes                  u8 each
+```
+
+The body is **self-delimiting** and is **not** the end of the frame: decode until its fields are exhausted, note the offset, then parse the remainder as the TLV trailer. Do not reject "trailing" bytes here.
+
+### 9.4 TLV trailer
+
+```text
+u8  type
+u16 len     little-endian
+u8  value[len]
+```
+
+| Type | Field | Value | On |
+| ---: | --- | --- | --- |
+| `1` | `loaded_writable_addresses` | `len/32` × 32-byte pubkeys, lookup order | msg_type 1, only with `"fields": ["alt"]` |
+| `2` | `loaded_readonly_addresses` | same | msg_type 1, only with `"fields": ["alt"]` |
+| `3` | `server_ts_ms` | u64 LE | msg_type 2 |
+| `4` | `highest_seq` | u64 LE (`u64::MAX` = none yet) | msg_type 2 |
+
+Order not significant. Unknown type → skip. **Duplicate type → reject the frame.** `alt_incomplete` (flags bit 0) is present regardless of `fields`.
+
+### 9.5 Derived fields (compute client-side; not on the wire)
+
+| Field | How |
+| --- | --- |
+| `fee_payer` | `account_keys[0]` (absent if no keys) |
+| `program_ids` | Each instruction's `program_id_index` resolved against `account_keys`, first-use order, deduplicated. Program ids are never ALT-sourced, so no enrichment needed. |
+| static `writable_accounts` | `account_keys[0 .. num_required_signatures - num_readonly_signed_accounts]` plus `account_keys[num_required_signatures .. K - num_readonly_unsigned_accounts]`. ALT-loaded writables are TLV type 1, not part of this. |
+| `compute_unit_price` | ComputeBudget program `ComputeBudget111111111111111111111111111111` instruction whose data byte 0 is `3`; next 8 bytes LE = micro-lamports per CU. Absent if no such instruction (absent ≠ 0). |
+| `compute_unit_limit` | Same with discriminator `2`; next 4 bytes LE = unit limit. Absent if none. |
+| transaction size | Byte length of the positional body. |
+
+The SDKs ship these as helpers (`thornode_pulse_wire::derive`, `derive.go`, `derive.py`).
+
+## 10. Official SDKs
+
+| Language | Package | Source |
+| --- | --- | --- |
+| Rust | crate `thornode-pulse` (import `thornode_pulse`) | https://github.com/thorlabsDev/pulse-sdk/tree/main/clients/rust · https://docs.rs/thornode-pulse |
+| Go | module `github.com/thorlabsDev/pulse-go` (package `pulseclient`) | https://github.com/thorlabsDev/pulse-go · https://pkg.go.dev/github.com/thorlabsDev/pulse-go |
+| Python | distribution `thornode-pulse` (import `thornode_pulse`), asyncio | https://github.com/thorlabsDev/pulse-sdk/tree/main/clients/python |
+
+All three negotiate `v: 2`, read and check the ack, verify the full-tx preamble, expose the close code as a typed error, and validate certificate and hostname by default. Enrichment `fields` exists only on the full-tx APIs.
+
+### 10.1 API map (use these names; do not invent others)
+
+Rust:
+
+- `PulseClient::connect(endpoint: &str) -> Result<PulseClient>`; `PulseClient::connect_with_token(endpoint, token) -> Result<PulseClient>`
+- `PulseClient::builder(endpoint).with_token(token).add_custom_ca_der(der).connect()` for a private CA (public roots and hostname checks stay on)
+- `client.subscribe_sig_first(&Filter) -> Result<SigFirstSub>`; `sub.next().await? -> Option<SigFirstItem { slot, seq, signature }>`; `sub.gaps() -> u64`, `sub.dropped() -> u64`; `sub.update_filter(&Filter) -> Result<Ack>`
+- `client.subscribe_full(&Filter, &[&str]) -> Result<FullSub>`; `sub.next().await? -> Option<Frame>` (`Frame::Tx(FullTxV2 { tx, alt_incomplete, loaded_writable, loaded_readonly })`; `tx` has `slot`, `versioned`, `num_required_signatures`, `num_readonly_signed_accounts`, `num_readonly_unsigned_accounts`, `recent_blockhash`, `signatures`, `account_keys`, `instructions`, `address_table_lookups`; `Frame::Heartbeat { server_ts_ms, highest_seq }`; `Frame::Unknown(u8)`); `sub.heartbeat() -> Option<(server_ts_ms, highest_seq)>`; `sub.update_filter(&Filter, &[&str]) -> Result<Ack>`
+- `Filter::all()`, `Filter::accounts([&str, …])`, `.with_vote(bool)`; public fields `account_include`, `account_exclude`, `account_required: Vec<String>`, `vote: Option<bool>`
+- Errors: `Error::ApplicationClosed(CloseInfo { code, reason })` with `close.retry_class()` / `close.retryable()`; `Error::ConnectTimeout`, `Error::AckTimeout`, `Error::FullStreamTimeout`, `Error::BadPreamble`, `Error::BadFrame`, `Error::BadFrameWithClose(CloseInfo)`; helpers `error.close_info()`, `error.is_bad_frame()`, `error.is_bad_preamble()`
+
+Go (built on quic-go):
+
+- `pulseclient.Connect(ctx, addr string, options ...Option) (*Client, error)` with `pulseclient.WithToken(token)`, `pulseclient.WithRootCAs(pool)`; `client.Close()`
+- `client.SubscribeSigFirst(ctx, filter) (*SigFirstSub, error)`; `sub.Next(ctx) (SigFirstItem, error)` (`io.EOF` at end); `sub.Gaps() uint64`, `sub.Dropped() uint64`, `sub.Queued() int`
+- `client.SubscribeFull(ctx, filter, fields ...string) (*FullSub, error)`; `sub.Next() (*FullTxV2, error)` (`io.EOF` at end); `sub.Heartbeat() (serverTsMs, highestSeq uint64, ok bool)`
+- `pulseclient.AllTxs()`, `pulseclient.Accounts(keys ...string)`, `filter.WithVote(bool) Filter`; struct fields `AccountInclude`, `AccountExclude`, `AccountRequired []string`, `Vote *bool`
+- Errors: `*RejectedError`, `*VersionMismatchError`, `ErrBadPreamble`, `ErrBadFrame`; `pulseclient.CloseInfoFromError(err) (CloseInfo, bool)` with `.Code`, `.Reason`, `.Retry`
+
+Python (asyncio, built on aioquic):
+
+- `connect_pulse(target, *, token=None, server_name=None, ca_file=None, certificate_sha256=None, insecure_local_development=False)` → async context manager yielding `PulseClient`
+- `await client.subscribe_sig_first(Filter)` → async iterable of `SigFirstItem(slot, seq, signature)`
+- `await client.subscribe_full(Filter, fields=())` → async iterable of frames (`frame.tx.slot`, `.signatures`, `.instructions`, …)
+- `Filter.all()`, `Filter.accounts(*keys)`, `.with_vote(bool)`; attributes `account_include`, `account_exclude`, `account_required`, `vote`
+- Exceptions: `PulseConnectionClosed` (`.close.code`, `.close.reason`, `.close.retry_disposition`), `AckTimeout`, `PreambleTimeout`, `FullStreamTimeout`, `FullQueueOverflow`, `BadPreamble`, `BadFrame` (never swallowed)
+
+### 10.2 Runnable sig-first programs
+
+Rust:
+
+```bash
+cargo new pulse-example && cd pulse-example
+cargo add thornode-pulse
+cargo add tokio --features rt-multi-thread,macros
+cargo add bs58
+```
+
+```rust
+// src/main.rs
+use std::env;
+use thornode_pulse::{Filter, PulseClient};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let target = env::var("PULSE_TARGET")?;
+    let token = env::var("PULSE_TOKEN")?;
+    let account = env::var("PULSE_ACCOUNT")?;
+
+    let client = PulseClient::connect_with_token(target, token).await?;
+    let filter = Filter::accounts([account]);
+    let mut sub = client.subscribe_sig_first(&filter).await?;
+
+    while let Some(item) = sub.next().await? {
+        let signature = bs58::encode(item.signature).into_string();
+        println!("slot={} seq={} signature={}", item.slot, item.seq, signature);
+    }
+    Ok(())
+}
+```
+
+Go:
+
+```bash
+mkdir pulse-example && cd pulse-example
+go mod init pulse-example
+go get github.com/thorlabsDev/pulse-go
+go get github.com/mr-tron/base58
+```
+
+```go
+// main.go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "os"
+
+    "github.com/mr-tron/base58"
+    pulseclient "github.com/thorlabsDev/pulse-go"
+)
+
+func main() {
+    ctx := context.Background()
+    client, err := pulseclient.Connect(ctx, os.Getenv("PULSE_TARGET"),
+        pulseclient.WithToken(os.Getenv("PULSE_TOKEN")))
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer client.Close()
+
+    sub, err := client.SubscribeSigFirst(ctx, pulseclient.Accounts(os.Getenv("PULSE_ACCOUNT")))
+    if err != nil {
+        log.Fatal(err)
+    }
+    for {
+        item, err := sub.Next(ctx)
+        if err != nil {
+            log.Fatal(err)
+        }
+        fmt.Printf("slot=%d seq=%d signature=%s\n", item.Slot, item.Seq, base58.Encode(item.Signature[:]))
+    }
+}
+```
+
+Python:
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install 'thornode-pulse[examples] @ https://github.com/thorlabsDev/pulse-sdk/releases/latest/download/thornode-pulse.tar.gz'
+```
+
+```python
+# main.py
+import asyncio
+import os
+
+import base58
+from thornode_pulse import Filter, connect_pulse
+
+
+async def main() -> None:
+    filter = Filter.accounts(os.environ["PULSE_ACCOUNT"])
+    async with connect_pulse(os.environ["PULSE_TARGET"], token=os.environ["PULSE_TOKEN"]) as client:
+        sub = await client.subscribe_sig_first(filter)
+        async for item in sub:
+            signature = base58.b58encode(item.signature).decode("ascii")
+            print(f"slot={item.slot} seq={item.seq} signature={signature}")
+
+
+asyncio.run(main())
+```
+
+Each line is one transaction observed by Pulse. Expected output shape:
+
+```text
+slot=439749392 seq=0 signature=2UWkJqjssNWhKb6qHAiqMQpRZKkGeKfKjVm29NogwDuyXvNx7THXT131kre3gsc7tSfptQLNJVjeNxQa2t22PQQx
+slot=439749392 seq=1 signature=...
+```
+
+### 10.3 Runnable full-tx programs (with `alt` enrichment)
+
+Rust:
+
+```rust
+use std::env;
+use thornode_pulse::{Filter, Frame, PulseClient};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let client = PulseClient::connect_with_token(env::var("PULSE_TARGET")?, env::var("PULSE_TOKEN")?).await?;
+    let filter = Filter::accounts([env::var("PULSE_ACCOUNT")?]);
+    let mut sub = client.subscribe_full(&filter, &["alt"]).await?;
+
+    while let Some(Frame::Tx(frame)) = sub.next().await? {
+        println!("slot={} signatures={} instructions={}",
+            frame.tx.slot, frame.tx.signatures.len(), frame.tx.instructions.len());
+    }
+    Ok(())
+}
+```
+
+Go:
+
+```go
+sub, err := client.SubscribeFull(ctx, pulseclient.Accounts(os.Getenv("PULSE_ACCOUNT")), "alt")
+if err != nil {
+    log.Fatal(err)
+}
+for {
+    frame, err := sub.Next()
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Printf("slot=%d signatures=%d instructions=%d\n",
+        frame.Tx.Slot, len(frame.Tx.Signatures), len(frame.Tx.Instructions))
+}
+```
+
+Python:
+
+```python
+sub = await client.subscribe_full(filter, fields=("alt",))
+async for frame in sub:
+    print(f"slot={frame.tx.slot} signatures={len(frame.tx.signatures)} instructions={len(frame.tx.instructions)}")
+```
+
+One connection carries one tier. Open a second connection to consume both sig-first and full-tx.
+
+### 10.4 Handling the close code
+
+```rust
+if let Some(close) = error.close_info() {
+    eprintln!("code={} reason={} retry={:?}", close.code, close.reason, close.retry_class());
+}
+if error.is_bad_frame() || error.is_bad_preamble() {
+    eprintln!("stream ended with incomplete or invalid wire data");
+}
+```
+
+```go
+if closeInfo, ok := pulseclient.CloseInfoFromError(err); ok {
+    log.Printf("code=%d reason=%q retry=%s", closeInfo.Code, closeInfo.Reason, closeInfo.Retry)
+}
+```
+
+```python
+from thornode_pulse import PulseConnectionClosed
+try:
+    async with connect_pulse(target, token=token) as client:
+        ...
+except PulseConnectionClosed as error:
+    print(error.close.code, error.close.reason, error.close.retry_disposition.value)
+```
+
+## 11. Client from scratch (no SDK)
+
+```text
+1. QUIC connect to host:port, ALPN ["pulse"], TLS 1.3, datagrams enabled,
+   certificate + hostname verification on, SNI = dashboard hostname.
+2. Open a bidi stream. Write one JSON control object. FIN the write side.
+     sig-first: {"v":2,"token":"<TOKEN>","account_include":[...]}
+     full-tx:   {"v":2,"token":"<TOKEN>","full":true,"account_include":[...],"fields":["alt"]}
+   "v":2 is mandatory. Open this stream within ~300 ms of connecting.
+3. Read the ack on the SAME stream with a 10 s timeout:
+     read 4 bytes (u32 BE) = n; reject n > 16384; read n bytes = JSON.
+   - EOF before a complete envelope => ERROR.
+   - type "error", or ack ok:false => not subscribed; surface reason; stop.
+   - first message: assert ack "v" == 2.
+4a. sig-first: loop over received QUIC datagrams; switch on byte 0:
+     1 => need len >= 81: slot = LE u64 @1, seq = LE u64 @9, sig = 64 bytes @17;
+          ignore trailing bytes.
+     2 => need len >= 17: server_ts_ms = LE u64 @1, highest_seq = LE u64 @9
+          (0xFFFFFFFFFFFFFFFF = none yet).
+     other => skip. Shorter than the minimum => reject that datagram only.
+4b. full-tx: accept the server's unidirectional stream. Read 6 bytes; assert
+    50 4C 53 32 02 00 else fail. Loop:
+     read 4 bytes (u32 BE) = len; reject len > 196614; read len bytes;
+     msg_type = body[0]; flags = body[1];
+       1 => reject if flags & 0xFE; reject if len-2 > 65536;
+            parse positional body (§9.3) then TLV trailer (§9.4).
+       2 => reject if flags != 0; TLV trailer only (types 3, 4).
+       other => skip the frame (already consumed via len).
+     A partial prefix or body at EOF => truncated-frame error.
+5. Filter update (same tier): new bidi stream, complete control JSON, FIN,
+   read that stream's ack. ok:false => previous filter stays; connection open.
+6. On close: read the QUIC application close code; map with §6. For code 4
+   the control stream may carry a JSON error envelope first.
+7. Reconnect only on code 3 or transport failure (bounded backoff + jitter);
+   restore the complete filter + fields; seq restarts at 0; reconcile via RPC.
+```
+
+## 12. Production checklist
+
+- Copy target and token from the same dashboard location; keep TLS verification on; allow outbound UDP.
+- Use an explicit account or program filter unless **Limits** shows the access allows an unfiltered feed.
+- Keep the receive loop small: hand decoded items to a bounded queue; do heavy work in workers. Sig-first SDK queues expose drops (`dropped()`, `Dropped()`, Python `metrics`); Python full-tx raises `FullQueueOverflow` on local overflow.
+- Reconnect loop: close the old client and workers → classify the error → stop on codes 1, 2 (until the credential is fixed), 4, 5 → back off with jitter on code 3 or network failure → reconnect with the same target and token → resend the **complete** filter and `fields` → reconcile the gap through Solana RPC if state matters. Never open parallel replacement connections.
+- After an accepted filter update, a short overlap of items matched by the previous filter is normal (updates are not atomic).
+- Metrics: connection state, reconnect count, last close code, time since last transaction or heartbeat, sig-first gaps and local drops, full-tx processing latency and stream errors, reconciliation results.
+- Deduplicate by signature; make side effects idempotent.
+
+## 13. Mistakes to avoid
+
+- Omitting ALPN `pulse`, or using TCP/TLS instead of QUIC.
+- Not enabling QUIC datagrams (sig-first delivers nothing).
+- Reading the ack or frame length prefix as little-endian (both are big-endian; everything else is little-endian).
+- Omitting `"v": 2` (close code 4). Sending no control message at all (code 4 or 2).
+- Checking `len == 81` (or 72). Lengths are minimums; ignore trailing bytes.
+- Not switching on the datagram type tag at byte 0.
+- Treating the first 6 stream bytes as a frame length (the preamble comes first).
+- Erroring on unknown datagram types, `msg_type`s, or TLV types (skip them); accepting duplicate TLV types (reject the frame).
+- Fire-and-forget on the control ack, or waiting forever (10 s bound; EOF before envelope = error).
+- Failing to decode `{"type":"error",...}` because `ok` is missing.
+- Using `u64::MAX` `highest_seq` as a real value; treating a nonzero gap count as exact.
+- Trying to change tier on the same connection; expecting history/backfill; adding a `failed` filter; assuming receipt means landed.
+- Sending an unfiltered feed on an access with an account cap (code 5, will not succeed unchanged).
+- Treating `vote: true` as additive.
+- Relying on `account_exclude` for ALT-loaded accounts.
+- Omitting `fields` on an update and expecting enrichment to stay on.
+- Disabling certificate/hostname verification for a public endpoint or when sending a token.
+- Not bounds-checking lengths and counts before allocating.
+
+## 14. Troubleshooting
+
+| Symptom | Check |
+| --- | --- |
+| TLS handshake fails | Exact dashboard hostname as SNI, correct system time, trusted roots, ALPN `pulse` |
+| Connection times out | Outbound UDP to the target port; a TCP check proves nothing |
+| Close code `2` | Target and token from the same location; token not revoked |
+| Close code `4` | Client sends `"v": 2` on the first control message; a control stream is opened at all |
+| Close code `5` | Add an account/program filter, or use access that includes Pulse for that tier |
+| Close code `3` | Over the concurrent-subscription or account cap right now; back off and retry |
+| Nothing arrives | Filter can match current traffic; `vote` selection is intentional; datagrams enabled |
+| Sig-first gaps grow | Local queue drops, slow receive path, network loss, reordering |
+| Full-tx consumer lags | Less work in the receive loop, more bounded workers, narrower filter |
+| Every frame misparses | Preamble skipped, or a length prefix read little-endian |
+
+## 15. References
+
+- Wire specification: https://github.com/thorlabsDev/pulse-sdk/blob/main/docs/PROTOCOL.md
+- Conformance vectors for testing a new decoder: https://github.com/thorlabsDev/pulse-sdk/blob/main/conformance/wire-v2/vectors.json
+- SDKs: Rust `clients/rust`, Python `clients/python` in https://github.com/thorlabsDev/pulse-sdk; Go https://github.com/thorlabsDev/pulse-go
+- ThorNode docs: [Pulse overview](/products/pulse), [Quickstart and SDKs](/products/pulse/quickstart), [Wire protocol v2](/products/pulse/protocol), [Production and errors](/products/pulse/production), [Usage and limits](/dashboard/usage-and-limits)
+
+```text
+=== END OF PULSE CLIENT CONTRACT ===
+```
