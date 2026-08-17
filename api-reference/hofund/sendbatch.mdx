@@ -1,0 +1,48 @@
+---
+title: "sendBatch"
+description: "Submit up to 25 independent transactions in one Hofund request."
+---
+
+`sendBatch` submits independent transactions together on `/hofund`. Each member is dispatched on its own; the result lists one signature per member in request order.
+
+## Parameters
+
+<ParamField body="params[0]" type="string[]" required>
+  1 to 25 fully signed transactions, canonical padded base64, at most 1232 bytes each, no duplicates.
+</ParamField>
+
+<ParamField body="params[1]" type="object">
+  `{}` or exactly `{ "mevProtect": <boolean> }`. `true` sends every member through Jito instead of the fast rails. `?mev-protect=true` is not accepted with JSON `sendBatch`; use this field.
+</ParamField>
+
+Protected batches have a separate, smaller ceiling: each member becomes its own Jito bundle, and the maximum defaults to a single transaction. Read `maxProtectedBatchTransactions` and `protectedBatchTimeoutMs` from [`getThorTipConfig`](/api-reference/hofund/status-and-tips) before sizing a protected batch. Exceeding it returns `-32602 protected sendBatch exceeds the configured maximum`.
+
+## Response
+
+<ResponseField name="result" type="string[]">
+  Signatures in the same order as `params[0]`.
+</ResponseField>
+
+Header: `X-Hofund-Submission-ID`. A batch outcome that cannot be resolved returns `-32007 transaction batch outcome is ambiguous`.
+
+<RequestExample>
+```bash cURL
+curl --fail-with-body "$HOFUND_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "sendBatch",
+    "params": [
+      ["<BASE64_SIGNED_TRANSACTION_1>", "<BASE64_SIGNED_TRANSACTION_2>"],
+      { "mevProtect": false }
+    ]
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{ "jsonrpc": "2.0", "id": 1, "result": ["<SIGNATURE_1>", "<SIGNATURE_2>"] }
+```
+</ResponseExample>

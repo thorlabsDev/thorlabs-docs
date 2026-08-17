@@ -1,0 +1,103 @@
+---
+title: "bloXroute routes"
+sidebarTitle: "bloXroute"
+description: "Bifrost routes for bloXroute submit, batch, Paladin, and snipe, with the request body each one takes."
+---
+
+Send the JSON body bloXroute's own [Trader API](https://docs.bloxroute.com/) defines. Do not add an `Authorization` header for bloXroute; ThorNode supplies the upstream credential. The response body is bloXroute's, unchanged.
+
+| Route | Operation | Transactions | Minimum tip |
+| --- | --- | --- | --- |
+| `POST /bloxroute` | Submit | 1 | 1,000,000 lamports |
+| `POST /blxrt-submit-batch` | Batch | 1 or more | 1,000,000 lamports each |
+| `POST /blxrt-submit-paladin` | Paladin | 1 | 1,000,000 lamports |
+| `POST /blxrt-submit-snipe` | Snipe | exactly 2 | 100,000 lamports; the second transaction needs a priority fee |
+
+## Tip addresses
+
+Bifrost recognizes a tip paid to any of these addresses:
+
+```text
+HWEoBxYs7ssKuudEjzjmpfJVX7Dvi7wescFsVx2L5yoY
+95cfoy472fcQHaw4tPGBTKpn6ZQnfEPfBgDQx6gcRmRg
+3UQUKjhMKaY2S6bjcQD6yHB7utcZt5bfarRCmctpRtUd
+FogxVNs6Mm2w9rnGL1vkARSwJxvLE8mujTv3LK8RnUhF
+EhRZX8iNrCRzEJ97tU4d3vC7JHkdsh2BWuT8yYbiseCe   (ThorNode dedicated)
+```
+
+## Submit
+
+```text
+POST /bloxroute
+```
+
+```json
+{
+  "transaction": { "content": "<BASE64_SIGNED_TRANSACTION>" },
+  "skipPreFlight": true,
+  "frontRunningProtection": true,
+  "tip": 1000000,
+  "useStakedRPCs": true,
+  "fastBestEffort": false,
+  "allowBackRun": false,
+  "submitProtection": "SP_HIGH",
+  "revertProtection": false
+}
+```
+
+`transaction.content` is required. `submitProtection` is `SP_LOW`, `SP_MEDIUM`, or `SP_HIGH`.
+
+## Batch
+
+```text
+POST /blxrt-submit-batch
+```
+
+```json
+{
+  "entries": [
+    { "transaction": { "content": "<BASE64_SIGNED_TRANSACTION_1>", "isCleanup": false }, "skipPreFlight": true },
+    { "transaction": { "content": "<BASE64_SIGNED_TRANSACTION_2>", "isCleanup": false }, "skipPreFlight": true }
+  ],
+  "submitStrategy": "P_SUBMIT_ALL",
+  "useBundle": false,
+  "frontRunningProtection": true,
+  "submitProtection": "SP_HIGH"
+}
+```
+
+`submitStrategy` is `P_SUBMIT_ALL`, `P_ABORT_ON_FIRST_ERROR`, or `P_WAIT_FOR_CONFIRMATION`.
+
+## Paladin
+
+```text
+POST /blxrt-submit-paladin
+```
+
+```json
+{
+  "transaction": { "content": "<BASE64_SIGNED_TRANSACTION>" },
+  "revertProtection": false
+}
+```
+
+## Snipe
+
+```text
+POST /blxrt-submit-snipe
+```
+
+```json
+{
+  "entries": [
+    { "transaction": { "content": "<BASE64_SIGNED_TRANSACTION_JITO>" }, "skipPreFlight": true },
+    { "transaction": { "content": "<BASE64_SIGNED_TRANSACTION_BLOXROUTE>" }, "skipPreFlight": true }
+  ],
+  "useStakedRPCs": true
+}
+```
+
+## Next steps
+
+- [Bifrost errors and pre-forward checks](/api-reference/bifrost/overview)
+- [bloXroute Trader API reference](https://docs.bloxroute.com/)

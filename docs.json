@@ -14,75 +14,175 @@
     "dark": "/logo/thornode-blue-dark.svg"
   },
   "navigation": {
-    "groups": [
+    "tabs": [
       {
-        "group": "Get started",
-        "icon": "rocket",
-        "pages": [
-          "index",
-          "getting-started/quickstart",
-          "getting-started/choose-a-product",
-          "getting-started/access-model"
-        ]
-      },
-      {
-        "group": "RPC & account data",
-        "icon": "code",
-        "pages": ["products/thoredge-rpc", "products/fastgate-account-api"]
-      },
-      {
-        "group": "Data streams",
-        "icon": "wave-pulse",
-        "pages": ["products/yellowstone-grpc"]
-      },
-      {
-        "group": "Pulse Decoded Shreds",
-        "icon": "bolt",
-        "root": "products/pulse",
-        "expanded": true,
-        "pages": [
-          "products/pulse/quickstart",
-          "products/pulse/protocol",
-          "products/pulse/production"
-        ]
-      },
-      {
-        "group": "Raw Shred Stream",
-        "icon": "layer-group",
-        "root": "products/raw-shred-stream",
-        "expanded": true,
-        "pages": ["products/shredreplay"]
-      },
-      {
-        "group": "Transaction routes",
-        "icon": "route",
-        "root": "products/bifrost-transaction-routes",
-        "expanded": true,
-        "pages": [
-          "products/bifrost-transaction-routes/provider-routes",
-          "products/bifrost-transaction-routes/hofund"
-        ]
-      },
-      {
-        "group": "Dashboard",
-        "icon": "gauge-high",
-        "pages": [
-          "dashboard/overview",
-          "dashboard/endpoints",
-          "dashboard/wallets",
-          "dashboard/usage-and-limits",
-          "dashboard/rentals",
-          "dashboard/renewals"
-        ]
-      },
-      {
-        "group": "Operate",
+        "tab": "Guides",
         "icon": "book-open",
-        "pages": [
-          "reference/plans-and-limits",
-          "reference/locations",
-          "reference/security",
-          "reference/troubleshooting"
+        "groups": [
+          {
+            "group": "Get started",
+            "icon": "rocket",
+            "pages": [
+              "index",
+              "getting-started/quickstart",
+              "getting-started/choose-a-product",
+              "getting-started/access-model"
+            ]
+          },
+          {
+            "group": "ThorEdge RPC",
+            "icon": "code",
+            "root": "products/thoredge-rpc",
+            "expanded": true,
+            "pages": [
+              "products/thoredge-rpc/quickstart"
+            ]
+          },
+          {
+            "group": "FastGate Account API",
+            "icon": "database",
+            "root": "products/fastgate-account-api",
+            "expanded": true,
+            "pages": [
+              "products/fastgate-account-api/quickstart"
+            ]
+          },
+          {
+            "group": "Yellowstone gRPC",
+            "icon": "wave-pulse",
+            "root": "products/yellowstone-grpc",
+            "expanded": true,
+            "pages": [
+              "products/yellowstone-grpc/quickstart"
+            ]
+          },
+          {
+            "group": "Pulse Decoded Shreds",
+            "icon": "bolt",
+            "root": "products/pulse",
+            "expanded": true,
+            "pages": [
+              "products/pulse/quickstart",
+              "products/pulse/protocol",
+              "products/pulse/production"
+            ]
+          },
+          {
+            "group": "Raw Shred Stream",
+            "icon": "layer-group",
+            "root": "products/raw-shred-stream",
+            "expanded": true,
+            "pages": [
+              "products/raw-shred-stream/quickstart",
+              {
+                "group": "Replay",
+                "root": "products/shredreplay",
+                "pages": [
+                  "products/shredreplay/quickstart"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Transaction routes",
+            "icon": "route",
+            "root": "products/bifrost-transaction-routes",
+            "expanded": true,
+            "pages": [
+              "products/bifrost-transaction-routes/quickstart",
+              {
+                "group": "Hofund",
+                "root": "products/bifrost-transaction-routes/hofund",
+                "pages": [
+                  "products/bifrost-transaction-routes/hofund/quickstart"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Dashboard",
+            "icon": "gauge-high",
+            "pages": [
+              "dashboard/overview",
+              "dashboard/endpoints",
+              "dashboard/wallets",
+              "dashboard/usage-and-limits",
+              "dashboard/rentals",
+              "dashboard/renewals"
+            ]
+          },
+          {
+            "group": "Operate",
+            "icon": "book-open",
+            "pages": [
+              "reference/plans-and-limits",
+              "reference/locations",
+              "reference/security",
+              "reference/troubleshooting"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API reference",
+        "icon": "code",
+        "groups": [
+          {
+            "group": "API reference",
+            "icon": "book",
+            "pages": [
+              "api-reference/overview"
+            ]
+          },
+          {
+            "group": "ThorEdge RPC",
+            "icon": "code",
+            "pages": [
+              "api-reference/thoredge-rpc/http-methods",
+              "api-reference/thoredge-rpc/websocket-methods"
+            ]
+          },
+          {
+            "group": "FastGate",
+            "icon": "database",
+            "pages": [
+              "api-reference/fastgate/overview",
+              "api-reference/fastgate/getprogramaccountsv2",
+              "api-reference/fastgate/gettokenaccountsbyownerv2",
+              "api-reference/fastgate/gettokenaccountsbydelegatev2"
+            ]
+          },
+          {
+            "group": "Yellowstone gRPC",
+            "icon": "wave-pulse",
+            "pages": [
+              "api-reference/yellowstone/subscribe"
+            ]
+          },
+          {
+            "group": "Bifrost",
+            "icon": "route",
+            "pages": [
+              "api-reference/bifrost/overview",
+              "api-reference/bifrost/bloxroute",
+              "api-reference/bifrost/astralane",
+              "api-reference/bifrost/blockrazor",
+              "api-reference/bifrost/lunarlander"
+            ]
+          },
+          {
+            "group": "Hofund",
+            "icon": "satellite-dish",
+            "pages": [
+              "api-reference/hofund/overview",
+              "api-reference/hofund/sendtransaction",
+              "api-reference/hofund/sendbatch",
+              "api-reference/hofund/sendbundle",
+              "api-reference/hofund/sendideal",
+              "api-reference/hofund/status-and-tips",
+              "api-reference/hofund/plain-binary-websocket"
+            ]
+          }
         ]
       }
     ],
@@ -115,7 +215,14 @@
     }
   },
   "contextual": {
-    "options": ["copy", "view", "chatgpt", "claude", "perplexity", "mcp"]
+    "options": [
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp"
+    ]
   },
   "footer": {
     "socials": {
@@ -296,6 +403,10 @@
     {
       "source": "/products/private-transactions",
       "destination": "/products/bifrost-transaction-routes"
+    },
+    {
+      "source": "/products/bifrost-transaction-routes/provider-routes",
+      "destination": "/api-reference/bifrost/overview"
     }
   ]
 }

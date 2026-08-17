@@ -1,0 +1,71 @@
+---
+title: "Plain, binary, and WebSocket"
+description: "Send Hofund transactions without JSON: base64 text, raw bytes, or a one-way binary WebSocket."
+---
+
+These surfaces take the same fast and protected lanes as `/hofund` for clients that would rather not build JSON. They accept only `sendTransaction`, `sendBatch`, and `getHealth`; bundles, ideal pairs, and nonces are JSON-RPC only.
+
+## Query parameters
+
+`method` is required exactly once: `sendTransaction`, `sendBatch`, or `getHealth`. A submission may add exactly one lane selector: `swqos-only=true` or `mev-protect=true`. `getHealth` takes neither. Nothing else is accepted: no duplicates, no unknown names, no URL-encoded names, no trailing `?`.
+
+## `/hofund/plain`
+
+`content-type: text/plain`.
+
+| `method` | Body |
+| --- | --- |
+| `sendTransaction` | The bare base64 transaction. |
+| `sendBatch` | Up to 25 base64 transactions separated by commas. |
+| `getHealth` | Empty. |
+
+```bash
+curl --fail-with-body "$HOFUND_PLAIN_URL?method=sendTransaction" \
+  --header 'content-type: text/plain' \
+  --data '<BASE64_SIGNED_TRANSACTION>'
+```
+
+## `/hofund/binary`
+
+`content-type: application/octet-stream` (may be omitted for `sendTransaction`).
+
+| `method` | Body |
+| --- | --- |
+| `sendTransaction` | Raw transaction bytes, no framing, 1–1232 bytes. |
+| `sendBatch` | Up to 25 frames of `[u16 big-endian length][transaction bytes]`. |
+| `getHealth` | Empty. |
+
+## Responses
+
+Success is a compact object without `jsonrpc` or `id`:
+
+```json
+{ "result": "<SIGNATURE>" }
+{ "result": ["<SIGNATURE_1>", "<SIGNATURE_2>"] }
+{ "result": "ok" }
+```
+
+Errors use the full JSON-RPC envelope with `"id": null` and the [same codes as JSON](/api-reference/hofund/overview#error-codes). `X-Hofund-Submission-ID` is returned on submissions.
+
+## WebSocket `/hofund/ws` and `/hofund/ws/mev-protect`
+
+`GET` upgrade with no query string, no body, and no subprotocol. `/hofund/ws` is the fast lane; `/hofund/ws/mev-protect` is the protected lane. Neither falls back to the other.
+
+- Every application message is one **binary** frame containing one raw, fully signed transaction, at most 1232 bytes. Text frames close the socket with `1003`.
+- **Nothing is sent back.** There is no acknowledgement and no submission id. Reconcile each signature through [ThorEdge RPC](/api-reference/thoredge-rpc/http-methods).
+- The server pings every 25 s and closes on a missed pong after 30 s, or after 5 minutes without a data message.
+- Per key: at most 10 concurrent connections and 16 in-flight admissions per connection. Over the limit, the handshake returns `429` with `Retry-After: 1`.
+
+Close codes:
+
+| Code | Reason |
+| --- | --- |
+| `4000` | `empty transaction` |
+| `4001` | `binary messages required` |
+| `4002` | `transaction too large` |
+| `4003` | `server shutdown` |
+| `4004` | `pong timeout` |
+| `4005` | `idle timeout` |
+| `1009` | Message over 1232 bytes at the gateway |
+
+Handshake failures return `{"error":"…"}` with `400` (query or body present, bad `Origin`, invalid upgrade), `405` (not `GET`), `503` (lane unavailable), or `502` (upstream unreachable).

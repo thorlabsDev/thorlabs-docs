@@ -1,0 +1,107 @@
+---
+title: "ThorEdge HTTP methods"
+sidebarTitle: "HTTP methods"
+description: "Every JSON-RPC method ThorEdge serves over HTTPS, which service answers it, and where its request and response shape is defined."
+---
+
+Send any method below as a JSON-RPC 2.0 `POST` to the complete ThorEdge URL. Standard methods keep the request and response shapes defined in the [Solana JSON-RPC reference](https://solana.com/docs/rpc/http); ThorEdge adds the [error codes, rate-limit headers, and limits](/api-reference/overview) described in the overview.
+
+Method names are matched exactly and case-sensitively. A method not listed here is forwarded to the upstream node, which decides whether it exists.
+
+## Example
+
+```bash
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{"jsonrpc":"2.0","id":1,"method":"getSlot"}'
+```
+
+```json
+{ "jsonrpc": "2.0", "result": 439745109, "id": 1 }
+```
+
+## Account queries
+
+These methods are answered by [FastGate](/products/fastgate-account-api) through the same URL. Standard shapes apply; the V2 methods add cursor pagination and are documented per method.
+
+| Method | Shape |
+| --- | --- |
+| `getAccountInfo` | [Solana](https://solana.com/docs/rpc/http/getaccountinfo) · [ThorNode notes](/api-reference/fastgate/overview) |
+| `getBalance` | [Solana](https://solana.com/docs/rpc/http/getbalance) · [ThorNode notes](/api-reference/fastgate/overview) |
+| `getLargestAccounts` | [Solana](https://solana.com/docs/rpc/http/getlargestaccounts) · [ThorNode notes](/api-reference/fastgate/overview) |
+| `getMinimumBalanceForRentExemption` | [Solana](https://solana.com/docs/rpc/http/getminimumbalanceforrentexemption) · [ThorNode notes](/api-reference/fastgate/overview) |
+| `getMultipleAccounts` | [Solana](https://solana.com/docs/rpc/http/getmultipleaccounts) · [ThorNode notes](/api-reference/fastgate/overview) |
+| `getProgramAccounts` | [Solana](https://solana.com/docs/rpc/http/getprogramaccounts) · [ThorNode notes](/api-reference/fastgate/overview) |
+| `getTokenAccountBalance` | [Solana](https://solana.com/docs/rpc/http/gettokenaccountbalance) · [ThorNode notes](/api-reference/fastgate/overview) |
+| `getTokenAccountsByDelegate` | [Solana](https://solana.com/docs/rpc/http/gettokenaccountsbydelegate) · [ThorNode notes](/api-reference/fastgate/overview) |
+| `getTokenAccountsByOwner` | [Solana](https://solana.com/docs/rpc/http/gettokenaccountsbyowner) · [ThorNode notes](/api-reference/fastgate/overview) |
+| `getTokenLargestAccounts` | [Solana](https://solana.com/docs/rpc/http/gettokenlargestaccounts) · [ThorNode notes](/api-reference/fastgate/overview) |
+| `getTokenSupply` | [Solana](https://solana.com/docs/rpc/http/gettokensupply) · [ThorNode notes](/api-reference/fastgate/overview) |
+| `getProgramAccountsV2` | [ThorNode reference](/api-reference/fastgate/getprogramaccountsv2) |
+| `getTokenAccountsByOwnerV2` | [ThorNode reference](/api-reference/fastgate/gettokenaccountsbyownerv2) |
+| `getTokenAccountsByDelegateV2` | [ThorNode reference](/api-reference/fastgate/gettokenaccountsbydelegatev2) |
+
+## Transactions
+
+| Method | Shape | ThorEdge behavior |
+| --- | --- | --- |
+| `sendTransaction` | [Solana](https://solana.com/docs/rpc/http/sendtransaction) | Forwarded once, unchanged, with an 8 s timeout. ThorEdge never resubmits; a `502` means you decide whether to rebuild and resend. Counts against the TPS cap. |
+| `simulateTransaction` | [Solana](https://solana.com/docs/rpc/http/simulatetransaction) | Standard read; 10 s timeout. |
+
+## Other methods
+
+Standard behavior, 10 s timeout, one retry on a transport error.
+
+| Method | Shape |
+| --- | --- |
+| `getBlock` | [Solana](https://solana.com/docs/rpc/http/getblock) |
+| `getBlockCommitment` | [Solana](https://solana.com/docs/rpc/http/getblockcommitment) |
+| `getBlockHeight` | [Solana](https://solana.com/docs/rpc/http/getblockheight) |
+| `getBlockProduction` | [Solana](https://solana.com/docs/rpc/http/getblockproduction) |
+| `getBlockTime` | [Solana](https://solana.com/docs/rpc/http/getblocktime) |
+| `getBlocks` | [Solana](https://solana.com/docs/rpc/http/getblocks) |
+| `getBlocksWithLimit` | [Solana](https://solana.com/docs/rpc/http/getblockswithlimit) |
+| `getClusterNodes` | [Solana](https://solana.com/docs/rpc/http/getclusternodes) |
+| `getEpochInfo` | [Solana](https://solana.com/docs/rpc/http/getepochinfo) |
+| `getEpochSchedule` | [Solana](https://solana.com/docs/rpc/http/getepochschedule) |
+| `getFeeForMessage` | [Solana](https://solana.com/docs/rpc/http/getfeeformessage) |
+| `getFirstAvailableBlock` | [Solana](https://solana.com/docs/rpc/http/getfirstavailableblock) |
+| `getGenesisHash` | [Solana](https://solana.com/docs/rpc/http/getgenesishash) |
+| `getHealth` | [Solana](https://solana.com/docs/rpc/http/gethealth) |
+| `getHighestSnapshotSlot` | [Solana](https://solana.com/docs/rpc/http/gethighestsnapshotslot) |
+| `getIdentity` | [Solana](https://solana.com/docs/rpc/http/getidentity) |
+| `getInflationGovernor` | [Solana](https://solana.com/docs/rpc/http/getinflationgovernor) |
+| `getInflationRate` | [Solana](https://solana.com/docs/rpc/http/getinflationrate) |
+| `getInflationReward` | [Solana](https://solana.com/docs/rpc/http/getinflationreward) |
+| `getLatestBlockhash` | [Solana](https://solana.com/docs/rpc/http/getlatestblockhash) |
+| `getLeaderSchedule` | [Solana](https://solana.com/docs/rpc/http/getleaderschedule) |
+| `getMaxRetransmitSlot` | [Solana](https://solana.com/docs/rpc/http/getmaxretransmitslot) |
+| `getMaxShredInsertSlot` | [Solana](https://solana.com/docs/rpc/http/getmaxshredinsertslot) |
+| `getRecentPerformanceSamples` | [Solana](https://solana.com/docs/rpc/http/getrecentperformancesamples) |
+| `getRecentPrioritizationFees` | [Solana](https://solana.com/docs/rpc/http/getrecentprioritizationfees) |
+| `getSignatureStatuses` | [Solana](https://solana.com/docs/rpc/http/getsignaturestatuses) |
+| `getSignaturesForAddress` | [Solana](https://solana.com/docs/rpc/http/getsignaturesforaddress) |
+| `getSlot` | [Solana](https://solana.com/docs/rpc/http/getslot) |
+| `getSlotLeader` | [Solana](https://solana.com/docs/rpc/http/getslotleader) |
+| `getSlotLeaders` | [Solana](https://solana.com/docs/rpc/http/getslotleaders) |
+| `getStakeMinimumDelegation` | [Solana](https://solana.com/docs/rpc/http/getstakeminimumdelegation) |
+| `getTransaction` | [Solana](https://solana.com/docs/rpc/http/gettransaction) |
+| `getTransactionCount` | [Solana](https://solana.com/docs/rpc/http/gettransactioncount) |
+| `getVersion` | [Solana](https://solana.com/docs/rpc/http/getversion) |
+| `getVoteAccounts` | [Solana](https://solana.com/docs/rpc/http/getvoteaccounts) |
+| `isBlockhashValid` | [Solana](https://solana.com/docs/rpc/http/isblockhashvalid) |
+| `minimumLedgerSlot` | [Solana](https://solana.com/docs/rpc/http/minimumledgerslot) |
+| `requestAirdrop` | [Solana](https://solana.com/docs/rpc/http/requestairdrop) |
+| `simulateTransaction` | [Solana](https://solana.com/docs/rpc/http/simulatetransaction) |
+
+## Not served
+
+| Method | Response |
+| --- | --- |
+| `getSupply` | HTTP `200`, `{"code": -32601, "message": "method not found"}` |
+
+## Next steps
+
+- [Subscribe over WebSocket](/api-reference/thoredge-rpc/websocket-methods)
+- [Paginate large account sets with the V2 methods](/api-reference/fastgate/getprogramaccountsv2)
+- [Read error codes and rate-limit headers](/api-reference/overview#response-and-error-semantics)

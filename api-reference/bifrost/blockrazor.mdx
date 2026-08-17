@@ -1,0 +1,63 @@
+---
+title: "BlockRazor route"
+sidebarTitle: "BlockRazor"
+description: "The Bifrost BlockRazor route in its v1 JSON and v2 plain-text forms."
+---
+
+`POST /blockrazor` accepts both BlockRazor HTTP contracts. Do not add the `apikey` header or `auth` query parameter; ThorNode supplies the credential. The response body is BlockRazor's, unchanged.
+
+| Form | Content type | Transactions | Minimum tip |
+| --- | --- | --- | --- |
+| v1 JSON | `application/json` | 1 | 1,000,000 lamports |
+| v2 plain text | `text/plain` | 1 | 1,000,000 lamports |
+
+## Tip addresses
+
+```text
+FjmZZrFvhnqqb9ThCuMVnENaM3JGVuGWNyCAxRJcFpg9
+6No2i3aawzHsjtThw81iq1EXPJN6rh8eSJCLaYZfKDTG
+A9cWowVAiHe9pJfKAj3TJiN9VpbzMUq6E4kEvf5mUT22
+Gywj98ophM7GmkDdaWs4isqZnDdFCW7B46TXmKfvyqSm
+68Pwb4jS7eZATjDfhmTXgRJjCiZmw1L7Huy4HNpnxJ3o
+4ABhJh5rZPjv63RBJBuyWzBK3g9gWMUQdTZP2kiW31V9
+B2M4NG5eyZp5SBQrSdtemzk5TqVuaWGQnowGaCBt8GyM
+5jA59cXMKQqZAVdtopv8q3yyw9SYfiE3vUCbt7p8MfVf
+5YktoWygr1Bp9wiS1xtMtUki1PeYuuzuCF98tqwYxf61
+295Avbam4qGShBYK7E9H5Ldew4B3WyJGmgmXfiWdeeyV
+EDi4rSy2LZgKJX74mbLTFk4mxoTgT6F7HxxzG2HBAFyK
+BnGKHAC386n4Qmv9xtpBVbRaUTKixjBe3oagkPFKtoy6
+Dd7K2Fp7AtoN8xCghKDRmyqr5U169t48Tw5fEd3wT9mq
+AP6qExwrbRgBAVaehg4b5xHENX815sMabtBzUzVB4v8S
+```
+
+## v1 JSON
+
+```bash
+curl --fail-with-body "$BIFROST_ROUTE_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "transaction": "<BASE64_SIGNED_TRANSACTION>",
+    "mode": "fast",
+    "safeWindow": 3,
+    "revertProtection": false
+  }'
+```
+
+`transaction` is required. `mode` is `fast` or `sandwichMitigation`; `safeWindow` is 3–13. The response is JSON with a `signature` field.
+
+## v2 plain text
+
+The body is the bare base64 transaction; options go in the query string.
+
+```bash
+curl --fail-with-body "$BIFROST_ROUTE_URL?mode=fast&revertProtection=true" \
+  --header 'content-type: text/plain' \
+  --data '<BASE64_SIGNED_TRANSACTION>'
+```
+
+BlockRazor answers with the HTTP status codes in its [send-transaction v2 reference](https://blockrazor.gitbook.io/blockrazor/transaction-submission/fast/solana/send-transaction-v2).
+
+## Next steps
+
+- [Bifrost errors and pre-forward checks](/api-reference/bifrost/overview)
+- [BlockRazor send-transaction reference](https://blockrazor.gitbook.io/blockrazor/transaction-submission/fast/solana/send-transaction)

@@ -1,0 +1,86 @@
+---
+title: "Bifrost routes"
+sidebarTitle: "Overview"
+description: "How a Bifrost route URL is built, where the Private TX key goes, what Bifrost checks before forwarding, and the errors it returns itself."
+---
+
+Every Bifrost route is one path on a location base URL:
+
+```text
+https://<location-base>/<private-tx-key>/<route>
+```
+
+Copy the complete URL from **Endpoints → Private TX**. Bifrost forwards your request body to the selected provider unchanged and returns the provider's response unchanged. Each route takes the request its provider's own API defines, without a provider API key.
+
+## Authentication
+
+| Placement | Form |
+| --- | --- |
+| URL path (what the dashboard copies) | `/<private-tx-key>/<route>` |
+| `Authorization` header | `Authorization: Bearer <private-tx-key>` on `/<route>` |
+
+`GET` or `HEAD /healthz` on the bare base URL needs no key and returns `{"status":"ok","service":"Bifrost Transaction Proxy"}`. A key-prefixed `/<key>/healthz` returns `401`. Use `/healthz` on a kept-alive connection to hold it open between sends; the public listener closes idle connections after about 30 seconds.
+
+## Route index
+
+| Provider | Route | Method | Transactions | Reference |
+| --- | --- | --- | --- | --- |
+| bloXroute | `/bloxroute` | `POST` | 1 | [bloXroute](/api-reference/bifrost/bloxroute) |
+| bloXroute | `/blxrt-submit-batch` | `POST` | 1 or more | [bloXroute](/api-reference/bifrost/bloxroute) |
+| bloXroute | `/blxrt-submit-paladin` | `POST` | 1 | [bloXroute](/api-reference/bifrost/bloxroute) |
+| bloXroute | `/blxrt-submit-snipe` | `POST` | exactly 2 | [bloXroute](/api-reference/bifrost/bloxroute) |
+| Astralane | `/astralane` | `POST` | 1 (`sendTransaction`) | [Astralane](/api-reference/bifrost/astralane) |
+| Astralane | `/astrln-submit-bundle` | `POST` | 1–4 | [Astralane](/api-reference/bifrost/astralane) |
+| Astralane | `/astrln-submit-batch` | `POST` | 1–25 | [Astralane](/api-reference/bifrost/astralane) |
+| Astralane | `/astrln-submit-ideal` | `POST` | exactly 2 | [Astralane](/api-reference/bifrost/astralane) |
+| Astralane | `/astrln-get-nonce` | `GET`, `POST` | — | [Astralane](/api-reference/bifrost/astralane) |
+| BlockRazor | `/blockrazor` | `POST` | 1 | [BlockRazor](/api-reference/bifrost/blockrazor) |
+| LunarLander | `/lunarlander` | `POST` | 1 | [LunarLander](/api-reference/bifrost/lunarlander) |
+| LunarLander | `/lunar-submit-bundle` | `POST` | 1–4 | [LunarLander](/api-reference/bifrost/lunarlander) |
+| LunarLander | `/lunar-submit-batch` | `POST` | 1–16, binary | [LunarLander](/api-reference/bifrost/lunarlander) |
+| Hofund | `/hofund…` | `POST`, WebSocket | see reference | [Hofund](/api-reference/hofund/overview) |
+
+Every Bifrost-enabled location serves the same catalog.
+
+## What Bifrost checks before forwarding
+
+Bifrost decodes each transaction in the body and rejects the request with `400` when:
+
+- the transaction count is outside the route's bound in the table above;
+- a transaction is not valid base64 or does not decode as a Solana transaction;
+- a LunarLander binary batch member is outside 66–1232 bytes;
+- the transaction pays no tip, or a tip below the provider's minimum, to a recognized tip address (see each provider page).
+
+The `400` body names the reason:
+
+```json
+{ "jsonrpc": "2.0", "id": 1, "error": { "code": -32000, "message": "guardrail reject: provider=<provider> endpoint=<endpoint> tx_index=<n> reason=<code> ..." } }
+```
+
+Reason codes: `invalid_json`, `invalid_params`, `missing_field`, `unsupported_route`, `unsupported_method`, `unsupported_content_type`, `invalid_base64`, `invalid_transaction`, `invalid_transaction_size`, `invalid_binary_batch`, `invalid_tip_address`, `invalid_transaction_count`, `tip_too_low`, `priority_fee_too_low`. bloXroute and BlockRazor JSON routes return the same message under a top-level `error` object; plain-text routes return it as text.
+
+## Errors Bifrost returns itself
+
+| HTTP | Body | Cause |
+| --- | --- | --- |
+| `401` | `{"error":"invalid or missing authentication key"}` | Key missing, unknown, revoked, or in the wrong position. |
+| `404` | `404 page not found` | Route path is not in the catalog. |
+| `405` | `Method not allowed` with `Allow` | Wrong HTTP method. |
+| `400` | guardrail reject (above) | Body failed a pre-forward check. |
+| `410` | `Astralane sendPaladin is deprecated and removed` | `sendPaladin` on `/astralane`. |
+| `413` | `Request body exceeds 256 KiB` | Body over 256 KiB (Hofund routes: 64 KiB). |
+| `502` | `Request failed: …` / `Upstream returned an invalid response` | Provider unreachable, timed out, or returned something unparseable. |
+| `503` | `<Provider> provider is disabled` | Provider not enabled at this location. |
+
+Bifrost has no rate limit of its own; a `429` comes from the provider and is passed through. Bifrost never retries and never falls back to another provider.
+
+## Reading a response
+
+A `2xx` means Bifrost completed the HTTP call to the provider. Parse the body: a JSON-RPC error can arrive inside a `200`. A returned signature means the provider accepted the transaction, not that it landed. Track the signature through [ThorEdge RPC](/api-reference/thoredge-rpc/http-methods) until it reaches your commitment or its blockhash expires.
+
+## Next steps
+
+- [bloXroute routes](/api-reference/bifrost/bloxroute)
+- [Astralane routes](/api-reference/bifrost/astralane)
+- [Hofund reference](/api-reference/hofund/overview)
+- [Send your first transaction](/products/bifrost-transaction-routes/quickstart)

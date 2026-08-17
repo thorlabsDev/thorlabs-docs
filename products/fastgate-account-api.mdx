@@ -24,83 +24,15 @@ Choose [Yellowstone gRPC](/products/yellowstone-grpc) when your application need
 
 ## Send an account query
 
-You need a ThorEdge HTTPS URL, `curl`, and `jq`. Open **Endpoints**, keep the **Endpoints** tab selected, create or select a location token, then copy its complete HTTPS URL.
-
-```bash
-export THORNODE_RPC_URL='<copied-https-url>'
-set -o pipefail
-
-curl --fail-with-body "$THORNODE_RPC_URL" \
-  --header 'content-type: application/json' \
-  --data '{
-    "jsonrpc": "2.0",
-    "id": 1,
-    "method": "getAccountInfo",
-    "params": [
-      "11111111111111111111111111111111",
-      { "encoding": "base64" }
-    ]
-  }' \
-  | jq '{
-      jsonrpc,
-      id,
-      accountFound: (.result.value != null),
-      error: (.error // null)
-    }'
-```
-
-Expected output:
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 1,
-  "accountFound": true,
-  "error": null
-}
-```
-
-`accountFound: true` and `error: null` confirm that ThorEdge accepted the query and returned the System Program account.
+Follow the [FastGate quickstart](/products/fastgate-account-api/quickstart) to read one account and page through a program with `getProgramAccountsV2`.
 
 ## Routed methods
 
-FastGate recognizes these method names.
+FastGate answers these method names sent to the ThorEdge URL:
 
-Standard Solana methods:
+`getAccountInfo`, `getMultipleAccounts`, `getBalance`, `getTokenAccountBalance`, `getTokenSupply`, `getLargestAccounts`, `getMinimumBalanceForRentExemption`, `getTokenLargestAccounts`, `getProgramAccounts`, `getTokenAccountsByOwner`, `getTokenAccountsByDelegate`, and the ThorNode additions `getProgramAccountsV2`, `getTokenAccountsByOwnerV2`, `getTokenAccountsByDelegateV2`.
 
-- `getAccountInfo`
-- `getMultipleAccounts`
-- `getBalance`
-- `getTokenAccountBalance`
-- `getTokenSupply`
-- `getLargestAccounts`
-- `getMinimumBalanceForRentExemption`
-- `getTokenLargestAccounts`
-- `getProgramAccounts`
-- `getTokenAccountsByOwner`
-- `getTokenAccountsByDelegate`
-
-Standard methods follow the request and response shapes in the [Solana JSON-RPC reference](https://solana.com/docs/rpc). ThorNode-specific V2 fields are documented below.
-
-V2 methods:
-
-- `getProgramAccountsV2`
-- `getTokenAccountsByOwnerV2`
-- `getTokenAccountsByDelegateV2`
-
-## V2 methods
-
-The V2 methods add cursor pagination and slot-based change filtering to large account queries.
-
-| Method                         | Parameters                                                          |
-| ------------------------------ | ------------------------------------------------------------------- |
-| `getProgramAccountsV2`         | Program ID, then options                                            |
-| `getTokenAccountsByOwnerV2`    | Owner, `{ "mint": ... }` or `{ "programId": ... }`, then options    |
-| `getTokenAccountsByDelegateV2` | Delegate, `{ "mint": ... }` or `{ "programId": ... }`, then options |
-
-Options include `encoding`, `dataSlice`, `limit`, `paginationKey`, and `changedSinceSlot`. `getProgramAccountsV2` also accepts the standard `dataSize` and `memcmp` filters. The default page size is `1000`; valid values range from `1` through `10000`.
-
-`getProgramAccountsV2` returns `accounts`, `count`, and `paginationKey`. The token-account V2 methods return `context.slot` plus `value.accounts`, `value.count`, and `value.paginationKey`. Pass the returned `paginationKey` into the next request until the response no longer contains a cursor.
+Standard methods keep the shapes in the [Solana JSON-RPC reference](https://solana.com/docs/rpc). The [FastGate reference](/api-reference/fastgate/overview) lists where each one differs from a validator, and the V2 methods each have a page with parameters, response fields, and examples.
 
 ## Run in production
 
@@ -123,6 +55,8 @@ Options include `encoding`, `dataSlice`, `limit`, `paginationKey`, and `changedS
 
 ## Next steps
 
+- [Run the quickstart](/products/fastgate-account-api/quickstart)
+- [Read the method reference](/api-reference/fastgate/overview)
 - [Create and rotate a ThorEdge endpoint](/products/thoredge-rpc)
 - [Filter `getProgramAccounts` requests](https://solana.com/docs/rpc/http/getprogramaccounts)
 - [Protect the complete RPC URL](/reference/security)

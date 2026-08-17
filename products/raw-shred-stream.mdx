@@ -28,80 +28,7 @@ Raw Shred Stream sends live raw Solana shreds from one ThorNode location to a UD
 
 ## Receive your first packets
 
-You need an active access with ShredStream enabled, Node.js, and a receiver reachable at a numeric, globally routable public IPv4 address. Open the chosen UDP port from `1024` through `65535` in every firewall, security group, network ACL, and NAT rule on the path. Do not use a hostname, private address, loopback address, or IPv6 address.
-
-Save this complete receiver as `receiver.mjs`:
-
-```javascript
-import dgram from "node:dgram";
-
-const port = Number(process.env.SHREDSTREAM_PORT);
-
-if (!Number.isInteger(port) || port < 1024 || port > 65535) {
-  throw new Error(
-    "SHREDSTREAM_PORT must be an integer from 1024 through 65535",
-  );
-}
-
-const socket = dgram.createSocket("udp4");
-let packets = 0;
-let bytes = 0;
-
-socket.on("message", (datagram) => {
-  packets += 1;
-  bytes += datagram.byteLength;
-});
-
-socket.on("error", (error) => {
-  console.error(error);
-  process.exitCode = 1;
-  socket.close();
-});
-
-socket.bind(port, "0.0.0.0", () => {
-  console.log(`Listening for ShredStream on UDP ${port}`);
-});
-
-setInterval(() => {
-  console.log(`packets=${packets} bytes=${bytes}`);
-  packets = 0;
-  bytes = 0;
-}, 1_000);
-```
-
-<Steps>
-  <Step title="Start the receiver">
-    Choose the same port you will register, then run the file on the host behind
-    the public IPv4 address:
-
-    ```bash
-    SHREDSTREAM_PORT='<udp-port>' node receiver.mjs
-    ```
-
-  </Step>
-  <Step title="Register the public target">
-    Open **Endpoints → ShredStream**, select an eligible access and enabled
-    location, then enter the receiver's real, globally routable numeric IPv4
-    address and the same UDP port. Save the registration and watch the receiver
-    for packets.
-  </Step>
-  <Step title="Verify packet delivery">
-    Watch the receiver until it prints a one-second interval with nonzero
-    `packets` and `bytes` values.
-  </Step>
-</Steps>
-
-Representative output looks like this; packet and byte counts vary with live traffic:
-
-```text
-Listening for ShredStream on UDP 20000
-packets=0 bytes=0
-packets=1842 bytes=2271057
-```
-
-Traffic is reaching the application when the packet count is nonzero. The listening message only means the local socket opened.
-
-If the receiver is behind NAT, forward the registered public port to the listening host. Carrier-grade NAT requires an externally provided forwarding arrangement or a different host with a reachable public IPv4 address.
+Follow the [Raw Shred Stream quickstart](/products/raw-shred-stream/quickstart) to run a minimal UDP receiver, register its public IPv4 and port, and see the first packets arrive.
 
 ## Handle UDP in production
 
@@ -129,6 +56,7 @@ If you restrict inbound traffic by source, obtain the current source ranges from
 
 ## Next steps
 
+- [Run the quickstart](/products/raw-shred-stream/quickstart)
 - [Replay recently captured shreds](/products/shredreplay)
 - [Review live access limits](/reference/plans-and-limits)
 - [Diagnose UDP delivery](/reference/troubleshooting#raw-shred-stream-or-replay-sends-no-udp-data)

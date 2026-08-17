@@ -1,0 +1,92 @@
+---
+title: "LunarLander routes"
+sidebarTitle: "LunarLander"
+description: "Bifrost routes for HelloMoon Lunar Lander submit, bundle, and binary batch."
+---
+
+Send the body HelloMoon's [Lunar Lander reference](https://docs.hellomoon.io/reference/lunar-lander) defines. ThorNode supplies the upstream credential. The response body is Lunar Lander's, unchanged.
+
+| Route | Transactions | Minimum tip |
+| --- | --- | --- |
+| `POST /lunarlander` | 1 | 1,000,000 lamports |
+| `POST /lunar-submit-bundle` | 1–4 | at least one member pays 1,000,000 lamports |
+| `POST /lunar-submit-batch` | 1–16, each 66–1232 bytes | 1,000,000 lamports each |
+
+## Tip addresses
+
+```text
+moon17L6BgxXRX5uHKudAmqVF96xia9h8ygcmG2sL3F
+moon26Sek222Md7ZydcAGxoKG832DK36CkLrS3PQY4c
+moon7fwyajcVstMoBnVy7UBcTx87SBtNoGGAaH2Cb8V
+moonBtH9HvLHjLqi9ivyrMVKgFUsSfrz9BwQ9khhn1u
+moonCJg8476LNFLptX1qrK8PdRsA1HD1R6XWyu9MB93
+moonF2sz7qwAtdETnrgxNbjonnhGGjd6r4W4UC9284s
+moonKfftMiGSak3cezvhEqvkPSzwrmQxQHXuspC96yj
+moonQBUKBpkifLcTd78bfxxt4PYLwmJ5admLW6cBBs8
+moonXwpKwoVkMegt5Bc776cSW793X1irL5hHV1vJ3JA
+moonZ6u9E2fgk6eWd82621eLPHt9zuJuYECXAYjMY1C
+tr7c9YdFm5pTx8xVp8XMRPrAFGSND7xmumTqPPJchHe   (ThorNode dedicated)
+trHMAN5tkHbzyvFobwjCx1G2tcKTo1ymVhog1ZVBqYD   (ThorNode dedicated)
+trWZmScJ2813eMwQLDpc96yf15mtFyXsafpP9NAfjdQ   (ThorNode dedicated)
+trdMqFh3cPLdweYmD9tLp8NeMZ6EJUhiDHr8XrqmuJN   (ThorNode dedicated)
+trzB8VqS6U3pG7CLjCoLTRvLw3i2ZEsjfAyhZmM3B27   (ThorNode dedicated)
+```
+
+## Submit
+
+```text
+POST /lunarlander
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "sendTransaction",
+  "params": ["<BASE64_SIGNED_TRANSACTION>", { "encoding": "base64" }]
+}
+```
+
+Response: `{"jsonrpc":"2.0","id":1,"result":"<SIGNATURE>"}`.
+
+## Bundle
+
+Up to 4 transactions that land together or not at all.
+
+```text
+POST /lunar-submit-bundle
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "sendBundle",
+  "params": [["<BASE64_SIGNED_TRANSACTION_1>", "<BASE64_SIGNED_TRANSACTION_2>"], { "encoding": "base64" }]
+}
+```
+
+Response: `{"jsonrpc":"2.0","id":1,"result":"<BUNDLE_ID>"}`.
+
+## Batch
+
+Binary body, `content-type: application/octet-stream`. Concatenate up to 16 transactions, each as a big-endian 16-bit length followed by the raw transaction bytes:
+
+```text
+[2 bytes: tx1 length][tx1 bytes][2 bytes: tx2 length][tx2 bytes]...
+```
+
+```text
+POST /lunar-submit-batch
+```
+
+Response:
+
+```json
+{ "attempted": 2, "accepted": 2, "rejected": 0, "parse_error": null }
+```
+
+## Next steps
+
+- [Bifrost errors and pre-forward checks](/api-reference/bifrost/overview)
+- [Lunar Lander reference](https://docs.hellomoon.io/reference/lunar-lander)

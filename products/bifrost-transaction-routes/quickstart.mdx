@@ -1,0 +1,66 @@
+---
+title: "Quickstart: send through a provider route"
+sidebarTitle: "Quickstart"
+description: "Copy a Bifrost route URL, submit a signed transaction to LunarLander, and confirm the returned signature through ThorEdge RPC."
+---
+
+In about five minutes you will send one signed transaction through a Bifrost route and see the provider's signature come back.
+
+## Before you start
+
+You need:
+
+- An access with **Private TX** enabled for a location
+- A signed, base64-encoded Solana transaction that pays the provider's minimum tip (LunarLander: 1,000,000 lamports to a [LunarLander tip address](/api-reference/bifrost/lunarlander#tip-addresses))
+- The complete ThorEdge RPC URL of the same access, to confirm the signature
+
+<Steps>
+  <Step title="Generate a Private TX key">
+    Open **Endpoints → Private TX**, select the access and a location, and generate the key if the access has none.
+  </Step>
+  <Step title="Copy the LunarLander Submit URL">
+    Choose **LunarLander → Submit** and copy the complete route URL. It already contains the key.
+
+    ```bash
+    export BIFROST_ROUTE_URL='<LUNARLANDER_SUBMIT_URL_COPIED_FROM_DASHBOARD>'
+    ```
+
+  </Step>
+  <Step title="Send the transaction">
+    ```bash
+    curl --fail-with-body --silent --show-error "$BIFROST_ROUTE_URL" \
+      --header 'content-type: application/json' \
+      --data '{
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "sendTransaction",
+        "params": ["<BASE64_SIGNED_TRANSACTION>", { "encoding": "base64" }]
+      }'
+    ```
+
+    A successful submit returns the signature:
+
+    ```json
+    { "jsonrpc": "2.0", "id": 1, "result": "<TRANSACTION_SIGNATURE>" }
+    ```
+
+  </Step>
+  <Step title="Confirm it landed">
+    ```bash
+    curl --fail-with-body "$THORNODE_RPC_URL" \
+      --header 'content-type: application/json' \
+      --data '{"jsonrpc":"2.0","id":1,"method":"getSignatureStatuses","params":[["<TRANSACTION_SIGNATURE>"],{"searchTransactionHistory":true}]}'
+    ```
+
+    The transaction landed when `result.value[0]` is not `null` and reports your commitment.
+
+  </Step>
+</Steps>
+
+A `401` means the URL is stale or the key is not in the path; recopy it. A `400` with `guardrail reject` names the check that failed, most often `tip_too_low`.
+
+## Next steps
+
+- [Every route, body, and limit](/api-reference/bifrost/overview)
+- [Send through Hofund instead](/products/bifrost-transaction-routes/hofund/quickstart)
+- [Store the route URL as a secret](/reference/security)

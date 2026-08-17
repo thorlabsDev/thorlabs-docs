@@ -1,0 +1,130 @@
+---
+title: "Astralane routes"
+sidebarTitle: "Astralane"
+description: "Bifrost routes for Astralane sendTransaction, sendBundle, sendBatch, sendIdeal, and getNonce, with the JSON-RPC body each one takes."
+---
+
+Send the JSON-RPC body Astralane's own [submit-transactions reference](https://astralane.gitbook.io/docs/low-latency/submit-transactions) defines. Do not add `api-key`; ThorNode supplies it. The response body is Astralane's, unchanged.
+
+| Route | Method | Transactions | Minimum tip |
+| --- | --- | --- | --- |
+| `POST /astralane` | `sendTransaction` (also accepts `sendBundle`, `sendBatch`, `sendIdeal`) | 1 | 10,000 lamports |
+| `POST /astrln-submit-bundle` | `sendBundle` | 1–4 | 10,000 lamports |
+| `POST /astrln-submit-batch` | `sendBatch` | 1–25 | 10,000 lamports each |
+| `POST /astrln-submit-ideal` | `sendIdeal` | exactly 2 | 10,000 lamports |
+| `GET` / `POST /astrln-get-nonce` | `getNonce` | — | — |
+
+Query parameters `mev-protect` and `swqos-only` are forwarded to Astralane. `sendPaladin` returns `410`.
+
+## Tip addresses
+
+```text
+astrazznxsGUhWShqgNtAdfrzP2G83DzcWVJDxwV9bF
+astra4uejePWneqNaJKuFFA8oonqCE1sqF6b45kDMZm
+astra9xWY93QyfG6yM8zwsKsRodscjQ2uU2HKNL5prk
+astraRVUuTHjpwEVvNBeQEgwYx9w9CFyfxjYoobCZhL
+astraEJ2fEj8Xmy6KLG7B3VfbKfsHXhHrNdCQx7iGJK
+astraubkDw81n4LuutzSQ8uzHCv4BhPVhfvTcYv8SKC
+astraZW5GLFefxNPAatceHhYjfA1ciq9gvfEg2S47xk
+astrawVNP4xDBKT7rAdxrLYiTSTdqtUr63fSMduivXK
+```
+
+## sendTransaction
+
+```text
+POST /astralane
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "sendTransaction",
+  "params": [
+    "<BASE64_SIGNED_TRANSACTION>",
+    { "encoding": "base64", "skipPreflight": true },
+    { "mevProtect": true }
+  ]
+}
+```
+
+`params[2]` is optional. Response: `{"jsonrpc":"2.0","id":1,"result":"<SIGNATURE>"}`.
+
+## sendBundle
+
+Up to 4 transactions executed in order; Astralane reverts the whole bundle if a member fails.
+
+```text
+POST /astrln-submit-bundle
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "sendBundle",
+  "params": [
+    ["<BASE64_SIGNED_TRANSACTION_1>", "<BASE64_SIGNED_TRANSACTION_2>"],
+    { "encoding": "base64", "mevProtect": true, "revertProtection": false }
+  ]
+}
+```
+
+## sendBatch
+
+Up to 25 independent transactions; each returns its own signature.
+
+```text
+POST /astrln-submit-batch
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "sendBatch",
+  "params": [
+    ["<BASE64_SIGNED_TRANSACTION_1>", "<BASE64_SIGNED_TRANSACTION_2>"],
+    { "mevProtect": true }
+  ]
+}
+```
+
+Response: `{"jsonrpc":"2.0","id":1,"result":["<SIGNATURE_1>","<SIGNATURE_2>"]}`.
+
+## sendIdeal
+
+Exactly two transactions: one weighted toward priority fees, one toward tips. Both use the same durable nonce so the loser is cancelled once the other lands.
+
+```text
+POST /astrln-submit-ideal
+```
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "sendIdeal",
+  "params": [["<BASE64_HIGH_TIP_LOW_FEE_TRANSACTION>", "<BASE64_LOW_TIP_HIGH_FEE_TRANSACTION>"]]
+}
+```
+
+## getNonce
+
+Returns the managed nonce account an ideal pair needs.
+
+```text
+GET  /astrln-get-nonce
+POST /astrln-get-nonce
+```
+
+Response:
+
+```json
+{ "nonce": "<HASH>", "nonceAccount": "<PUBKEY>", "nonceAuthority": "<PUBKEY>" }
+```
+
+## Next steps
+
+- [Bifrost errors and pre-forward checks](/api-reference/bifrost/overview)
+- [Astralane submit-transactions reference](https://astralane.gitbook.io/docs/low-latency/submit-transactions)

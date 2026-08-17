@@ -60,35 +60,7 @@ You need:
 
 ## Send your first request
 
-Store the copied HTTPS URL in your environment, then request a recent blockhash:
-
-```bash
-export THORNODE_RPC_URL='<copied-https-url>'
-set -o pipefail
-
-curl --fail-with-body "$THORNODE_RPC_URL" \
-  --header 'content-type: application/json' \
-  --data '{"jsonrpc":"2.0","id":1,"method":"getLatestBlockhash"}' \
-  | jq '{
-      jsonrpc,
-      id,
-      hasBlockhash: (.result.value.blockhash | type == "string"),
-      error: (.error // null)
-    }'
-```
-
-Expected output:
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 1,
-  "hasBlockhash": true,
-  "error": null
-}
-```
-
-The request succeeded when `hasBlockhash` is `true` and `error` is `null`. Configure your Solana WebSocket client with the complete `wss://` URL from the same location panel when you need subscriptions.
+Follow the [RPC and WebSocket quickstart](/products/thoredge-rpc/quickstart) to receive a blockhash over HTTPS and slot notifications over WSS. The [HTTP method reference](/api-reference/thoredge-rpc/http-methods) lists every method ThorEdge serves and which service answers it.
 
 ## Run in production
 
@@ -109,6 +81,8 @@ The request succeeded when `hasBlockhash` is `true` and `error` is `null`. Confi
 
 ## Next steps
 
+- [Run the quickstart](/products/thoredge-rpc/quickstart)
+- [Read the HTTP and WebSocket method reference](/api-reference/thoredge-rpc/http-methods)
 - [Query accounts through FastGate](/products/fastgate-account-api)
 - [Read current plans and limits](/reference/plans-and-limits)
 - [Store and rotate credentials safely](/reference/security)

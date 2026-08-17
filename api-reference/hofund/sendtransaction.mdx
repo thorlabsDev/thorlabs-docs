@@ -1,0 +1,125 @@
+---
+title: "sendTransaction"
+description: "Submit one signed transaction through a Hofund fast rail or through Jito."
+---
+
+`sendTransaction` submits one transaction. On `/hofund` you choose the lane per request; on a lane route the URL fixes it.
+
+| Route | Rail | Options accepted |
+| --- | --- | --- |
+| `/hofund` | Fast (both rails); `?swqos-only=true` for SWQoS only; `?mev-protect=true` or `params[2]` for Jito | Fast option set below; Jito accepts only `encoding` and `skipPreflight` |
+| `/hofund-fast` | Direct TPU and SWQoS at once; the first verified acknowledgement wins | Fast option set |
+| `/hofund-direct-tpu` | Direct TPU only | Fast option set |
+| `/hofund-swqos` | SWQoS only | Fast option set |
+| `/hofund-jito-bundle-only` | Jito, bundle-only, no fallback | Exactly `{ "encoding": "base64", "skipPreflight": true }` |
+
+The transaction must pay the Thor tip floor to a Thor tip account (fast rails), and additionally the Jito tip floor to a Jito tip account (protected). Read both sets from [`getFastTipConfig` and `getThorTipConfig`](/api-reference/hofund/status-and-tips).
+
+## Parameters
+
+<ParamField body="params[0]" type="string" required>
+  Fully signed transaction, canonical padded base64, at most 1232 bytes decoded.
+</ParamField>
+
+<ParamField body="params[1]" type="object" required>
+  Send configuration.
+  <Expandable title="properties">
+    <ParamField body="encoding" type="string" required>Must be `"base64"`.</ParamField>
+    <ParamField body="skipPreflight" type="boolean" required>Must be `true`. Hofund does not simulate.</ParamField>
+    <ParamField body="maxRetries" type="integer">Fast rails only. `0`–`5`, forwarded to the rail.</ParamField>
+    <ParamField body="preflightCommitment" type="string">Fast rails only. `processed`, `confirmed`, or `finalized`; accepted for SDK compatibility, has no effect.</ParamField>
+    <ParamField body="deadlineMs" type="integer">Fast rails only. Bounds the whole dispatch, from `100` up to the maximum reported by `getFastTipConfig`.</ParamField>
+    <ParamField body="region" type="string">Fast rails only. `"auto"` or the exact region reported by `getFastTipConfig`; fails closed if it does not match the instance you reached.</ParamField>
+  </Expandable>
+  `minContextSlot` is rejected: `-32602 minContextSlot is unsupported and is not enforced by Hofund sender rails`.
+</ParamField>
+
+<ParamField body="params[2]" type="object">
+  `/hofund` only. Exactly `{ "mevProtect": true }` routes the transaction through Jito instead of the fast rails. Do not combine with `?mev-protect=true`.
+</ParamField>
+
+On the lane routes `/hofund-fast`, `/hofund-direct-tpu`, and `/hofund-swqos` you can send `deadlineMs` and `region` as headers instead: `Hofund-Deadline-Ms` and `Hofund-Expected-Region`. Sending both the header and the body field is rejected.
+
+## Response
+
+<ResponseField name="result" type="string">
+  The transaction signature, once one selected rail returned a verified acknowledgement (fast) or Jito accepted the transaction (protected).
+</ResponseField>
+
+Headers: `X-Hofund-Submission-ID`; `X-Bundle-ID` on the Jito path.
+
+Acknowledged is not landed. Track the signature through [ThorEdge RPC](/api-reference/thoredge-rpc/http-methods), or poll [`getHofundSubmissionStatus`](/api-reference/hofund/status-and-tips) with the submission id.
+
+## Errors
+
+| HTTP | Code | Message | Meaning |
+| --- | --- | --- | --- |
+| `200` | `-32602` | `Thor tip is below the configured floor` | No qualifying tip transfer, or too small. |
+| `200` | `-32602` | `transaction must pay at least N Thor and M Jito tip lamports` | Protected path tip check failed. |
+| `200` | `-32006` | `transaction rejected by all selected rails` | Every rail returned a deterministic rejection. |
+| `200` | `-32007` | `transaction outcome is ambiguous` | A rail timed out or answered malformed. Check status before resubmitting. |
+| `409` | `-32005` | `transaction signature is already reserved` | Same signature already submitted, possibly on another lane. |
+| `429` | `-32003` | `fast submission rate limit exceeded` | Retry after `Retry-After`. All fast lanes share one limiter. |
+
+<RequestExample>
+```bash /hofund (fast)
+curl --fail-with-body "$HOFUND_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "sendTransaction",
+    "params": [
+      "<BASE64_SIGNED_TRANSACTION>",
+      { "encoding": "base64", "skipPreflight": true, "maxRetries": 0 }
+    ]
+  }'
+```
+
+```bash /hofund (protected)
+curl --fail-with-body "$HOFUND_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "sendTransaction",
+    "params": [
+      "<BASE64_SIGNED_TRANSACTION>",
+      { "encoding": "base64", "skipPreflight": true },
+      { "mevProtect": true }
+    ]
+  }'
+```
+
+```bash /hofund-jito-bundle-only
+curl --fail-with-body "$HOFUND_JITO_BUNDLE_ONLY_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "sendTransaction",
+    "params": [
+      "<BASE64_SIGNED_TRANSACTION>",
+      { "encoding": "base64", "skipPreflight": true }
+    ]
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json Response
+{ "jsonrpc": "2.0", "id": 1, "result": "<TRANSACTION_SIGNATURE>" }
+```
+
+```json Rejected
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "error": {
+    "code": -32602,
+    "message": "Thor tip is below the configured floor",
+    "data": { "kind": "tip_too_low" }
+  }
+}
+```
+</ResponseExample>

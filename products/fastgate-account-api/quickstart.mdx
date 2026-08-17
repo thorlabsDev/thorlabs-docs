@@ -1,0 +1,64 @@
+---
+title: "Quickstart: query accounts"
+sidebarTitle: "Quickstart"
+description: "Fetch one account through FastGate, then page through a program's accounts with getProgramAccountsV2."
+---
+
+In about five minutes you will read the USDC mint account and fetch the first page of SPL Token mints, both through the ThorEdge RPC URL you already have.
+
+## Before you start
+
+You need the complete **RPC** URL from the **SSL** column of a location ([create one](/getting-started/quickstart)), plus `curl` and `jq`.
+
+```bash
+export THORNODE_RPC_URL='<copied-https-url>'
+```
+
+## Read one account
+
+```bash
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0", "id": 1, "method": "getAccountInfo",
+    "params": ["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", { "encoding": "jsonParsed" }]
+  }' | jq '.result.value.data.parsed.info | {decimals, supply}'
+```
+
+Output; `supply` moves:
+
+```json
+{ "decimals": 6, "supply": "7678653499214954" }
+```
+
+## Page through a program
+
+Ask for the first two SPL Token mint accounts (`dataSize` 82) and keep the cursor:
+
+```bash
+curl --fail-with-body "$THORNODE_RPC_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc": "2.0", "id": 1, "method": "getProgramAccountsV2",
+    "params": [
+      "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+      { "filters": [{ "dataSize": 82 }], "dataSlice": { "offset": 0, "length": 0 }, "limit": 2 }
+    ]
+  }' | jq '{count: .result.count, next: .result.paginationKey, first: .result.accounts[0].pubkey}'
+```
+
+```json
+{
+  "count": 2,
+  "next": "1111iH2XXowNevv9LrNNZvBDqZHqTn78dBUWnsx6dz",
+  "first": "11111ZSvet4hKEYUAETZWELHgkeYjyNZovzcypyAWs"
+}
+```
+
+Send the same request again with `"paginationKey": "<next>"` added to the options to get the next page. You are done when `paginationKey` is `null`.
+
+## Next steps
+
+- [`getProgramAccountsV2` reference](/api-reference/fastgate/getprogramaccountsv2)
+- [Every routed method and how it differs from a validator](/api-reference/fastgate/overview)
+- [Run in production](/products/fastgate-account-api#run-in-production)

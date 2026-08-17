@@ -1,0 +1,90 @@
+---
+title: "Hofund reference"
+sidebarTitle: "Overview"
+description: "Hofund routes, the strict JSON-RPC envelope, lane and protection selectors, receipt headers, and every error code."
+---
+
+Hofund is ThorNode's own submission surface, reached through Bifrost route URLs. Copy them from **Endpoints → Private TX**. Every route below is `https://<location-base>/<private-tx-key>/<route>`; the Private TX key goes in the path or in `Authorization: Bearer`, exactly as for other Bifrost routes.
+
+## Routes
+
+| Route | Body | Methods | Reference |
+| --- | --- | --- | --- |
+| `POST /hofund` | JSON-RPC | `sendTransaction`, `sendBatch`, `sendBundle`, `sendIdeal`, `getNonce`, `getHealth` | per method |
+| `POST /hofund/plain` | base64 text | `method=` query: `sendTransaction`, `sendBatch`, `getHealth` | [Plain, binary, WebSocket](/api-reference/hofund/plain-binary-websocket) |
+| `POST /hofund/binary` | raw bytes | same as plain | [Plain, binary, WebSocket](/api-reference/hofund/plain-binary-websocket) |
+| `GET /hofund/ws` | binary WebSocket messages | fast lane, fire-and-forget | [Plain, binary, WebSocket](/api-reference/hofund/plain-binary-websocket) |
+| `GET /hofund/ws/mev-protect` | binary WebSocket messages | protected lane, fire-and-forget | [Plain, binary, WebSocket](/api-reference/hofund/plain-binary-websocket) |
+| `POST /hofund-fast` | JSON-RPC | `sendTransaction` on both fast rails | [sendTransaction](/api-reference/hofund/sendtransaction) |
+| `POST /hofund-direct-tpu` | JSON-RPC | `sendTransaction`, direct TPU only | [sendTransaction](/api-reference/hofund/sendtransaction) |
+| `POST /hofund-swqos` | JSON-RPC | `sendTransaction`, SWQoS only | [sendTransaction](/api-reference/hofund/sendtransaction) |
+| `POST /hofund-jito-bundle-only` | JSON-RPC | `sendTransaction` through Jito, single transaction | [sendTransaction](/api-reference/hofund/sendtransaction) |
+| `POST /hofund-bundle` | JSON-RPC | `sendBundle`, `getBundleStatuses`, `getInflightBundleStatuses`, `getTipAccounts`, `getThorTipConfig` | [sendBundle](/api-reference/hofund/sendbundle) |
+| `POST /hofund-status` | JSON-RPC | `getHofundSubmissionStatus`, `getFastTipConfig` | [Status and tips](/api-reference/hofund/status-and-tips) |
+
+`/hofund` picks the operation from the JSON-RPC method. The lane routes fix the lane in the URL and accept no query string. A lane never falls back to another lane.
+
+## Request contract
+
+- `POST` with `content-type: application/json` (unified route and lane routes).
+- Body at most **64 KiB**.
+- The envelope is exactly `{ "jsonrpc": "2.0", "id", "method", "params" }`. `id` is a string or number, never `null`; unknown or duplicate keys are rejected; a JSON array (batch) is rejected with `-32600 JSON-RPC request batching is not supported`.
+- Every transaction is canonical, padded, standard base64 of a fully signed transaction, at most **1232 bytes** decoded. Durable-nonce transactions and duplicate signatures are rejected.
+- Selectors on `/hofund`: `?swqos-only=true` or `?mev-protect=true` (mutually exclusive), or the JSON selector `{"mevProtect":true}` described per method. Supplying both a query and a body selector is rejected.
+- Exact retries of the same body return the stored prior outcome and never dispatch again. Sending the same signed transaction through a different lane fails with `409`, `-32005 transaction signature is already reserved`.
+
+## Response contract
+
+Success is HTTP `200` with `result`. Two receipt headers accompany submissions:
+
+| Header | Meaning |
+| --- | --- |
+| `X-Hofund-Submission-ID` | 64-hex id for [`getHofundSubmissionStatus`](/api-reference/hofund/status-and-tips) |
+| `X-Bundle-ID` | Jito bundle id, on protected submissions |
+
+A JSON-RPC error carries a machine-readable subcode:
+
+```json
+{ "jsonrpc": "2.0", "id": 1, "error": { "code": -32602, "message": "transaction exceeds 1232 bytes", "data": { "kind": "invalid_transaction", "field": "params[0]" } } }
+```
+
+`data.kind` is always present; `data.field` when a specific field is at fault.
+
+## Error codes
+
+Bifrost gateway errors (JSON-RPC envelope, `id` echoed when parseable):
+
+| HTTP | Code | Message |
+| --- | --- | --- |
+| `401` | `-32040` | `invalid or missing authentication key` |
+| `403` | `-32041` | `required HOFUND route capability is missing` (your access lacks that lane) |
+| `503` | `-32042` | `HOFUND routes are unavailable` / `authentication service unavailable` |
+| `502` | `-32043` | `HOFUND upstream request failed` |
+| `413` | `-32600` | `request body exceeds 64 KiB` |
+| `415` | `-32600` | `Content-Type must be application/json` |
+| `400` | `-32602` | query violations, for example `method must be sendTransaction, sendBatch, or getHealth` |
+
+Hofund errors:
+
+| HTTP | Code | Meaning |
+| --- | --- | --- |
+| `200` | `-32700` / `-32600` / `-32601` / `-32602` | Parse error, invalid request, unknown method, invalid params (message names the field) |
+| `200` | `-32006` | `transaction rejected by all selected rails` (or `by the selected rail`) |
+| `200` | `-32007` | `transaction outcome is ambiguous`: reconcile through `getHofundSubmissionStatus` before resubmitting |
+| `409` | `-32005` | `transaction signature is already reserved` |
+| `429` | `-32003` | `fast submission rate limit exceeded`; `Retry-After: 1` |
+| `429` | `-32010` | Upstream (Jito) capacity exhausted |
+| `503` | `-32002` | `request admission capacity is exhausted` / `submission queue capacity is exhausted`; `Retry-After: 1` |
+| `503` | `-32008` | `fast submission is unavailable` / `submission store is unavailable` |
+| `502` | `-32009` | Upstream request failed |
+| `502` | `-32011` | `transaction outcome could not be durably recorded` |
+| `401` | `-32001` | Unauthorized at Hofund |
+| `404` | `-32004` | `submission not found` |
+
+Common `-32602` messages: `transaction exceeds 1232 bytes`, `transaction must use canonical padded base64`, `contains duplicate transaction`, `transaction count exceeds 25`, `sendBundle transaction count exceeds 4`, `Thor tip is below the configured floor` (`kind: tip_too_low`), `durable nonce is not supported`, `minContextSlot is unsupported and is not enforced by Hofund sender rails`.
+
+## Next steps
+
+- [sendTransaction](/api-reference/hofund/sendtransaction)
+- [Status and tip configuration](/api-reference/hofund/status-and-tips)
+- [Hofund product guide](/products/bifrost-transaction-routes/hofund)
