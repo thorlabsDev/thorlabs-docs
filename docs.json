@@ -39,12 +39,12 @@
             ]
           },
           {
-            "group": "FastGate Account API",
+            "group": "FastGate RPC",
             "icon": "database",
-            "root": "products/fastgate-account-api",
+            "root": "products/fastgate-rpc",
             "expanded": true,
             "pages": [
-              "products/fastgate-account-api/quickstart"
+              "products/fastgate-rpc/quickstart"
             ]
           },
           {
@@ -212,7 +212,7 @@
             ]
           },
           {
-            "group": "FastGate",
+            "group": "FastGate RPC",
             "icon": "database",
             "pages": [
               "api-reference/fastgate/overview",
@@ -382,11 +382,11 @@
     },
     {
       "source": "/infrastructure/fastgate-rpc/:slug*",
-      "destination": "/products/fastgate-account-api"
+      "destination": "/products/fastgate-rpc"
     },
     {
       "source": "/infrastructure/fastgate-rpc",
-      "destination": "/products/fastgate-account-api"
+      "destination": "/products/fastgate-rpc"
     },
     {
       "source": "/infrastructure/thor-shredstream/:slug*",
@@ -474,7 +474,7 @@
     },
     {
       "source": "/products/fastgate-account-queries",
-      "destination": "/products/fastgate-account-api"
+      "destination": "/products/fastgate-rpc"
     },
     {
       "source": "/products/shredstream",
@@ -531,6 +531,14 @@
     {
       "source": "/api-reference/thoredge-rpc/http/gettokenaccountsbydelegate",
       "destination": "/api-reference/fastgate/gettokenaccountsbydelegate"
+    },
+    {
+      "source": "/products/fastgate-account-api",
+      "destination": "/products/fastgate-rpc"
+    },
+    {
+      "source": "/products/fastgate-account-api/quickstart",
+      "destination": "/products/fastgate-rpc/quickstart"
     }
   ]
 }

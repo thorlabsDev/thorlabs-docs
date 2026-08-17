@@ -11,7 +11,7 @@ Choose the product by the data your application needs and how it can receive tha
 | ---------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------- | ------------------------------------------------ |
 | Call Solana JSON-RPC methods                         | [ThorEdge RPC](/products/thoredge-rpc)                             | JSON-RPC request                                        | JSON-RPC response over HTTPS                     |
 | Subscribe through Solana WebSocket methods           | [ThorEdge RPC](/products/thoredge-rpc)                             | JSON-RPC subscription                                   | Events over WSS                                  |
-| Run supported account-heavy queries                  | [FastGate Account API](/products/fastgate-account-api)             | Supported account method sent to ThorEdge               | Solana account data over HTTPS JSON-RPC          |
+| Run supported account-heavy queries                  | [FastGate RPC](/products/fastgate-rpc)             | Supported account method sent to ThorEdge               | Solana account data over HTTPS JSON-RPC          |
 | Receive filtered Geyser-compatible data              | [Yellowstone gRPC](/products/yellowstone-grpc)                     | Subscribe request and filters                           | Persistent gRPC stream                           |
 | Receive signatures or decoded transactions over QUIC | [Pulse Decoded Shreds](/products/pulse)                            | Location target, token, feed, filters, and Pulse client | Sig-first datagrams or an ordered full-tx stream |
 | Decode and process live shreds yourself              | [Raw Shred Stream](/products/raw-shred-stream)                     | Registered public IPv4 and UDP port                     | Live raw shred datagrams over UDP                |
@@ -20,7 +20,7 @@ Choose the product by the data your application needs and how it can receive tha
 
 ## RPC or FastGate
 
-**ThorEdge RPC** handles ordinary Solana JSON-RPC calls and WebSocket subscriptions. **FastGate Account API** routes supported account queries through that same HTTPS URL; it does not require a separate endpoint or credential.
+**ThorEdge RPC** handles ordinary Solana JSON-RPC calls and WebSocket subscriptions. **FastGate RPC** routes supported account queries through that same HTTPS URL; it does not require a separate endpoint or credential.
 
 Use the [RPC quickstart](/getting-started/quickstart) for either path, then verify your required method against the [FastGate method reference](/api-reference/fastgate/overview).
 
