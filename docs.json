@@ -261,7 +261,8 @@
               "api-reference/hofund/sendbundle",
               "api-reference/hofund/sendideal",
               "api-reference/hofund/status-and-tips",
-              "api-reference/hofund/plain-binary-websocket"
+              "api-reference/hofund/plain-binary-websocket",
+              "api-reference/hofund/quic"
             ]
           }
         ]

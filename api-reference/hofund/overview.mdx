@@ -19,8 +19,46 @@ Hofund is ThorNode's own submission surface, reached through Bifrost route URLs.
 | `POST /hofund-jito-bundle-only` | JSON-RPC | `sendTransaction` through Jito, single transaction | [sendTransaction](/api-reference/hofund/sendtransaction) |
 | `POST /hofund-bundle` | JSON-RPC | `sendBundle`, `getBundleStatuses`, `getInflightBundleStatuses`, `getTipAccounts`, `getThorTipConfig` | [sendBundle](/api-reference/hofund/sendbundle) |
 | `POST /hofund-status` | JSON-RPC | `getHofundSubmissionStatus`, `getFastTipConfig` | [Status and tips](/api-reference/hofund/status-and-tips) |
+| `GET /hofund/ws` | binary WebSocket frames | fast lane, one raw transaction per frame | [Plain, binary, WebSocket](/api-reference/hofund/plain-binary-websocket) |
+| `GET /hofund/ws/mev-protect` | binary WebSocket frames | Jito bundle-only lane, one raw transaction per frame | [Plain, binary, WebSocket](/api-reference/hofund/plain-binary-websocket) |
 
 `/hofund` picks the operation from the JSON-RPC method. The lane routes fix the lane in the URL and accept no query string. A lane never falls back to another lane.
+
+Two more lanes listen on the node itself, not behind the Bifrost port, and authenticate with a client certificate instead of a Bifrost key:
+
+| Endpoint | Lane | Reference |
+| --- | --- | --- |
+| `<location-host>:4802` (UDP) | fast, raw QUIC | [QUIC](/api-reference/hofund/quic) |
+| `<location-host>:4803` (UDP) | Jito bundle-only, raw QUIC | [QUIC](/api-reference/hofund/quic) |
+
+## Locations
+
+Every Hofund location serves the same routes. `<location-base>` is `http://<host>:4343`; the WebSocket form is `ws://<host>:4343`; QUIC lanes are `<host>:4802` and `<host>:4803`. The dashboard shows the exact URLs with your key filled in.
+
+| Location | Host |
+| --- | --- |
+| Amsterdam | `rpc-ams.thornode.io` |
+| Frankfurt | `rpc-fra1.thornode.io` |
+| New York | `rpc-nyc1.thornode.io` |
+| Salt Lake City | `rpc-slc1.thornode.io` |
+| Singapore | `rpc-sgp1.thornode.io` |
+| Tokyo | `ap-northeast-1.thornode.io` |
+
+## Limits
+
+| Limit | Value |
+| --- | --- |
+| Fast-lane rate per key (all fast surfaces: JSON-RPC, plain, binary, WebSocket, QUIC) | Flash 10 tx/s, Classic 20 tx/s, Elite 40 tx/s, Prime 60 tx/s; burst is twice the rate |
+| Jito-lane rate per key (`mev-protect`, `/hofund-jito-bundle-only`, `/hofund-bundle`, protected WebSocket and QUIC) | 5 requests/s, burst 5 |
+| Request body | 64 KiB |
+| One transaction | 1232 bytes, base64 canonical and padded |
+| `sendBatch` | up to 25 transactions |
+| `sendBundle` | up to 5 transactions |
+| WebSocket | 10 concurrent connections per key, 16 in-flight transactions per connection |
+| QUIC | 64 concurrent streams per connection |
+| Submission records (`getHofundSubmissionStatus`) | kept for 10 minutes |
+
+Your key's tier is the tier of the pass that owns it. Over the fast rate, JSON-RPC, plain and binary submissions return `429` with `-32003 fast submission rate limit exceeded` and `Retry-After: 1`; a batch counts one credit per member. WebSocket and QUIC have no reply channel: a frame or stream over the rate is dropped without notice, so pace your sends under your tier and reconcile by signature.
 
 ## Request contract
 

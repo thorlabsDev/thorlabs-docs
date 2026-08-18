@@ -59,7 +59,7 @@ Acknowledged is not landed. Track the signature through [ThorEdge RPC](/api-refe
 | `200` | `-32006` | `transaction rejected by all selected rails` | Every rail returned a deterministic rejection. |
 | `200` | `-32007` | `transaction outcome is ambiguous` | A rail timed out or answered malformed. Check status before resubmitting. |
 | `409` | `-32005` | `transaction signature is already reserved` | Same signature already submitted, possibly on another lane. |
-| `429` | `-32003` | `fast submission rate limit exceeded` | Retry after `Retry-After`. All fast lanes share one limiter. |
+| `429` | `-32003` | `fast submission rate limit exceeded` | Retry after `Retry-After`. All fast surfaces share one per-key limiter set by your pass tier (Flash 10, Classic 20, Elite 40, Prime 60 tx/s; burst twice the rate). |
 
 <RequestExample>
 ```bash /hofund (fast)
