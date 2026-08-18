@@ -19,8 +19,8 @@ Hofund is ThorNode's own submission surface, reached through Bifrost route URLs.
 | `POST /hofund-jito-bundle-only` | JSON-RPC | `sendTransaction` through Jito, single transaction | [sendTransaction](/api-reference/hofund/sendtransaction) |
 | `POST /hofund-bundle` | JSON-RPC | `sendBundle`, `getBundleStatuses`, `getInflightBundleStatuses`, `getTipAccounts`, `getThorTipConfig` | [sendBundle](/api-reference/hofund/sendbundle) |
 | `POST /hofund-status` | JSON-RPC | `getHofundSubmissionStatus`, `getFastTipConfig` | [Status and tips](/api-reference/hofund/status-and-tips) |
-| `GET /hofund/ws` | binary WebSocket frames | fast lane, one raw transaction per frame | [Plain, binary, WebSocket](/api-reference/hofund/plain-binary-websocket#websocket-hofundws-and-hofundwsmev-protect) |
-| `GET /hofund/ws/mev-protect` | binary WebSocket frames | Jito bundle-only lane, one raw transaction per frame | [Plain, binary, WebSocket](/api-reference/hofund/plain-binary-websocket#websocket-hofundws-and-hofundwsmev-protect) |
+| `GET /hofund/ws` | binary WebSocket frames | fast lane, one raw transaction per frame | [Plain, binary, WebSocket](/api-reference/hofund/plain-binary-websocket) |
+| `GET /hofund/ws/mev-protect` | binary WebSocket frames | Jito bundle-only lane, one raw transaction per frame | [Plain, binary, WebSocket](/api-reference/hofund/plain-binary-websocket) |
 
 `/hofund` picks the operation from the JSON-RPC method. The lane routes fix the lane in the URL and accept no query string. A lane never falls back to another lane.
 
