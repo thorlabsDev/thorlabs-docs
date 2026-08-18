@@ -1,0 +1,64 @@
+---
+title: "QUIC"
+description: "Send raw signed transactions to Hofund over a mutually authenticated QUIC connection: one stream per transaction, no reply."
+---
+
+The QUIC lanes are Hofund's lowest-overhead ingress: a persistent UDP connection to the node, one unidirectional stream per transaction, and no application response. They are for clients that already reconcile by signature and want to skip HTTP and Bifrost key handling entirely.
+
+## Endpoints
+
+| Endpoint | Lane | Delivery |
+| --- | --- | --- |
+| `<location-host>:4802` | standard | fast lane (direct TPU + SWQoS), same as `/hofund-fast` |
+| `<location-host>:4803` | protected | Jito bundle-only, same as `/hofund-jito-bundle-only`; no fast fallback |
+
+The hosts are the [Hofund locations](/api-reference/hofund/overview#locations) — for example `rpc-ams.thornode.io:4802`. The lane is fixed by the port; nothing on the wire selects it. The dashboard lists the endpoints for each location under **Endpoints → Hofund → QUIC ingress**.
+
+## Authentication
+
+QUIC lanes use **mutual TLS**, not a Bifrost key:
+
+- The server presents the location's public certificate (issued by Let's Encrypt). Verify it against your system roots or ISRG Root X1, with the location host as the server name.
+- You present a client certificate issued by **ThorNode's Hofund ingress CA**. Certificates from any other CA are rejected during the handshake, and the certificate's public key must be enrolled for the lane you connect to.
+
+To get onboarded, generate a key and a certificate signing request and send the CSR (never the key) to ThorNode:
+
+```bash
+openssl req -new -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes \
+  -keyout hofund-client.key -out hofund-client.csr -subj "/CN=<your-org>"
+```
+
+You receive the signed `hofund-client.crt`; ThorNode enrols its public-key fingerprint on the standard lane, the protected lane, or both, under your account's tier. To rotate, send a new CSR — the new key is enrolled next to the old one, so you can switch without downtime.
+
+## Wire contract
+
+- QUIC v1, TLS 1.3, ALPN `hofund-ingest/1`.
+- One **client-initiated unidirectional stream per transaction**. The stream carries the raw, fully signed transaction bytes — 1 to 1232 bytes, no framing, no base64 — followed by FIN.
+- Datagrams, bidirectional streams, server-initiated streams, 0-RTT, and session tickets are not used.
+- Up to 64 concurrent streams per connection and 10 connections per client identity. The server closes a connection idle for 30 s; reconnect and continue.
+- The same tip rules apply as on the JSON routes: a Thor tip on every transaction, plus a Jito tip on the protected lane. Transactions that fail admission are dropped.
+- Your tier's fast rate applies (Flash 10, Classic 20, Elite 40, Prime 60 tx/s; protected lane 5/s). Streams over the rate are dropped without notice — pace your sends.
+
+**Nothing is sent back.** A stream that closed cleanly means the bytes were handed to Hofund's transport, not that the transaction was accepted or landed. Send each transaction at most once, then reconcile the signature through [ThorEdge RPC](/api-reference/thoredge-rpc/http-methods). There is no submission id on this lane, so `getHofundSubmissionStatus` does not apply.
+
+## Reference client
+
+ThorNode ships a reference client with your onboarding kit: the `hofund-quic-client` command and the Go package it is built on. The command reads one raw transaction from a file and reports only what it can know — the transport handoff:
+
+```bash
+hofund-quic-client \
+  --lane-endpoint rpc-ams.thornode.io:4802 \
+  --server-name rpc-ams.thornode.io \
+  --client-cert /abs/path/hofund-client.crt \
+  --client-key /abs/path/hofund-client.key \
+  --server-ca /abs/path/isrg-root-x1.pem \
+  --transaction-file /abs/path/tx.bin
+```
+
+```json
+{"status":"transport_handoff","bytes":232,"transport_handoff":true,"application_acceptance":"unknown","landing":"unknown"}
+```
+
+Credential paths must be absolute, regular files that only your user (or root) can read. The Go client keeps one connection open, applies local backpressure at 64 in-flight sends, and never re-sends a transaction whose stream write already started — a failure after that point is reported as ambiguous and must be reconciled, not retried automatically.
+
+Any QUIC library that supports client certificates and ALPN works the same way: connect with `hofund-ingest/1`, open a unidirectional stream, write the transaction bytes, close the stream.
