@@ -46,19 +46,7 @@ Every Hofund location serves the same routes. `<location-base>` is `http://<host
 
 ## Limits
 
-| Limit | Value |
-| --- | --- |
-| Fast-lane rate per key (all fast surfaces: JSON-RPC, plain, binary, WebSocket, QUIC) | Flash 10 tx/s, Classic 20 tx/s, Elite 40 tx/s, Prime 60 tx/s; burst is twice the rate |
-| Jito-lane rate per key (`mev-protect`, `/hofund-jito-bundle-only`, `/hofund-bundle`, protected WebSocket and QUIC) | 5 requests/s, burst 5 |
-| Request body | 64 KiB |
-| One transaction | 1232 bytes, base64 canonical and padded |
-| `sendBatch` | up to 25 transactions |
-| `sendBundle` | up to 5 transactions |
-| WebSocket | 10 concurrent connections per key, 16 in-flight transactions per connection |
-| QUIC | 64 concurrent streams per connection |
-| Submission records (`getHofundSubmissionStatus`) | kept for 10 minutes |
-
-Your key's tier is the tier of the pass that owns it. Over the fast rate, JSON-RPC, plain and binary submissions return `429` with `-32003 fast submission rate limit exceeded` and `Retry-After: 1`; a batch counts one credit per member. WebSocket and QUIC have no reply channel: a frame or stream over the rate is dropped without notice, so pace your sends under your tier and reconcile by signature.
+Per-key rates depend on your pass tier (Flash 10 · Classic 20 · Elite 40 · Prime 60 tx/s on the fast lanes, 5 requests/s on the Jito lanes), plus size and connection caps. See [Rate limits](/api-reference/hofund/rate-limits) for the full tables and the exact error responses.
 
 ## Request contract
 
