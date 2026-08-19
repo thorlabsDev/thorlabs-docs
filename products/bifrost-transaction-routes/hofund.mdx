@@ -72,7 +72,7 @@ A transaction is capped at 1232 bytes.
 
 ## Include a Thor tip
 
-Every transaction on a fast lane includes a System transfer of at least **1000 lamports** to one of these ten addresses:
+Every transaction on a fast lane includes a System transfer of at least **100,000 lamports (0.0001 SOL)** to one of these ten addresses:
 
 ```
 V3mrim4354kvQEjrdYq7KJg52WjEdwVWnoJPR6VKvRH
@@ -91,7 +91,7 @@ Pick any one per transaction. The same ten addresses are valid at every location
 
 ## Send a Jito bundle
 
-`/hofund-bundle` takes `sendBundle` with 1 to 5 base64 transactions. One member of the bundle — usually the last — must carry both tips: at least **1000 lamports** to a Thor tip address above **and** at least **1000 lamports** to one of Jito's tip accounts, and that same transaction must include a real application instruction (a program other than System, Compute Budget, or Memo, touching a writable account). A bundle made only of transfers and tips is rejected before it is sent.
+`/hofund-bundle` takes `sendBundle` with 1 to 5 base64 transactions. One member of the bundle — usually the last — must carry both tips: at least **100,000 lamports (0.0001 SOL)** to a Thor tip address above **and** at least **1000 lamports** to one of Jito's tip accounts, and that same transaction must include a real application instruction (a program other than System, Compute Budget, or Memo, touching a writable account). A bundle made only of transfers and tips is rejected before it is sent.
 
 ```bash
 export HOFUND_BUNDLE_URL='<HOFUND_BUNDLE_URL_COPIED_FROM_DASHBOARD>'
