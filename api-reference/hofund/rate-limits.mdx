@@ -1,0 +1,46 @@
+---
+title: "Rate limits"
+description: "Per-key Hofund limits by pass tier: fast-lane and Jito-lane rates, bursts, how credits are counted, what you get back when you exceed them, and the connection and size caps."
+---
+
+Every Hofund limit is enforced **per Bifrost key**, at the location you call. The fast-lane rate depends on the tier of the pass that owns the key; the Jito-lane rate is the same for every tier.
+
+## Rates by tier
+
+| Pass tier | Fast lanes (`/hofund`, `/hofund-fast`, `/hofund-direct-tpu`, `/hofund-swqos`, `/hofund/plain`, `/hofund/binary`, `/hofund/ws`, QUIC `:4802`) | Jito lanes (`?mev-protect=true`, `/hofund-jito-bundle-only`, `/hofund-bundle`, `/hofund/ws/mev-protect`, QUIC `:4803`) |
+| --- | --- | --- |
+| Flash | 10 tx/s, burst 20 | 5 requests/s, burst 5 |
+| Classic | 20 tx/s, burst 40 | 5 requests/s, burst 5 |
+| Elite | 40 tx/s, burst 80 | 5 requests/s, burst 5 |
+| Prime | 60 tx/s, burst 120 | 5 requests/s, burst 5 |
+
+- One key has **one** fast-lane bucket shared by every fast surface — HTTP, WebSocket and QUIC draw from the same allowance.
+- Buckets are token buckets: you may burst up to the burst size, then sustain the rate. Tokens refill continuously.
+- `sendBatch` and `sendIdeal` charge one credit per transaction; `sendBundle` charges one request on the Jito bucket.
+- Your tier is shown on **Endpoints → Hofund** in the dashboard next to your endpoints and tip addresses.
+
+## When you exceed a limit
+
+| Surface | Response |
+| --- | --- |
+| JSON-RPC, plain, binary (fast) | HTTP `429`, JSON-RPC error `-32003 fast submission rate limit exceeded`, header `Retry-After: 1` |
+| JSON-RPC (Jito lanes) | HTTP `429`, `-32010` (Jito capacity exhausted), `Retry-After: 1` |
+| WebSocket, QUIC | **No reply** — the frame or stream over the rate is dropped silently. Pace your sends under your tier and reconcile every signature. |
+
+Exceeding a limit never opens a penalty window: the next request within the rate succeeds.
+
+## Connection and size caps
+
+| Cap | Value |
+| --- | --- |
+| WebSocket connections per key | 10 (the 11th handshake fails with `502 {"error":"HOFUND WebSocket upstream is unavailable"}` — close one and retry) |
+| WebSocket in-flight transactions per connection | 16 |
+| QUIC streams per connection | 64 (10 connections per client identity; idle connections close after 30 s) |
+| Request body | 64 KiB |
+| One transaction | 1232 bytes (base64, canonical and padded, on JSON routes) |
+| `sendBatch` | 1–25 transactions |
+| `sendBundle` | 1–5 transactions |
+| `sendIdeal` | exactly 2 transactions |
+| Submission records (`getHofundSubmissionStatus`) | kept for 10 minutes |
+
+Location-level capacity (`-32002 request admission capacity is exhausted`, `503`, `Retry-After: 1`) is independent of your key's rate and applies only under exceptional load at that location.

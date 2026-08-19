@@ -37,7 +37,7 @@ You receive the signed `hofund-client.crt`; ThorNode enrols its public-key finge
 - Datagrams, bidirectional streams, server-initiated streams, 0-RTT, and session tickets are not used.
 - Up to 64 concurrent streams per connection and 10 connections per client identity. The server closes a connection idle for 30 s; reconnect and continue.
 - The same tip rules apply as on the JSON routes: a Thor tip on every transaction, plus a Jito tip on the protected lane. Transactions that fail admission are dropped.
-- Your tier's fast rate applies (Flash 10, Classic 20, Elite 40, Prime 60 tx/s; protected lane 5/s). Streams over the rate are dropped without notice — pace your sends.
+- Your tier's rate applies ([Rate limits](/api-reference/hofund/rate-limits)); streams over the rate are dropped without notice — pace your sends.
 
 **Nothing is sent back.** A stream that closed cleanly means the bytes were handed to Hofund's transport, not that the transaction was accepted or landed. Send each transaction at most once, then reconcile the signature through [ThorEdge RPC](/api-reference/thoredge-rpc/http-methods). There is no submission id on this lane, so `getHofundSubmissionStatus` does not apply.
 

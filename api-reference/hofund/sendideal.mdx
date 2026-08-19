@@ -5,6 +5,9 @@ description: "Submit a fast/Jito pair that shares a durable nonce so only one ca
 
 An ideal pair is two versions of the same intent: one tuned for the fast rails (priority fee), one for Jito (tip). Both use the same durable nonce, so whichever lands first cancels the other. Both methods live on `/hofund`.
 
+
+An ideal pair costs one fast-lane credit and one Jito-lane credit — see [Rate limits](/api-reference/hofund/rate-limits).
+
 ## getNonce
 
 <ParamField body="params[0]" type="string" required>
