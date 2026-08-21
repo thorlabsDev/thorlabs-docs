@@ -262,8 +262,7 @@
               "api-reference/hofund/sendbundle",
               "api-reference/hofund/sendideal",
               "api-reference/hofund/status-and-tips",
-              "api-reference/hofund/plain-binary-websocket",
-              "api-reference/hofund/quic"
+              "api-reference/hofund/plain-binary-websocket"
             ]
           }
         ]
@@ -315,6 +314,10 @@
     }
   },
   "redirects": [
+    {
+      "source": "/api-reference/hofund/quic",
+      "destination": "/api-reference/hofund/overview"
+    },
     {
       "source": "/introduction/welcome/:slug*",
       "destination": "/getting-started/quickstart"
