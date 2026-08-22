@@ -1,0 +1,66 @@
+---
+title: "QUIC"
+description: "Send raw signed transactions to Hofund over a bearer-authenticated QUIC connection: authenticate once on a control stream, then one raw transaction per stream, no reply."
+---
+
+The QUIC lane is Hofund's lowest-overhead ingress: a persistent UDP connection to the node, one bounded control-stream authentication, then one unidirectional stream per transaction, and no application response. It is for clients that already reconcile by signature and want to skip HTTP and Bifrost key-path handling.
+
+## Endpoint
+
+| Endpoint | Lane | Delivery |
+| --- | --- | --- |
+| `<location-host>:4802` | standard | fast lane (direct TPU + SWQoS), same as `/hofund-fast` |
+
+The host is a [Hofund location](/api-reference/hofund/overview#locations) — for example `rpc-ams.thornode.io:4802`. The lane is fixed by the port; nothing on the wire selects it. The dashboard lists the endpoint for each location under **Endpoints → Hofund → QUIC ingress**, and only when that account already has its usable Bifrost key.
+
+## Authentication
+
+Authentication is **your per-pass Bifrost key, and only that key** — the same credential you use on every other Hofund route:
+
+- The server presents the location's public certificate (issued by Let's Encrypt). Your client verifies it by the location host as the server name, against your system roots or ISRG Root X1, on every connection.
+- Immediately after connecting, open **one bidirectional control stream** and send exactly this JSON:
+
+```json
+{"type":"authenticate","token":"<your-bifrost-key>"}
+```
+
+- The server answers `{"type":"authenticated"}`. On success you keep the connection; on any failure it returns a generic authentication error and closes.
+
+Send the key in the **control JSON body**. It is never sent in an `Authorization` header, a URL/query string, a JSON or base64 transaction envelope, or a QUIC Initial Token, and none of those are accepted as authentication. A transaction stream opened before authentication succeeds closes the connection.
+
+## Wire contract
+
+- QUIC v1, TLS 1.3, ALPN `hofund-ingest/1`. The client verifies the server's public certificate by hostname against system roots; no other credential is exchanged.
+- One **control stream**: the bounded `authenticate` JSON above, exchanged within a short timeout.
+- One **client-initiated unidirectional stream per transaction**. The stream carries the raw, fully signed transaction bytes — 1 to 1232 bytes, no framing, no base64 — followed by FIN.
+- Datagrams, bidirectional transaction streams, server-initiated streams, 0-RTT, and session tickets are not used.
+- Up to 64 concurrent transaction streams per connection and 10 connections per account. Unauthenticated connections are capped per source IP before a token exists. The server closes a connection idle for 30 s; reconnect and re-authenticate.
+- The same tip rules apply as on the JSON routes: a Thor tip on every transaction. Transactions that fail admission are dropped.
+- Your tier's rate applies ([Rate limits](/api-reference/hofund/rate-limits)); streams over the rate are dropped without notice — pace your sends.
+
+**Nothing is sent back.** A stream that closed cleanly means the bytes were handed to Hofund's transport, not that the transaction was accepted or landed. Send each transaction at most once, then reconcile the signature through [ThorEdge RPC](/api-reference/thoredge-rpc/http-methods). There is no submission id on this lane, so `getHofundSubmissionStatus` does not apply.
+
+## Reference client
+
+ThorNode ships a reference client: the `hofund-quic-client` command and the Go package it is built on. The command reads one raw transaction from a file and reports only what it can know — the transport handoff:
+
+```bash
+export HOFUND_QUIC_BEARER_TOKEN='<YOUR_BIFROST_KEY>'
+
+hofund-quic-client \
+  --lane-endpoint rpc-ams.thornode.io:4802 \
+  --server-name rpc-ams.thornode.io \
+  --server-ca /abs/path/isrg-root-x1.pem \
+  --bearer-token "$HOFUND_QUIC_BEARER_TOKEN" \
+  --transaction-file /abs/path/tx.bin
+```
+
+`--bearer-token` is optional because the command reads `HOFUND_QUIC_BEARER_TOKEN`; the flag overrides the environment and neither is printed.
+
+```json
+{"status":"transport_handoff","bytes":232,"transport_handoff":true,"application_acceptance":"unknown","landing":"unknown"}
+```
+
+Credential paths must be absolute, regular files that only your user (or root) can read; the server CA is the only file. The Go client completes the control-stream authentication during `Dial` and on every reconnect, keeps one connection open, applies local backpressure at 64 in-flight sends, and never re-sends a transaction whose stream write already started — a failure after that point is reported as ambiguous and must be reconciled, not retried automatically.
+
+Any QUIC library that supports ALPN works the same way: connect with `hofund-ingest/1`, verify the server certificate, send the one control-stream `authenticate` message, read the `authenticated` reply, then open a unidirectional stream per transaction with the raw bytes and close it.

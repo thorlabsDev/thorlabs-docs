@@ -1,6 +1,6 @@
 ---
 title: "Hofund"
-description: "Send Solana transactions through ThorNode's own sender — fast, direct-TPU, and SWQoS lanes, plus Jito-protected single transactions and atomic bundles — over HTTP or WebSocket, with a Thor tip, at any Bifrost location."
+description: "Send Solana transactions through ThorNode's own sender — fast, direct-TPU, and SWQoS lanes, plus Jito-protected single transactions and atomic bundles — over HTTP, WebSocket, or QUIC, with a Thor tip, at any Bifrost location."
 ---
 
 Hofund is ThorNode's own submission surface. The aggregated Bifrost routes forward your request to an upstream provider; Hofund submits through ThorNode's own transaction sender at the location you call.
@@ -11,14 +11,14 @@ Hofund routes appear under **Endpoints → Hofund** next to the other providers,
 
 Hofund runs at every edge location. Each one exposes the same routes on the same ports; the dashboard shows the exact URLs with your key.
 
-| Location       | Host                         | HTTP + WebSocket routes            |
-| -------------- | ---------------------------- | ---------------------------------- |
-| Amsterdam      | `rpc-ams.thornode.io`        | `http://<host>:4343/<key>/<route>` |
-| Frankfurt      | `rpc-fra1.thornode.io`       | same                               |
-| New York       | `rpc-nyc1.thornode.io`       | same                               |
-| Salt Lake City | `rpc-slc1.thornode.io`       | same                               |
-| Singapore      | `rpc-sgp1.thornode.io`       | same                               |
-| Tokyo          | `ap-northeast-1.thornode.io` | same                               |
+| Location       | Host                         | HTTP + WebSocket routes             | QUIC lane             |
+| -------------- | ---------------------------- | ----------------------------------- | --------------------- |
+| Amsterdam      | `rpc-ams.thornode.io`        | `http://<host>:4343/<key>/<route>`  | `<host>:4802`         |
+| Frankfurt      | `rpc-fra1.thornode.io`       | same                                | same                 |
+| New York       | `rpc-nyc1.thornode.io`       | same                                | same                 |
+| Salt Lake City | `rpc-slc1.thornode.io`       | same                                | same                 |
+| Singapore      | `rpc-sgp1.thornode.io`       | same                                | same                 |
+| Tokyo          | `ap-northeast-1.thornode.io` | same                                | same                 |
 
 ## Pick a lane
 
@@ -31,6 +31,7 @@ Hofund runs at every edge location. Each one exposes the same routes on the same
 | `/hofund-bundle`           | Up to 5 transactions as one atomic Jito bundle: all land, or none        |
 | `/hofund/ws`               | Fast lane over a WebSocket: one binary frame per transaction, no reply   |
 | `/hofund/ws/mev-protect`   | Jito bundle-only lane over a WebSocket, same framing                     |
+| `:4802` (QUIC)             | Fast lane over bearer-authenticated QUIC: one stream per transaction     |
 
 The fast lanes submit through the transaction sender at the location you call. Singapore is the designated stake-weighted location; it becomes stake-weighted once its sender identity is staked. Until then, `swqos` and `swqos-only` requests are accepted at every location and delivered through that location's own sender.
 
@@ -143,17 +144,18 @@ Jito publishes the authoritative list in [its documentation](https://docs.jito.w
 
 `/hofund/plain` takes the Base64 transaction as `text/plain`, and `/hofund/binary` takes raw bytes as `application/octet-stream`; both select the operation with `?method=sendTransaction` (or `?method=getHealth`).
 
-## Stream transactions over WebSocket
+## Stream transactions over WebSocket or QUIC
 
-The WebSocket routes take the same signed bytes you would base64 for JSON — no envelope, no method, one transaction per message — and send **nothing back**: no acknowledgement and no submission id. Reconcile every signature yourself.
+Both raw transports take the same signed bytes you would base64 for JSON — no envelope, no method, one transaction per message — and send **nothing back**: no acknowledgement and no submission id. Reconcile every signature yourself.
 
 - **WebSocket** — open the `ws://` form of the route URL from the dashboard (`ws://<host>:4343/<key>/hofund/ws`, or `…/hofund/ws/mev-protect` for the Jito lane) and send each transaction as one binary frame of at most 1232 bytes. Up to 10 connections per key, 16 in-flight transactions per connection.
+- **QUIC** — connect UDP to `<host>:4802` with server-certificate verification, ALPN `hofund-ingest/1`, and authenticate **exclusively with this account's Bifrost key**: immediately after connecting, open one bidirectional control stream and send `{"type":"authenticate","token":"<your-bifrost-key>"}`. The server answers `{"type":"authenticated"}`; only then open one unidirectional stream per raw signed transaction. ThorNode provides a reference client; see the [QUIC reference](/api-reference/hofund/quic).
 
 The tip rules below apply on every transport.
 
 ## Rate limits
 
-Every Bifrost key has a per-key fast-lane rate set by the tier of the pass that owns it, enforced across all fast surfaces together (JSON-RPC, plain, binary, and WebSocket):
+Every Bifrost key has a per-key fast-lane rate set by the tier of the pass that owns it, enforced across all fast surfaces together (JSON-RPC, plain, binary, WebSocket, QUIC):
 
 | Pass    | Fast lane            |
 | ------- | -------------------- |
@@ -162,7 +164,7 @@ Every Bifrost key has a per-key fast-lane rate set by the tier of the pass that 
 | Elite   | 40 tx/s, burst 80    |
 | Prime   | 60 tx/s, burst 120   |
 
-The Jito lanes (`mev-protect`, `/hofund-jito-bundle-only`, `/hofund-bundle`, and protected WebSocket) allow 5 requests per second per key, burst 5, at every tier. Over the limit, HTTP routes answer `429` with `Retry-After: 1`; the WebSocket lane drops the extra transaction silently, so pace your sends.
+The Jito lanes (`mev-protect`, `/hofund-jito-bundle-only`, `/hofund-bundle`, protected WebSocket) allow 5 requests per second per key, burst 5, at every tier. Over the limit, HTTP routes answer `429` with `Retry-After: 1`; the WebSocket and QUIC lanes drop the extra transaction silently, so pace your sends.
 
 ## Check what happened
 

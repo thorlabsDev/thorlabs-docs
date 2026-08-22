@@ -7,14 +7,14 @@ Every Hofund limit is enforced **per Bifrost key**, at the location you call. Th
 
 ## Rates by tier
 
-| Pass tier | Fast lanes (`/hofund`, `/hofund-fast`, `/hofund-direct-tpu`, `/hofund-swqos`, `/hofund/plain`, `/hofund/binary`, `/hofund/ws`) | Jito lanes (`?mev-protect=true`, `/hofund-jito-bundle-only`, `/hofund-bundle`, `/hofund/ws/mev-protect`) |
+| Pass tier | Fast lanes (`/hofund`, `/hofund-fast`, `/hofund-direct-tpu`, `/hofund-swqos`, `/hofund/plain`, `/hofund/binary`, `/hofund/ws`, QUIC `:4802`) | Jito lanes (`?mev-protect=true`, `/hofund-jito-bundle-only`, `/hofund-bundle`, `/hofund/ws/mev-protect`) |
 | --- | --- | --- |
 | Flash | 10 tx/s, burst 20 | 5 requests/s, burst 5 |
 | Classic | 20 tx/s, burst 40 | 5 requests/s, burst 5 |
 | Elite | 40 tx/s, burst 80 | 5 requests/s, burst 5 |
 | Prime | 60 tx/s, burst 120 | 5 requests/s, burst 5 |
 
-- One key has **one** fast-lane bucket shared by every fast surface — HTTP and WebSocket draw from the same allowance.
+- One key has **one** fast-lane bucket shared by every fast surface — HTTP, WebSocket and QUIC draw from the same allowance.
 - Buckets are token buckets: you may burst up to the burst size, then sustain the rate. Tokens refill continuously.
 - `sendBatch` and `sendIdeal` charge one credit per transaction; `sendBundle` charges one request on the Jito bucket.
 - Your tier is shown on **Endpoints → Hofund** in the dashboard next to your endpoints and tip addresses.
@@ -25,7 +25,7 @@ Every Hofund limit is enforced **per Bifrost key**, at the location you call. Th
 | --- | --- |
 | JSON-RPC, plain, binary (fast) | HTTP `429`, JSON-RPC error `-32003 fast submission rate limit exceeded`, header `Retry-After: 1` |
 | JSON-RPC (Jito lanes) | HTTP `429`, `-32010` (Jito capacity exhausted), `Retry-After: 1` |
-| WebSocket | **No reply** — the frame over the rate is dropped silently. Pace your sends under your tier and reconcile every signature. |
+| WebSocket, QUIC | **No reply** — the frame or stream over the rate is dropped silently. Pace your sends under your tier and reconcile every signature. |
 
 Exceeding a limit never opens a penalty window: the next request within the rate succeeds.
 
@@ -35,6 +35,7 @@ Exceeding a limit never opens a penalty window: the next request within the rate
 | --- | --- |
 | WebSocket connections per key | 10 (the 11th handshake fails with `502 {"error":"HOFUND WebSocket upstream is unavailable"}` — close one and retry) |
 | WebSocket in-flight transactions per connection | 16 |
+| QUIC streams per connection | 64 (10 connections per client identity; idle connections close after 30 s) |
 | Request body | 64 KiB |
 | One transaction | 1232 bytes (base64, canonical and padded, on JSON routes) |
 | `sendBatch` | 1–25 transactions |

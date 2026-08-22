@@ -24,9 +24,15 @@ Hofund is ThorNode's own submission surface, reached through Bifrost route URLs.
 
 `/hofund` picks the operation from the JSON-RPC method. The lane routes fix the lane in the URL and accept no query string. A lane never falls back to another lane.
 
+One more lane listens on the node itself, not behind the Bifrost port, and authenticates with the same Bifrost key over a first-stream control message instead of a key in the path:
+
+| Endpoint | Lane | Reference |
+| --- | --- | --- |
+| `<location-host>:4802` (UDP) | fast, raw QUIC | [QUIC](/api-reference/hofund/quic) |
+
 ## Locations
 
-Every Hofund location serves the same routes. `<location-base>` is `http://<host>:4343`, and the WebSocket form is `ws://<host>:4343`. The dashboard shows the exact URLs with your key filled in.
+Every Hofund location serves the same routes. `<location-base>` is `http://<host>:4343`; the WebSocket form is `ws://<host>:4343`; the QUIC lane is `<host>:4802`. The dashboard shows the exact URLs with your key filled in.
 
 | Location | Host |
 | --- | --- |
