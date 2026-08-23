@@ -11,7 +11,7 @@ The QUIC lane is Hofund's lowest-overhead ingress: a persistent UDP connection t
 | --- | --- | --- |
 | `<location-host>:4802` | standard | fast lane (direct TPU + SWQoS), same as `/hofund-fast` |
 
-The host is a [Hofund location](/api-reference/hofund/overview#locations) — for example `rpc-ams.thornode.io:4802`. The lane is fixed by the port; nothing on the wire selects it. The dashboard lists the endpoint for each location under **Endpoints → Hofund → QUIC ingress**, and only when that account already has its usable Bifrost key.
+The current production endpoint is `rpc-fra1.thornode.io:4802`. The lane is fixed by the port; nothing on the wire selects it. The dashboard lists **Endpoints → Hofund → QUIC ingress** only when that account already has its usable Bifrost key. Use the endpoint shown there; a location that is not listed does not expose customer QUIC ingress.
 
 ## Authentication
 
@@ -48,8 +48,8 @@ ThorNode ships a reference client: the `hofund-quic-client` command and the Go p
 export HOFUND_QUIC_BEARER_TOKEN='<YOUR_BIFROST_KEY>'
 
 hofund-quic-client \
-  --lane-endpoint rpc-ams.thornode.io:4802 \
-  --server-name rpc-ams.thornode.io \
+  --lane-endpoint rpc-fra1.thornode.io:4802 \
+  --server-name rpc-fra1.thornode.io \
   --server-ca /abs/path/isrg-root-x1.pem \
   --bearer-token "$HOFUND_QUIC_BEARER_TOKEN" \
   --transaction-file /abs/path/tx.bin
