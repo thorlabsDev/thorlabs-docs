@@ -11,7 +11,18 @@ The QUIC lane is Hofund's lowest-overhead ingress: a persistent UDP connection t
 | --- | --- | --- |
 | `<location-host>:4802` | standard | fast lane (direct TPU + SWQoS), same as `/hofund-fast` |
 
-The current production endpoint is `rpc-fra1.thornode.io:4802`. The lane is fixed by the port; nothing on the wire selects it. The dashboard lists **Endpoints → Hofund → QUIC ingress** only when that account already has its usable Bifrost key. Use the endpoint shown there; a location that is not listed does not expose customer QUIC ingress.
+The standard bearer-authenticated ingress is available at these production endpoints:
+
+| Location | Endpoint |
+| --- | --- |
+| Amsterdam | `rpc-ams.thornode.io:4802` |
+| Salt Lake City | `rpc-slc1.thornode.io:4802` |
+| Tokyo | `ap-northeast-1.thornode.io:4802` |
+| Frankfurt | `rpc-fra1.thornode.io:4802` |
+| New York | `rpc-nyc1.thornode.io:4802` |
+| Singapore | `rpc-sgp1.thornode.io:4802` |
+
+The lane is fixed by the port; nothing on the wire selects it. The dashboard lists **Endpoints → Hofund → QUIC ingress** only when that account already has its usable Bifrost key. Use the endpoint shown there; a location that is not listed for the selected account is not available to that account.
 
 ## Authentication
 
