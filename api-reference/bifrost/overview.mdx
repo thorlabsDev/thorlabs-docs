@@ -49,7 +49,7 @@ Bifrost decodes each transaction in the body and rejects the request with `400` 
 - the transaction count is outside the route's bound in the table above;
 - a transaction is not valid base64 or does not decode as a Solana transaction;
 - a LunarLander binary batch member is outside 66–1232 bytes;
-- the transaction pays no tip, or a tip below the provider's minimum, to a recognized tip address (see each provider page).
+- the request does not meet the provider's route-specific tip rule, such as a tip on every independent transaction or in the required bundle member (see each provider page).
 
 The `400` body names the reason:
 

@@ -24,7 +24,7 @@ Hofund runs at every edge location. Each one exposes the same routes on the same
 
 | Route                      | Delivery                                                                 |
 | -------------------------- | ------------------------------------------------------------------------ |
-| `/hofund-fast`             | Direct TPU and SWQoS in parallel; the transaction lands once             |
+| `/hofund-fast`             | Direct TPU and SWQoS in parallel; requires a recent blockhash and rejects durable nonce |
 | `/hofund-direct-tpu`       | Direct TPU only                                                          |
 | `/hofund-swqos`            | SWQoS only                                                               |
 | `/hofund-jito-bundle-only` | One transaction, delivered only as a Jito bundle — no fast-rail fallback |
@@ -68,6 +68,8 @@ curl --fail-with-body --silent --show-error "$HOFUND_ROUTE_URL" \
 The response also carries an `X-Hofund-Submission-Id` header. Keep it: it is the handle for the status route below.
 
 A transaction is capped at 1232 bytes.
+
+Ordinary fast and protected `sendTransaction` routes require a recent blockhash and reject durable nonce. For a durable-nonce pair, use `/hofund` with `sendIdeal` when that capability is available.
 
 ## Include a Thor tip
 
@@ -141,6 +143,8 @@ Jito publishes the authoritative list in [its documentation](https://docs.jito.w
 ## Send everything through one endpoint
 
 `/hofund` accepts the same `sendTransaction` body and defaults to the fast lane. Select the SWQoS-only lane with the query parameter `?swqos-only=true`, or the Jito lane with `?mev-protect=true`. It also answers `sendBatch`, `sendBundle`, `sendIdeal`, `getNonce`, and `getHealth`.
+
+`sendIdeal` is `/hofund`'s supported durable-nonce flow: it accepts a verified two-transaction fast/Jito pair that shares the same nonce account, live nonce value, and authority. Ordinary `/hofund` `sendTransaction` calls still require a recent blockhash.
 
 `/hofund/plain` takes the Base64 transaction as `text/plain`, and `/hofund/binary` takes raw bytes as `application/octet-stream`; both select the operation with `?method=sendTransaction` (or `?method=getHealth`).
 

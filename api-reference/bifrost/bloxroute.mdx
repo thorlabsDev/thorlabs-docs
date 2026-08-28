@@ -9,7 +9,7 @@ Send the JSON body bloXroute's own [Trader API](https://docs.bloxroute.com/) def
 | Route | Operation | Transactions | Minimum tip |
 | --- | --- | --- | --- |
 | `POST /bloxroute` | Submit | 1 | 1,000,000 lamports |
-| `POST /blxrt-submit-batch` | Batch | 1 or more | 1,000,000 lamports each |
+| `POST /blxrt-submit-batch` | Batch | 1 or more | `useBundle: true`: last transaction; `false` or omitted: every transaction |
 | `POST /blxrt-submit-paladin` | Paladin | 1 | 1,000,000 lamports |
 | `POST /blxrt-submit-snipe` | Snipe | exactly 2 | 100,000 lamports; the second transaction needs a priority fee |
 
@@ -67,6 +67,8 @@ POST /blxrt-submit-batch
 ```
 
 `submitStrategy` is `P_SUBMIT_ALL`, `P_ABORT_ON_FIRST_ERROR`, or `P_WAIT_FOR_CONFIRMATION`.
+
+With `useBundle: true`, the last transaction must pay the qualifying 1,000,000-lamport bloXroute tip. With `useBundle: false` or when `useBundle` is omitted, every transaction is independent and must pay its own qualifying tip.
 
 ## Paladin
 

@@ -24,6 +24,8 @@ Hofund is ThorNode's own submission surface, reached through Bifrost route URLs.
 
 `/hofund` picks the operation from the JSON-RPC method. The lane routes fix the lane in the URL and accept no query string. A lane never falls back to another lane.
 
+Ordinary `sendTransaction` routes, including `/hofund-fast`, require a recent blockhash and reject durable nonce. Durable nonce is supported only by the verified [`/hofund` `sendIdeal` pair flow](/api-reference/hofund/sendideal), when that capability is available.
+
 One more lane listens on the node itself, not behind the Bifrost port, and authenticates with the same Bifrost key over a first-stream control message instead of a key in the path:
 
 | Endpoint | Lane | Reference |
@@ -52,7 +54,7 @@ Per-key rates depend on your pass tier (Flash 10 · Classic 20 · Elite 40 · Pr
 - `POST` with `content-type: application/json` (unified route and lane routes).
 - Body at most **64 KiB**.
 - The envelope is exactly `{ "jsonrpc": "2.0", "id", "method", "params" }`. `id` is a string or number, never `null`; unknown or duplicate keys are rejected; a JSON array (batch) is rejected with `-32600 JSON-RPC request batching is not supported`.
-- Every transaction is canonical, padded, standard base64 of a fully signed transaction, at most **1232 bytes** decoded. Durable-nonce transactions and duplicate signatures are rejected.
+- Every transaction is canonical, padded, standard base64 of a fully signed transaction, at most **1232 bytes** decoded. Ordinary routes reject durable-nonce transactions; `sendIdeal` verifies its durable-nonce pair separately. Duplicate signatures are rejected.
 - Selectors on `/hofund`: `?swqos-only=true` or `?mev-protect=true` (mutually exclusive), or the JSON selector `{"mevProtect":true}` described per method. Supplying both a query and a body selector is rejected.
 - Exact retries of the same body return the stored prior outcome and never dispatch again. Sending the same signed transaction through a different lane fails with `409`, `-32005 transaction signature is already reserved`.
 
@@ -104,7 +106,7 @@ Hofund errors:
 | `401` | `-32001` | Unauthorized at Hofund |
 | `404` | `-32004` | `submission not found` |
 
-Common `-32602` messages: `transaction exceeds 1232 bytes`, `transaction must use canonical padded base64`, `contains duplicate transaction`, `transaction count exceeds 25`, `sendBundle transaction count exceeds 4`, `Thor tip is below the configured floor` (`kind: tip_too_low`), `durable nonce is not supported`, `minContextSlot is unsupported and is not enforced by Hofund sender rails`.
+Common `-32602` messages: `transaction exceeds 1232 bytes`, `transaction must use canonical padded base64`, `contains duplicate transaction`, `transaction count exceeds 25`, `sendBundle transaction count exceeds 4`, `Thor tip is below the configured floor` (`kind: tip_too_low`), `durable nonce is not supported by this route; use a recent blockhash, or use /hofund sendIdeal when available`, `minContextSlot is unsupported and is not enforced by Hofund sender rails`.
 
 ## Next steps
 
