@@ -15,6 +15,8 @@ description: "Submit one signed transaction through a Hofund fast rail or throug
 
 The transaction must pay the Thor tip floor to a Thor tip account (fast rails), and additionally the Jito tip floor to a Jito tip account (protected). Read both sets from [`getFastTipConfig` and `getThorTipConfig`](/api-reference/hofund/status-and-tips).
 
+Every ordinary `sendTransaction` route requires a recent blockhash. Durable-nonce transactions are rejected; when the capability is available, use the two-transaction durable-nonce pair flow on [`/hofund` `sendIdeal`](/api-reference/hofund/sendideal).
+
 ## Parameters
 
 <ParamField body="params[0]" type="string" required>
@@ -56,6 +58,7 @@ Acknowledged is not landed. Track the signature through [ThorEdge RPC](/api-refe
 | --- | --- | --- | --- |
 | `200` | `-32602` | `Thor tip is below the configured floor` | No qualifying tip transfer, or too small. |
 | `200` | `-32602` | `transaction must pay at least N Thor and M Jito tip lamports` | Protected path tip check failed. |
+| `400` | `-32602` | `durable nonce is not supported by this route; use a recent blockhash, or use /hofund sendIdeal when available` | Rebuild the ordinary transaction with a recent blockhash, or use the supported `sendIdeal` pair flow. |
 | `200` | `-32006` | `transaction rejected by all selected rails` | Every rail returned a deterministic rejection. |
 | `200` | `-32007` | `transaction outcome is ambiguous` | A rail timed out or answered malformed. Check status before resubmitting. |
 | `409` | `-32005` | `transaction signature is already reserved` | Same signature already submitted, possibly on another lane. |
