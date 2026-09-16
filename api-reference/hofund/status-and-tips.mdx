@@ -30,7 +30,9 @@ description: "Look up what happened to a Hofund submission, and read the live ti
   </Expandable>
 </ResponseField>
 
-The record lives about 10 minutes. After that, or for WebSocket submissions (which return no submission id), reconcile the signature through [ThorEdge RPC](/api-reference/thoredge-rpc/http-methods).
+An accepted durable nonce submission with an unobserved signature has status `unknown`. `expiresAt` controls receipt retention and does not establish nonce expiry.
+
+The record lives about 10 minutes. After that, or for WebSocket and QUIC submissions (which return no submission id), reconcile the signature through [ThorEdge RPC](/api-reference/thoredge-rpc/http-methods).
 
 ## getFastTipConfig
 

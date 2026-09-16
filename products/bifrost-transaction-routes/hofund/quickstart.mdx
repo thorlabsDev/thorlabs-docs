@@ -55,7 +55,7 @@ export HOFUND_STATUS_URL='<HOFUND_STATUS_URL_COPIED_FROM_DASHBOARD>'
       --data '{ "jsonrpc": "2.0", "id": 1, "method": "getHofundSubmissionStatus", "params": ["<SUBMISSION_ID>"] }'
     ```
 
-    `result.status` moves from `pending` to `processed`, `confirmed`, or `finalized` as the transaction lands, or to `failed` or `expired`.
+    `result.status` reports `processed`, `confirmed`, or `finalized` once the signature is observed on-chain. Before that, it may be `pending` or `unknown`. `failed` indicates failure; `expired` applies to recent-blockhash transactions. See [status semantics](/api-reference/hofund/status-and-tips) for durable nonces and receipt retention.
 
   </Step>
 </Steps>

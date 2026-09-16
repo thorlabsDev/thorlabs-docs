@@ -5,6 +5,8 @@ description: "Submit up to 25 independent transactions in one Hofund request."
 
 `sendBatch` submits independent transactions together on `/hofund`. Each member is dispatched on its own; the result lists one signature per member in request order. Each member counts one credit against your key's fast-lane rate (protected batches: the Jito-lane rate) — see [Rate limits](/api-reference/hofund/rate-limits).
 
+Members may use recent blockhashes or caller-owned durable nonces, including a mixture in one batch. Each nonce transaction must meet the [nonce requirements](/api-reference/hofund/sendtransaction#durable-nonce).
+
 ## Parameters
 
 <ParamField body="params[0]" type="string[]" required>
