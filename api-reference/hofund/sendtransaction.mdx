@@ -15,7 +15,15 @@ description: "Submit one signed transaction through a Hofund fast rail or throug
 
 The transaction must pay the Thor tip floor to a Thor tip account (fast rails), and additionally the Jito tip floor to a Jito tip account (protected). Read both sets from [`getFastTipConfig` and `getThorTipConfig`](/api-reference/hofund/status-and-tips).
 
-Every ordinary `sendTransaction` route requires a recent blockhash. Durable-nonce transactions are rejected; when the capability is available, use the two-transaction durable-nonce pair flow on [`/hofund` `sendIdeal`](/api-reference/hofund/sendideal).
+Every `sendTransaction` route accepts recent blockhash or caller-owned durable nonce transactions through the same request format.
+
+## Durable nonce
+
+Build and fully sign the transaction with your nonce value in `recentBlockhash`. Instruction 0 must be the only `AdvanceNonceAccount` instruction, using a writable nonce account, the readonly recent-blockhashes sysvar, and a signing nonce authority. These accounts and the System Program must be static message keys. Legacy and v0 transactions are supported.
+
+Hofund verifies signatures, instruction structure, and the selected lane's tip requirements locally. It forwards the signed bytes unchanged with `skipPreflight: true`; validators check the live nonce value and authority. Acceptance does not prove the nonce is still usable or the transaction landed.
+
+Exact retries retain the existing signature-based replay rules. Different signed variants may share one nonce account and value. [`sendIdeal`](/api-reference/hofund/sendideal) is available when you want Hofund to verify and submit a fast/Jito pair together. Atomic `sendBundle` requests still require recent blockhash transactions.
 
 ## Parameters
 
@@ -50,6 +58,8 @@ On the lane routes `/hofund-fast`, `/hofund-direct-tpu`, and `/hofund-swqos` you
 
 Headers: `X-Hofund-Submission-ID`; `X-Bundle-ID` on the Jito path.
 
+Nonce transaction status follows its signature. An unobserved signature is `unknown`; a receipt deadline or blockhash validity check cannot prove nonce expiry.
+
 Acknowledged is not landed. Track the signature through [ThorEdge RPC](/api-reference/thoredge-rpc/http-methods), or poll [`getHofundSubmissionStatus`](/api-reference/hofund/status-and-tips) with the submission id.
 
 ## Errors
@@ -58,7 +68,7 @@ Acknowledged is not landed. Track the signature through [ThorEdge RPC](/api-refe
 | --- | --- | --- | --- |
 | `200` | `-32602` | `Thor tip is below the configured floor` | No qualifying tip transfer, or too small. |
 | `200` | `-32602` | `transaction must pay at least N Thor and M Jito tip lamports` | Protected path tip check failed. |
-| `400` | `-32602` | `durable nonce is not supported by this route; use a recent blockhash, or use /hofund sendIdeal when available` | Rebuild the ordinary transaction with a recent blockhash, or use the supported `sendIdeal` pair flow. |
+| `400` | `-32602` | `AdvanceNonceAccount must occur exactly once at instruction 0` | Put the nonce advance first and remove additional advances. |
 | `200` | `-32006` | `transaction rejected by all selected rails` | Every rail returned a deterministic rejection. |
 | `200` | `-32007` | `transaction outcome is ambiguous` | A rail timed out or answered malformed. Check status before resubmitting. |
 | `409` | `-32005` | `transaction signature is already reserved` | Same signature already submitted, possibly on another lane. |
