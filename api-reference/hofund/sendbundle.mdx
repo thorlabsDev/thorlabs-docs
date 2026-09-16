@@ -5,6 +5,8 @@ description: "Submit an atomic Jito bundle through Hofund, and query bundle stat
 
 A bundle lands as one unit or not at all. Hofund forwards it to Jito atomically and never splits or retries it through another rail.
 
+Every bundle member must use a recent blockhash. Durable nonce transactions are supported by [single sends](/api-reference/hofund/sendtransaction#durable-nonce) and [independent batches](/api-reference/hofund/sendbatch), but are rejected by both atomic bundle routes below.
+
 Two surfaces accept `sendBundle` and they differ in size and config:
 
 | Route | Transactions | `params[1]` |

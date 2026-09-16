@@ -44,6 +44,7 @@ Send the key in the **control JSON body**. It is never sent in an `Authorization
 - QUIC v1, TLS 1.3, ALPN `hofund-ingest/1`. The client verifies the server's public certificate by hostname against system roots; no other credential is exchanged.
 - One **control stream**: the bounded `authenticate` JSON above, exchanged within a short timeout.
 - One **client-initiated unidirectional stream per transaction**. The stream carries the raw, fully signed transaction bytes — 1 to 1232 bytes, no framing, no base64 — followed by FIN.
+- Recent blockhash and caller-owned durable nonce transactions are supported, with the same [nonce requirements](/api-reference/hofund/sendtransaction#durable-nonce) as HTTP.
 - Datagrams, bidirectional transaction streams, server-initiated streams, 0-RTT, and session tickets are not used.
 - Up to 64 concurrent transaction streams per connection and 10 connections per account. Unauthenticated connections are capped per source IP before a token exists. The server closes a connection idle for 30 s; reconnect and re-authenticate.
 - The same tip rules apply as on the JSON routes: a Thor tip on every transaction. Transactions that fail admission are dropped.
