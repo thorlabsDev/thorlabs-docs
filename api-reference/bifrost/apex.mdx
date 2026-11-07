@@ -1,0 +1,145 @@
+---
+title: "Apex routes"
+sidebarTitle: "Apex"
+description: "Send signed transactions, independent batches, and atomic bundles through OrbitFlare Apex with your Bifrost key."
+---
+
+Choose **Apex** in **Endpoints → Bifrost** and copy the operation's complete URL. ThorNode supplies the upstream credential; authenticate with your Bifrost key using the [standard route authentication](/api-reference/bifrost/overview#authentication).
+
+| Route | Body | Transactions | Success result |
+| --- | --- | --- | --- |
+| `POST /apex` | JSON-RPC | 1 send or 1–4 in a bundle | `result`: signature, bundle ID, or utility result |
+| `POST /apex-send` | JSON | 1 | `signature` |
+| `POST /apex-send-bin` | Raw bytes | 1 | `signature` |
+| `POST /apex-send-batch` | Binary frames | 1–16, independent | `attempted`, `accepted`, `rejected`, `results` |
+| `POST /apex-send-bundle` | Binary frames | 1–4, atomic | `bundle_id`, `signatures` |
+
+## Transaction and tip requirements
+
+Legacy and v0 transactions may contain at most **1232 serialized bytes**; v1 transactions may contain at most **4096 bytes**. Sign the final message before submitting it.
+
+Each independent transaction must include exactly one top-level System Program transfer of at least **1,000,000 lamports (0.001 SOL)** to an accepted Apex tip account. The tip's source must sign the transaction, and the recipient must appear in the static account keys rather than an address lookup table. A bundle needs exactly one such tip across all its members.
+
+### Dedicated tip accounts
+
+```text
+APEXPyh4aLbs5JsCwni5R9E9RSC5oxBR943N3vffY1pe
+APEXQgNvjGkrKyxp7XZ2STZvdAP2hi32GnaJmMizoLjt
+APEXYGPxDCvBN8JEW7BaChMVwBwL5zfZ7irQJCFgqHJ2
+```
+
+### Default tip accounts
+
+```text
+APeX2oLtjYehgTMUCA971L8htM7tGNqsXHDz5NrivhhX
+APeXAKT6spXSmU3uRv2MoEgQ7ckhAS4nexTgaxwLEfJ9
+APeXB4mu1X7BSjwyPtiNUnKyhvc4wrq5SKEdmnPKWR95
+APeXJTSGoxLWmwb9o1tiiEL5RXVUakazYgjLmZdDc2Ef
+APeXUUaKFfPXjPxKHEdwCsJ4BfTuGg4qnVQyJE9K37PU
+APeXVWXKDRAAujckMjmMsV61a4DQiXa98MPUAkL46sim
+APeXW6PKFZRDz7WXBBybBMcoJaQo97UtLa5TAQnchNBY
+APeXZuKaKuqouyfU8fFL1woeWvSEVFkY4EMrmkvbfhhD
+APeXbYdbmrYWsastf6GurexGe3dwnuWKLD2mcsDoEuBU
+APeXn29deoxpsZz6r7n63Ymmv2skBr3WhKYLB1mB2fR7
+```
+
+Call `getTipAccounts` on `/apex` for the current upstream list. Bifrost forwards that list unchanged and requires authentication even for utility methods:
+
+```bash
+export BIFROST_ROUTE_URL='<APEX_JSON_RPC_URL_COPIED_FROM_DASHBOARD>'
+
+curl --fail-with-body --silent --show-error "$BIFROST_ROUTE_URL" \
+  --header 'content-type: application/json' \
+  --data '{"jsonrpc":"2.0","id":1,"method":"getTipAccounts","params":[]}'
+```
+
+The `result` is an array of base58 account addresses, including the dedicated and default accounts above.
+
+## JSON-RPC send
+
+Use the same `/apex` URL:
+
+```bash
+curl --fail-with-body --silent --show-error "$BIFROST_ROUTE_URL" \
+  --header 'content-type: application/json' \
+  --data '{
+    "jsonrpc":"2.0",
+    "id":1,
+    "method":"sendTransaction",
+    "params":["<BASE64_SIGNED_TRANSACTION>",{"encoding":"base64"}]
+  }'
+```
+
+Response: `{"jsonrpc":"2.0","id":1,"result":"<TRANSACTION_SIGNATURE>"}`.
+
+| Parameter | Type | Requirement |
+| --- | --- | --- |
+| `params[0]` | string | Required signed transaction, base64 or base58 |
+| `params[1].encoding` | string | Optional `base64` or `base58`; omit for detection |
+| `params[1].maxRetries` | number | Optional Apex retry budget; omit for the upstream default |
+| `params[2]` | boolean | Optional `mevProtect`; see [Apex MEV behavior](https://docs.orbitflare.com/apex/mev-protection) |
+
+Apex performs no simulation or preflight. Use `simulateTransaction` on your regular Solana RPC before submission when needed.
+
+## JSON send
+
+Copy **Apex → JSON send** for `/apex-send`. Send `Content-Type: application/json` with:
+
+```json
+{"transaction":"<BASE64_SIGNED_TRANSACTION>"}
+```
+
+`transaction` is required. Optional `mevProtect` (boolean) and `maxRetries` (number) select Apex behavior; omit them for upstream defaults. Response: `{"signature":"<TRANSACTION_SIGNATURE>"}`.
+
+## Binary send and batch
+
+Copy **Binary send** for `/apex-send-bin` and POST the raw signed bytes with `Content-Type: application/octet-stream`. Its response is `{"signature":"<TRANSACTION_SIGNATURE>"}`.
+
+For **Binary batch** (`/apex-send-batch`), concatenate 1–16 signed transactions with a two-byte unsigned big-endian length before each transaction:
+
+```text
+[u16 length][transaction bytes][u16 length][transaction bytes]...
+```
+
+Send the framed body as `application/octet-stream`. Each transaction is sent independently and needs its own tip. Inspect `results` and the `accepted`/`rejected` counts; batch acceptance does not establish atomic execution.
+
+Binary routes accept query options `mev_protect=0|1` and `max_retries=N`. Append options to the copied operation URL. See the [upstream sending reference](https://docs.orbitflare.com/apex/sending-transactions) for option semantics.
+
+## Atomic bundles
+
+Use `sendBundle` on `/apex`:
+
+```json
+{
+  "jsonrpc":"2.0",
+  "id":1,
+  "method":"sendBundle",
+  "params":[["<BASE64_TRANSACTION_1>","<BASE64_TRANSACTION_2>"],{"encoding":"base64"}]
+}
+```
+
+Response: `{"jsonrpc":"2.0","id":1,"result":"<BUNDLE_ID>"}`.
+
+Alternatively, copy **Binary bundle** for `/apex-send-bundle` and send 1–4 binary frames using the batch framing above. Response: `{"bundle_id":"<BUNDLE_ID>","signatures":["<TRANSACTION_SIGNATURE>"]}`.
+
+Exactly one tip is allowed across the bundle. Apex submits bundles through Jito; members execute in order with all-or-nothing semantics. See the [upstream bundle reference](https://docs.orbitflare.com/apex/bundles).
+
+## Status, quota, and errors
+
+On `/apex`, `getTipAccounts`, `getInflightBundleStatuses`, `getVersion`, and `health` are authenticated utility methods. They do not consume Bifrost transaction quota. Each submitted batch or bundle member counts as one transaction against a subscription's TPS allowance.
+
+For bundle status, send:
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"getInflightBundleStatuses","params":[["<BUNDLE_ID>"]]}
+```
+
+Parse every response body, including HTTP `200` responses containing a JSON-RPC `error`. Bifrost returns `400` for invalid transactions, size/count violations, or missing, duplicate, and insufficient tips. A `429` can come from your subscription allowance or Apex's own limits. See [Bifrost errors](/api-reference/bifrost/overview#errors-bifrost-returns-itself).
+
+An acceptance signature or bundle ID does not prove confirmation. Query each transaction signature through Solana RPC until it reaches your required commitment or expires; inspect `err` as well as `confirmationStatus`.
+
+## Next steps
+
+- [Bifrost authentication and errors](/api-reference/bifrost/overview)
+- [Confirm signatures through ThorEdge RPC](/api-reference/thoredge-rpc/http-methods)
+- [OrbitFlare Apex overview](https://docs.orbitflare.com/apex/overview)

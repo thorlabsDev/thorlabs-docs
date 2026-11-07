@@ -25,6 +25,11 @@ Copy the complete URL from **Endpoints → Bifrost**. Bifrost forwards your requ
 
 | Provider | Route | Method | Transactions | Reference |
 | --- | --- | --- | --- | --- |
+| Apex | `/apex` | `POST` | 1 send or 1–4 in a bundle; utility methods | [Apex](/api-reference/bifrost/apex) |
+| Apex | `/apex-send` | `POST` | 1, JSON | [Apex](/api-reference/bifrost/apex) |
+| Apex | `/apex-send-bin` | `POST` | 1, raw bytes | [Apex](/api-reference/bifrost/apex) |
+| Apex | `/apex-send-batch` | `POST` | 1–16, binary | [Apex](/api-reference/bifrost/apex) |
+| Apex | `/apex-send-bundle` | `POST` | 1–4, binary | [Apex](/api-reference/bifrost/apex) |
 | bloXroute | `/bloxroute` | `POST` | 1 | [bloXroute](/api-reference/bifrost/bloxroute) |
 | bloXroute | `/blxrt-submit-batch` | `POST` | 1 or more | [bloXroute](/api-reference/bifrost/bloxroute) |
 | bloXroute | `/blxrt-submit-paladin` | `POST` | 1 | [bloXroute](/api-reference/bifrost/bloxroute) |
@@ -40,15 +45,16 @@ Copy the complete URL from **Endpoints → Bifrost**. Bifrost forwards your requ
 | LunarLander | `/lunar-submit-batch` | `POST` | 1–16, binary | [LunarLander](/api-reference/bifrost/lunarlander) |
 | Hofund | `/hofund…` | `POST`, WebSocket | see reference | [Hofund](/api-reference/hofund/overview) |
 
-Every Bifrost-enabled location serves the same catalog.
+The dashboard shows the provider routes enabled for your selected access and location.
 
 ## What Bifrost checks before forwarding
 
 Bifrost decodes each transaction in the body and rejects the request with `400` when:
 
 - the transaction count is outside the route's bound in the table above;
-- a transaction is not valid base64 or does not decode as a Solana transaction;
+- a transaction uses invalid encoding for the selected route or does not decode as a Solana transaction;
 - a LunarLander binary batch member is outside 66–1232 bytes;
+- an Apex transaction exceeds 1232 bytes for legacy/v0 or 4096 bytes for v1;
 - the request does not meet the provider's route-specific tip rule, such as a tip on every independent transaction or in the required bundle member (see each provider page).
 
 The `400` body names the reason:
@@ -69,10 +75,11 @@ Reason codes: `invalid_json`, `invalid_params`, `missing_field`, `unsupported_ro
 | `400` | guardrail reject (above) | Body failed a pre-forward check. |
 | `410` | `Astralane sendPaladin is deprecated and removed` | `sendPaladin` on `/astralane`. |
 | `413` | `Request body exceeds 256 KiB` | Body over 256 KiB (Hofund routes: 64 KiB). |
+| `429` | rate-limit response | Bifrost subscription TPS allowance or an upstream provider limit exceeded. |
 | `502` | `Request failed: …` / `Upstream returned an invalid response` | Provider unreachable, timed out, or returned something unparseable. |
 | `503` | `<Provider> provider is disabled` | Provider not enabled at this location. |
 
-Bifrost has no rate limit of its own; a `429` comes from the provider and is passed through. Bifrost never retries and never falls back to another provider.
+Bifrost subscriptions count each submitted transaction, including each batch or bundle member, against the access's TPS allowance. Authenticated Apex utility methods do not consume transaction quota. Provider limits also apply; provider `429` responses pass through. Bifrost never retries and never falls back to another provider.
 
 ## Reading a response
 
@@ -80,6 +87,7 @@ A `2xx` means Bifrost completed the HTTP call to the provider. Parse the body: a
 
 ## Next steps
 
+- [Apex routes](/api-reference/bifrost/apex)
 - [bloXroute routes](/api-reference/bifrost/bloxroute)
 - [Astralane routes](/api-reference/bifrost/astralane)
 - [Hofund reference](/api-reference/hofund/overview)

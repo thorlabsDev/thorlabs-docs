@@ -245,6 +245,7 @@
             "icon": "route",
             "pages": [
               "api-reference/bifrost/overview",
+              "api-reference/bifrost/apex",
               "api-reference/bifrost/bloxroute",
               "api-reference/bifrost/astralane",
               "api-reference/bifrost/blockrazor",
