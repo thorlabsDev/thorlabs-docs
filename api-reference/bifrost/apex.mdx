@@ -126,6 +126,17 @@ Exactly one tip is allowed across the bundle. Apex submits bundles through Jito;
 
 ## Status, quota, and errors
 
+### Subscription TPS
+
+| Plan | Shared Bifrost TPS | Apex TPS ceiling |
+| --- | --- | --- |
+| Starter | 10 | 10 |
+| Developer | 50 | 50 |
+| Professional | 50 | 50 |
+| Enterprise | 60 | 50 |
+
+Both limits apply per subscription access across its keys and locations. An Apex submission consumes the shared Bifrost allowance and the Apex allowance together; another provider consumes only the shared allowance. A request exceeding either allowance returns `429` without consuming the remaining allowance. The selected access's current Apex allowance is shown in the dashboard provider panel.
+
 On `/apex`, `getTipAccounts`, `getInflightBundleStatuses`, `getVersion`, and `health` are authenticated utility methods. They do not consume Bifrost transaction quota. Each submitted batch or bundle member counts as one transaction against a subscription's TPS allowance.
 
 For bundle status, send:
